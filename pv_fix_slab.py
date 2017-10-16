@@ -1,8 +1,19 @@
 #!/usr/bin/env python
 #
-# sort atoms and fix some layers according to needs
-# modified from the script of Yue-Chao Wang
 #
+
+# * * * * * * * * * * * * * * * * * * *
+#
+#     File Name :
+# Creation Date :
+# Last Modified : Mon 16 Oct 2017 03:54:59 PM CST
+#       Purpose : sort atoms and fix some layers according to needs,
+#                 modified from the script written by Yue-Chao Wang
+#    Created By : Min-Ye Zhang
+#       Contact : stevezhang@pku.edu.cn
+#
+# * * * * * * * * * * * * * * * * * * *
+
 import sys
 import argparse
 

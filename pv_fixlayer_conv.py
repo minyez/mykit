@@ -27,29 +27,31 @@ def Main(ArgList):
 
     case_pos = vasp_read_poscar()
     natoms = case_pos.natoms
-    fix_list = []
-    rev_list = reversed(fix_list)
+    all_list = []
+    calc_list = []
+    rev_list = reversed(calc_list)
+    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(opts.nproc,vasp_path=opts.vasp_path)
 
     if opts.debug:
         print "Total number of atoms: %d" % natoms
 
     for i in rev_list:
         os.chdir(str(i)+'fixed')
-        if not i == 10:
-            copy2('../'+str(i+1)+'fixed/WAVECAR','WAVECAR')
-            copy2('../'+str(i+1)+'fixed/CONTCAR','CONTCAR')
+        if not i == all_list[-1]:
+            index_in_all = all_list.index(i)
+            copy2('../'+str(all_list[index_in_all+1])+'fixed/WAVECAR','WAVECAR')
+            copy2('../'+str(all_list[index_in_all+1])+'fixed/CONTCAR','CONTCAR')
             opt_num = int(sp.check_output("grep -c 'T  T  T' POSCAR_new",shell=True))
             fix_num = natoms - opt_num
             if opts.debug:
-                print fix_num,type(fix_num)
+                print optnum,fix_num,type(fix_num)
             if not opts.sym:
                 sp.call("pv_fix_slab.py -f CONTCAR -o POSCAR -n %d" % fix_num,shell=True)
             else:
-                sp.call("pv_fix_slab.py -f CONTCAR -o POSCAR -n %d -s" % int(fix_num)/2,shell=True)
-        vasp_path, vasp_cmd = vasp_vaspcmd_zmy(opts.nproc,vasp_path=opts.vasp_path)
+                surf_num = opt_num / 2
+                sp.call("pv_fix_slab.py -f CONTCAR -o POSCAR -n %d -s" % surf_num,shell=True)
         if opts.debug:
-            print opt_num, fix_num, vasp_cmd
-#        vasp_vasprun_zmy(vasp_cmd,'out','error')
+        vasp_vasprun_zmy(vasp_cmd,'out','error')
         os.chdir('..')
 
 # ====================================================

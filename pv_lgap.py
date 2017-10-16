@@ -14,7 +14,7 @@ def Main(ArgList):
     description = '''
     Calculate the l-weighted gap, either minimal or k-averaged between two bands
     Also these two values between any occupied and empty band is possible
-    by adding option: -v vb -c cb 
+    by adding option: -v vb -c cb
     '''
 
     parser = ArgumentParser(description=description)
@@ -27,7 +27,7 @@ def Main(ArgList):
     parser.add_argument("-i",dest='flag_inv',help="flag for the inverse of gap. Useful for analysis of polarization",action='store_true')
     parser.add_argument("-l",dest='vc',help="the atom-l-components over which the valence and the conduction band will be weighed, respectively. E.g. '1s2p' for the transition from type1atom-s orbital to type2atom-p orbital. m-decomposition is not supported yet.",default='0t0t')
     parser.add_argument("-s",dest='showcomp',help="flag for show the band component at each k-point",action='store_true')
-    
+
 
     opts = parser.parse_args()
     vb = opts.vb
@@ -114,7 +114,7 @@ def Main(ArgList):
     kavgap = np.inner(np.array(kgap),dxml.kpweigh)/np.sum(dxml.kpweigh)
     if opts.flag_inv:
         kavgap = 1.0E0/kavgap
-            
+
 
 #   Ensure that cb > vb
     if vb > cb:

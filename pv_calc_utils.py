@@ -5,7 +5,7 @@
 # This script offers utilities for initializing and running
 # tasks including standard DFT, LDA/GGA+U, hybrid functional
 # , GW and RPA calculations as well as some basic io utilities
-# 
+#
 # Special thanks to Prof. Hong Jiang and Dr. Feng Wu
 #
 # ====================================================
@@ -69,7 +69,7 @@ def vasp_io_change_tag(name_ifile,tag,name_ofile='temp',new_val=None,n_val=1,rep
     for i in xrange(length):
     # split the line with eq notation and semicolon
         line = [ x.strip() for x in re.split(r'[%s;]'%eq,lines[i])]
-        if len(line) == 0: 
+        if len(line) == 0:
             ofile.write(lines[i])
             continue
         elif len(line) >= 2 and line[0] != "#":
@@ -220,7 +220,7 @@ def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False):
           ofile.write("0 0 0\n")
         else:
           ofile.write("%8.4f %8.4f %8.4f\n"%(sh[0],sh[1],sh[2]))
-    
+
     elif mode == 'M':
         ofile = open('KPOINTS','w')
         ofile.write("K-Points\n")
@@ -232,7 +232,7 @@ def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False):
         else:
           ofile.write("%8.4f %8.4f %8.4f\n"%(sh[0],sh[1],sh[2]))
     ofile.close()
-    
+
 
 # ====================================================
 
@@ -265,7 +265,7 @@ def vasp_write_incar_minimal_elec(incar,tag_xc,\
         incar.write(" ISTART = %s\n" % wfrestart )
     if not encut == 0:
         incar.write(" ENCUT = %d\n" % encut)
-        incar.write(" PREC = Accurate\n") 
+        incar.write(" PREC = Accurate\n")
     else:
         incar.write(" PREC = Accurate # ENMAX will be set\n")
     incar.write(" LREAL = .False.\n")
@@ -303,7 +303,7 @@ def vasp_write_incar_minimal_elec(incar,tag_xc,\
 def vasp_write_incar_LDAU(incar,tag_xc,encut,ediff="1E-8",mode=None):
     '''
     Under implementation !!!
-    Write INCAR for LDA/GGA with Hubbard-U correction 
+    Write INCAR for LDA/GGA with Hubbard-U correction
     '''
 
 # ====================================================
@@ -340,19 +340,20 @@ def vasp_vaspcmd_zmy(np=1,mpitype="mpirun",vasp_path="vasp"):
     """
     Setting vasp command on different platforms
     mpitype indicates the type of MPI executives, whether use mpirun or yhrun
-    """  
+    """
 # define execution type of vasp
     if vasp_path == "vasp":
         try:
-            which_vasp = str(sp.check_output("which vasp | tail -1",shell=True)).split('\n')[0]
+            which_vasp = str(sp.check_output("which vasp",stderr=sp.STDOUT,shell=True)).split('\n')[0]
             vasp_path = which_vasp
         except sp.CalledProcessError:
-            try: 
-                which_vasp = str(sp.check_output("which vasp_std",shell=True)).split('\n')[0]
+            try:
+                which_vasp = str(sp.check_output("which vasp_std",stderr=sp.STDOUT,shell=True)).split('\n')[0]
                 vasp_path = which_vasp
             except sp.CalledProcessError:
                 print "Path for vasp not found. Need manual setting"
                 vasp_path = "vasp"
+                raise
 
     if np == 1:
         vasp_cmd = vasp_path
@@ -360,8 +361,8 @@ def vasp_vaspcmd_zmy(np=1,mpitype="mpirun",vasp_path="vasp"):
         if mpitype == "mpirun":
             vasp_cmd = "mpirun -np %d %s" % (np, vasp_path)
         elif mpitype == "yhrun":
-            vasp_cmd = "yhrun -n %d -p TH_HPC1 %s" % (np, vasp_path)
-    
+            vasp_cmd = "yhrun -n %d %s" % (np, vasp_path)
+
     return vasp_path, vasp_cmd
 
 # ====================================================
