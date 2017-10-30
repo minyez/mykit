@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Mon 30 Oct 2017 08:51:18 PM CST
+# Last Modified : Mon 30 Oct 2017 10:02:16 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -201,6 +201,7 @@ class vasp_read_poscar:
 
 
     def write_poscar(self,OutFile='POSCAR_new',l_reload=False):
+        print " Write POSCAR: %s" % OutFile
         # reload all objects to poslines
         if l_reload:
             self.action_change_scale(self.scale)
@@ -262,8 +263,9 @@ class vasp_read_poscar:
             return False
 
 
-    def action_shift(self,shift,zdirt):
-        print "  - overall shift %6.4f in direction %d" % (shift,zdirt)
+    def action_shift(self,shift,zdirt,verbose=True):
+        if verbose:
+            print "  - overall shift %6.4f in direction %d" % (shift,zdirt)
         for ia in xrange(self.natoms):
             self.action_single_atom_shift(ia+1,shift,zdirt)
 
@@ -279,8 +281,10 @@ class vasp_read_poscar:
     def action_add_vacuum(self,vacadd,zdirt=3):
         # add length to the vacuum region of slab model. In Angstrom unit
         # 1D case and middle vacuum case to be implemented
-#        if vacadd < 0.1:
-#            return
+        if abs(vacadd) < 1.0:
+            print " In action_add_vacuum:"
+            print "  - too small change in vacuum (abs <= 1.0 A). Pass."
+            return
         iz = zdirt - 1
         # check the slab model
         for ix in xrange(3):
@@ -300,10 +304,7 @@ class vasp_read_poscar:
         self.action_centering(zdirt)
         self.action_dirt2cart(False)
 
-        print self.lattice[iz][iz]
         self.lattice[iz][iz] = self.lattice[iz][iz] + vacadd
-        print self.lattice[iz][iz]
-        print " In action_add_vacuum:"
         self.action_shift(vacadd/2.0,zdirt)
         self.action_cart2dirt(True)
         self.write_lattice_to_lines()
@@ -311,7 +312,7 @@ class vasp_read_poscar:
 
     def check_sort_index(self,zdirt=3):
         iz = zdirt - 1
-        Coords_all = [self.innerpos[:][iz]]
+        Coords_all = [self.innerpos[i][iz] for i in xrange(self.natoms)]
         sorted_index = sorted(range(self.natoms),key=lambda k:Coords_all[k])
         return sorted_index
 
@@ -322,22 +323,23 @@ class vasp_read_poscar:
         '''
         # skip the heading, save the starting line of each atom block
         iz = zdirt - 1
-        Atom_Line = [8]
+        blocka = [0]
         for i in xrange(self.ntypes-1):
-            Atom_Line.append(Atom_Line[i]+self.atom_num[i])
+            blocka.append(blocka[i]+self.atom_num[i])
 
         for i in xrange(self.ntypes):
-            Coords = [self.innerpos[Atom_Line[i]:Atom_Line[i]+self.atom_num[i]][iz]]
-            Index = sorted(range(self.atom_num[i]),key=lambda k:Coords[k])
+            Coords = [self.innerpos[x][iz] for x in xrange(blocka[i],blocka[i]+self.atom_num[i])]
+            print Coords
+            index = sorted(range(self.atom_num[i]),key=lambda k:Coords[k])
+            print index
             temp_list = []
         # sort the coordinates for each type of atoms
             for j in xrange(self.atom_num[i]):
-                temp_list.append(self.poslines[Atom_Line[i]+Index[j]])
+                temp_list.append(self.innerpos[blocka[i]+index[j]])
+            self.innerpos[blocka[i]:blocka[i]+self.atom_num[i]] = temp_list
 
-            self.poslines[Atom_Line[i]:Atom_Line[i]+self.atom_numb[i]] = temp_list
-
-        self.write_innerpos_from_lines()
-        self.check_sort_index(zdirt)
+        self.write_innerpos_to_lines()
+        return self.check_sort_index(zdirt)
 
 
 # ===========================================================

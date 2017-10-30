@@ -4,7 +4,7 @@
 #
 #     File Name : pv_fix_slab.py
 # Creation Date : 2017-06-20
-# Last Modified : Mon 30 Oct 2017 04:02:59 PM CST
+# Last Modified : Mon 30 Oct 2017 09:31:28 PM CST
 #       Purpose : sort atoms and fix some layers according to needs,
 #                 modified from the script written by Yue-Chao Wang
 #    Created By : Min-Ye Zhang
@@ -41,6 +41,7 @@ def fix_xyz_range(poscar,start,end,direct,reverse=False,debug=False):
     Use reverse if you want to the points out of this range to be fixed. which is rarely used
     '''
 
+    idir = direct - 1
     TrSurf, FlsSurf = flag_fix(reverse)
     Atom_Type, Atom_Numb, Atom_Line = get_atom_info(poscar)
 
@@ -49,7 +50,7 @@ def fix_xyz_range(poscar,start,end,direct,reverse=False,debug=False):
     for i in xrange(len(Atom_Numb)):
         while n_line < Atom_Line[i]+Atom_Numb[i]:
             Coord_line = poscar.poslines[n_line].split()
-            key = float(Coord_line[direct])
+            key = float(Coord_line[idir])
             # in the range
             if key >= start and key <= end:
                 rewrite_posline(poscar,n_line,FlsSurf,Atom_Type[i])
@@ -139,7 +140,7 @@ def Main(ArgList):
     group1.add_argument("-n",dest="fixnum",type=int,help="Number of atoms from bottom to set F/T")
     group1.add_argument("-r",dest="range",type=float,nargs=2,help="The range of F or T")
     parser.add_argument("-s",dest="sym",help="Flag for symmetric fixing.",action='store_true')
-    parser.add_argument("-d",dest="direction",default="z",help="Sort according to which direction x, y or z")
+    parser.add_argument("-d",dest="direction",type=int,default="3",help="Sort according to which direction 1, 2 or 3")
     parser.add_argument("-t",action='store_true',help="Using this Tag Set T in Range, Default is False")
     parser.add_argument("-o",dest="Output",default="POSCAR_new",help="Name of New POSCAR")
     parser.add_argument("-D",action="store_true",help="Debug mode")
@@ -153,19 +154,15 @@ def Main(ArgList):
 
     poscar = vasp_read_poscar(FileName)
 
-    if opts.direction == 'x':
-        drct = 0
-    elif opts.direction == 'y':
-        drct = 1
-    elif opts.direction == 'z':
-        drct = 2
-    else :
+    drct = opts.direction
+    if drct not in [1,2,3]:
         print "Wrong in PUT"
-        exit()
+        sys.exit(1)
 
 # all_atom_sort is a sorted list
 # the poscar.poslines is already sorted after the sort_coor function
-    all_atom_sort = sort_coor(poscar,drct,opts.D)
+#    all_atom_sort = sort_coor(poscar,drct)
+    all_atom_sort = poscar.action_sort_coor(drct)
     if opts.range is not None:
         start = min(opts.range)
         end = max(opts.range)
