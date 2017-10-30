@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Mon 30 Oct 2017 06:58:36 PM CST
+# Last Modified : Mon 30 Oct 2017 08:51:18 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -86,18 +86,20 @@ class vasp_read_poscar:
         If not, shift the innerpos according to the periodic boundary condition
         Currently ONLY support DIRECT coordinate system
         '''
-        if self.coor_type == 'cart':
-            print " Cartisian system detected. PBC check not supported yet. Pass"
-            return
         # ia is the index of [iatom]th atom in self.innerpos[:]
         ia = iatom - 1
-        for iz in xrange(3):
-            while (self.innerpos[ia][iz] >= 1.0):
-                print "  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1)
-                self.innerpos[ia][iz] = self.innerpos[ia][iz] - 1.0
-            while (self.innerpos[ia][iz] < 0.0):
-                print "  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1)
-                self.innerpos[ia][iz] = self.innerpos[ia][iz] + 1.0
+        if self.coor_type == 'cart':
+            print " In check_pbc:"
+            print "  - Cartisian system detected. PBC check not supported yet. Pass"
+            return
+        else:
+            for iz in xrange(3):
+                while (self.innerpos[ia][iz] >= 1.0):
+                    print "  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1)
+                    self.innerpos[ia][iz] = self.innerpos[ia][iz] - 1.0
+                while (self.innerpos[ia][iz] < 0.0):
+                    print "  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1)
+                    self.innerpos[ia][iz] = self.innerpos[ia][iz] + 1.0
 
 
     def check_atomtype(self,iatom):
@@ -111,16 +113,6 @@ class vasp_read_poscar:
             else:
                 ia = ia - self.atom_num[itype]
 
-    def check_vacuum(self,zdirt):
-        thres_vac = 0.02
-        iz = zdirt - 1
-        zmax = max(self.innerpos[:][iz])
-        zmin = min(self.innerpos[:][iz])
-        if zmin < thres_vac or (1.0-zmax) < thres_vac:
-            return True
-        else:
-            return False
-        pass
 
     def check_mcenter(self):
         '''
@@ -140,44 +132,51 @@ class vasp_read_poscar:
             return
 
         for iz in dirt_list:
-            if self.check_vacuum(iz+1):
+            if self.check_vacuum_pos(iz+1):
                 print "  - Vacuum in the middle detected. Not supported currently. Pass."
                 continue
-            surf_atom = [self.check_extreme_atom(0.0,3,False,1.0),self.check_extreme_atom(0.0,3,True,1.0)]
-            shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
-            self.action_shift(iz+1,shift)
-
+            else:
+                surf_atom = [self.check_extreme_atom(0.0,3,False,1.0),self.check_extreme_atom(0.0,3,True,1.0)]
+                shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
+                if shift >= 1E-3:
+                    self.action_shift(shift,iz+1)
         self.write_innerpos_to_lines()
 
 
-    def action_shift(self,zdirt,shift):
-        iz = zdirt - 1
-        print "  - shift %6.4f in direction %d" % (shift,zdirt)
-        for ia in xrange(self.natoms):
-            self.innerpos[ia][iz] = self.innerpos[ia][iz] + shift
-            self.check_pbc(ia+1)
-
-
-    def action_dirt2cart(self):
+    def action_dirt2cart(self,l_write=True):
         if self.coor_type == 'cart':
             print " Cartisian coordinate system detected. Nothing to do."
             return
         for ia in xrange(self.natoms):
             self.innerpos[ia] = np.dot(self.lattice,self.innerpos[ia])
         self.coor_type = 'cart'
-        self.write_coortype_to_lines()
-        self.write_innerpos_to_lines()
+        if l_write:
+            self.write_coortype_to_lines()
+            self.write_innerpos_to_lines()
 
 
-    def action_cart2dirt(self):
+    def action_cart2dirt(self,l_write=True):
         if self.coor_type == 'dirt':
             print " Direct coordinate system detected. Nothing to do."
             return
         for ia in xrange(self.natoms):
             self.innerpos[ia] = np.dot(np.linalg.inv(self.lattice),self.innerpos[ia])
         self.coor_type = 'dirt'
-        self.write_coortype_to_lines()
-        self.write_innerpos_to_lines()
+        if l_write:
+            self.write_coortype_to_lines()
+            self.write_innerpos_to_lines()
+
+
+    def action_change_scale(self,scale=1.0,l_write=True):
+        self.scale = scale
+        if l_write:
+            self.poslines[1] = "%12.8f\n" % self.scale
+
+
+    def write_lattice_to_lines(self):
+        for i in xrange(3):
+            self.poslines[i+2] = "%20.12f%20.12f%20.12f\n" % \
+                           (self.lattice[i][0],self.lattice[i][1],self.lattice[i][2])
 
 
     def write_innerpos_from_lines(self):
@@ -201,12 +200,30 @@ class vasp_read_poscar:
             self.poslines[7] = 'Selective dynamics\nDirect\n'
 
 
+    def write_poscar(self,OutFile='POSCAR_new',l_reload=False):
+        # reload all objects to poslines
+        if l_reload:
+            self.action_change_scale(self.scale)
+            self.write_coortype_to_lines()
+            self.write_innerpos_to_lines()
+            self.write_lattice_to_lines()
+        with open(OutFile,'w+') as f:
+            for i in xrange(len(self.poslines)):
+                f.write(self.poslines[i])
+
+
+# ===========================================================
+# slab utilities
+# ===========================================================
+
     def check_extreme_atom(self,target=0.0,zdirt=3,l_far=True,terminal=1.0):
         if self.coor_type == 'cart':
-            print " Cartisian coordinate system detected. Currently not supported. Pass"
+            print " In check_extreme_atom:"
+            print "  - Cartisian coordinate system detected. Currently not supported. Pass"
             return None
         for x in [target,terminal]:
             if x < 0.0 or x > 1.0:
+                print " In check_extreme_atom:"
                 print "  - Invalid target or terminal in extreme check. Pass."
                 return None
         iz = zdirt - 1
@@ -232,10 +249,96 @@ class vasp_read_poscar:
             return ia_clo+1
 
 
-    def write_poscar(self,OutFile='POSCAR_new'):
-        with open(OutFile,'w+') as f:
-            for i in xrange(len(self.poslines)):
-                f.write(self.poslines[i])
+    def check_vacuum_pos(self,zdirt):
+        thres_vac = 0.02
+        iz = zdirt - 1
+        zmax = max(self.innerpos[:][iz])
+        zmin = min(self.innerpos[:][iz])
+        # if the vacuum is in the middle of the slab/wire, return True
+        # else False
+        if zmin < thres_vac or (1.0-zmax) < thres_vac:
+            return True
+        else:
+            return False
+
+
+    def action_shift(self,shift,zdirt):
+        print "  - overall shift %6.4f in direction %d" % (shift,zdirt)
+        for ia in xrange(self.natoms):
+            self.action_single_atom_shift(ia+1,shift,zdirt)
+
+
+    def action_single_atom_shift(self,iatom,shift,zdirt):
+        iz = zdirt - 1
+        ia = iatom - 1
+        self.innerpos[ia][iz] = self.innerpos[ia][iz] + shift
+        if self.coor_type == 'dirt':
+            self.check_pbc(iatom)
+
+
+    def action_add_vacuum(self,vacadd,zdirt=3):
+        # add length to the vacuum region of slab model. In Angstrom unit
+        # 1D case and middle vacuum case to be implemented
+#        if vacadd < 0.1:
+#            return
+        iz = zdirt - 1
+        # check the slab model
+        for ix in xrange(3):
+            if (iz is not ix) and self.lattice[iz][ix] > 1.0E-2:
+                print
+                return
+            if (iz is not ix) and self.lattice[ix][iz] > 1.0E-2:
+                return
+
+        if self.check_vacuum_pos(zdirt):
+            print " In action_add_vacuum:"
+            print "  - Vacuum in the middle detected. Not supported currently. Pass."
+            return
+
+        if self.coor_type == 'cart':
+            self.action_cart2dirt(False)
+        self.action_centering(zdirt)
+        self.action_dirt2cart(False)
+
+        print self.lattice[iz][iz]
+        self.lattice[iz][iz] = self.lattice[iz][iz] + vacadd
+        print self.lattice[iz][iz]
+        print " In action_add_vacuum:"
+        self.action_shift(vacadd/2.0,zdirt)
+        self.action_cart2dirt(True)
+        self.write_lattice_to_lines()
+
+
+    def check_sort_index(self,zdirt=3):
+        iz = zdirt - 1
+        Coords_all = [self.innerpos[:][iz]]
+        sorted_index = sorted(range(self.natoms),key=lambda k:Coords_all[k])
+        return sorted_index
+
+
+    def action_sort_coor(self,zdirt=3):
+        '''
+        Sort atoms of each type
+        '''
+        # skip the heading, save the starting line of each atom block
+        iz = zdirt - 1
+        Atom_Line = [8]
+        for i in xrange(self.ntypes-1):
+            Atom_Line.append(Atom_Line[i]+self.atom_num[i])
+
+        for i in xrange(self.ntypes):
+            Coords = [self.innerpos[Atom_Line[i]:Atom_Line[i]+self.atom_num[i]][iz]]
+            Index = sorted(range(self.atom_num[i]),key=lambda k:Coords[k])
+            temp_list = []
+        # sort the coordinates for each type of atoms
+            for j in xrange(self.atom_num[i]):
+                temp_list.append(self.poslines[Atom_Line[i]+Index[j]])
+
+            self.poslines[Atom_Line[i]:Atom_Line[i]+self.atom_numb[i]] = temp_list
+
+        self.write_innerpos_from_lines()
+        self.check_sort_index(zdirt)
+
 
 # ===========================================================
 
