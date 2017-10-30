@@ -2,7 +2,7 @@
 #
 # a simple script to get fundamental gap and k-point-averaged band gap
 
-from pv_anal_utils import vasp_read_xml
+from pv_classes import vasp_read_xml
 from argparse import ArgumentParser
 import numpy as np
 import os,sys

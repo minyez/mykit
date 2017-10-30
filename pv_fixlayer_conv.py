@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from pv_calc_utils import *
-from pv_anal_utils import vasp_read_poscar
+from pv_classes import vasp_read_poscar
 from shutil import copy2
 from argparse import ArgumentParser
 import subprocess as sp

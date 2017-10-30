@@ -1,17 +1,26 @@
 #!/usr/bin/env python
+# coding=utf-8
+
+# ====================================================
 #
-# This script is used to calculate and analyze the ACFDT-RPA results in vasp
+#     File Name : pv_acfdt.py
+# Creation Date : 2017-04-24
+# Last Modified : Mon 30 Oct 2017 12:04:01 PM CST
+#    Created By : Min-Ye Zhang
+#       Contact : stevezhang@pku.edu.cn
+#       Purpose : This script is used to calculate and analyze the ACFDT-RPA results in vasp
+#         TO DO :
+#                 vasp calculation script : normal dft, HF, exact diagonalization, acfdt
+#                                  Analyze: Ener_Vol curve. In another script
 #
-# TO DO:
-#
-#   vasp calculation script : normal dft, HF, exact diagonalization, acfdt
-#   Analyze: Ener_Vol curve. In another script
-#
+# ====================================================
 
 import sys, os
 from argparse import ArgumentParser
-from pv_calc_utils import *
-# from vasp_utils import vasp_write_kpoints
+from pv_calc_utils import vasp_write_incar_minimal_elec,\
+                          vasp_io_get_NPAR,vasp_vaspcmd_zmy,\
+                          vasp_io_change_tag,vasp_write_incar_exact,\
+                          vasp_write_kpoints_basic
 
 # =====================================================
 
@@ -180,9 +189,9 @@ def Main(ArgList):
         vasp_io_change_tag('INCAR_2','HFSCREEN')
 
 # Step 3: Exact diagonalization
-#   For RPA calculation of system with a gap, WAVEDER is 
+#   For RPA calculation of system with a gap, WAVEDER is
 #   required to include longwave contribution, while it
-#   is better for convergence w.r.t kpoint-mesh if this 
+#   is better for convergence w.r.t kpoint-mesh if this
 #   contribution is neglected.
     with open('INCAR_3','w') as incar:
         print "Setting INCAR_3: Exact Diag."

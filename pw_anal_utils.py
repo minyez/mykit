@@ -1,4 +1,17 @@
 #!/usr/bin/env python
+# coding=utf-8
+
+# ====================================================
+#
+#     File Name : pw_anal_utils.py
+# Creation Date : 2017-08-24
+# Last Modified : Mon 30 Oct 2017 12:05:37 PM CST
+#    Created By : Min-Ye Zhang
+#       Contact : stevezhang@pku.edu.cn
+#       Purpose : provide classes and functions for the analysis
+#                 of WIEN2K input and output files
+#
+# ====================================================
 
 import os,sys
 import subprocess as sp
@@ -46,10 +59,10 @@ def Read_BandStructure(hybrid=False):
     if not os.path.exists(ifile):
         print '%s not found. Exit.' % ifile
         sys.exit('1')
-    
+
     with open(ifile,'r') as f:
         lines = f.readlines()
-    
+
     i = 4
     while i < len(lines):
         words = lines[i].split()

@@ -1,118 +1,74 @@
 #!/usr/bin/env python
 #
+# ====================================================
 #
-
-# * * * * * * * * * * * * * * * * * * *
-#
-#     File Name :
-# Creation Date :
-# Last Modified : Mon 16 Oct 2017 03:54:59 PM CST
+#     File Name : pv_fix_slab.py
+# Creation Date : 2017-06-20
+# Last Modified : Mon 30 Oct 2017 04:02:59 PM CST
 #       Purpose : sort atoms and fix some layers according to needs,
 #                 modified from the script written by Yue-Chao Wang
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #
-# * * * * * * * * * * * * * * * * * * *
+# ====================================================
 
 import sys
 import argparse
+from pv_classes import vasp_read_poscar
+from pv_slab_utils import sort_coor, flag_fix
 
 # ====================================================
 
-def get_atom_info(poscar_lines):
-
-    Atom_Type = poscar_lines[5].split()
-    Atom_Numb = [int(x) for x in poscar_lines[6].split()]
-    Atom_St_Line = [8]
+def get_atom_info(poscar):
+    '''
+    read in the atomic information from POSCAR
+    there should be 8 lines in the heading:
+    1 for comment, 1 for scale, 3 for lattice vectors
+    2 for atoms type and numbers
+    '''
+    Atom_Type = poscar.atom_type
+    Atom_Numb = poscar.atom_num
+    Atom_Line = [8]
     for i in xrange(len(Atom_Type)-1):
-        Atom_St_Line.append(Atom_St_Line[i]+Atom_Numb[i])
-#    print Atom_Type
-#    print Atom_Numb
-#    print Atom_St_Line
-
-    return  Atom_Type, Atom_Numb, Atom_St_Line
+        Atom_Line.append(Atom_Line[i]+Atom_Numb[i])
+    return  Atom_Type, Atom_Numb, Atom_Line
 
 # ====================================================
 
-def sort_xyz(poscar_lines,direct,debug=False):
+def fix_xyz_range(poscar,start,end,direct,reverse=False,debug=False):
     '''
-    Sort atoms of each type
-    '''
-    if poscar_lines[7].split()[0].startswith('S'):
-        del poscar_lines[7]
-    Atom_Type, Atom_Numb, Atom_St_Line = get_atom_info(poscar_lines)
-
-    for i in xrange(len(Atom_Type)):
-        Coords = [float(x.split()[direct]) for x in poscar_lines[Atom_St_Line[i]:Atom_St_Line[i]+Atom_Numb[i]]]
-        Index = sorted(range(len(Coords)),key=lambda k:Coords[k])
-        if debug: print Index
-        temp_list = []
-
-# sort the coordinates for each type of atoms
-        for j in xrange(len(Coords)):
-            temp_list.append(poscar_lines[Atom_St_Line[i]+Index[j]])
-        if debug: print temp_list
-
-        poscar_lines[Atom_St_Line[i]:Atom_St_Line[i]+Atom_Numb[i]] = temp_list
-
-    Coords_all = [float(x.split()[direct]) for x in poscar_lines[Atom_St_Line[0]:Atom_St_Line[-1]+Atom_Numb[-1]]]
-    all_atom_sort = sorted(range(len(Coords_all)),key=lambda k:Coords_all[k])
-    if debug:
-        print Atom_St_Line
-        print len(Coords_all)
-        print all_atom_sort
-        print Coords_all
-
-    return all_atom_sort
-
-# ====================================================
-
-def flag_fix(reverse=False):
-
-    FlsSurf = "  F  F  F "
-    TrSurf = "  T  T  T "
-    if reverse:
-        TrSurf = "  F  F  F "
-        FlsSurf = "  T  T  T "
-    return TrSurf, FlsSurf
-
-# ====================================================
-
-def fix_xyz_range(poscar_lines,start,end,direct,reverse=False,debug=False):
-    '''
-    Fix x/y/z between start and end points. Need sorted poscar_lines
+    Fix x/y/z between start and end points. Need sorted poscar.poslines
     Use reverse if you want to the points out of this range to be fixed. which is rarely used
     '''
-    poscar_lines[7] = 'Selective dynamics\n'+poscar_lines[7]
 
     TrSurf, FlsSurf = flag_fix(reverse)
-    Atom_Type, Atom_Numb, Atom_St_Line = get_atom_info(poscar_lines)
+    Atom_Type, Atom_Numb, Atom_Line = get_atom_info(poscar)
 
+    rewrite_poscar(poscar,Atom_Numb,Atom_Type,fix_index,TrSurf,FlsSurf)
     n_line = 8
     for i in xrange(len(Atom_Numb)):
-        while n_line < Atom_St_Line[i]+Atom_Numb[i]:
-            Coord_line = poscar_lines[n_line].split()
+        while n_line < Atom_Line[i]+Atom_Numb[i]:
+            Coord_line = poscar.poslines[n_line].split()
             key = float(Coord_line[direct])
             # in the range
             if key >= start and key <= end:
-                poscar_lines[n_line] = '   '+'   '.join(poscar_lines[n_line].split()[0:3])+FlsSurf+'# %s\n' % Atom_Type[i]
+                rewrite_posline(poscar,n_line,FlsSurf,Atom_Type[i])
             # out of the range
             else:
-                poscar_lines[n_line] = '   '+'   '.join(poscar_lines[n_line].split()[0:3])+TrSurf+'# %s\n' % Atom_Type[i]
+                rewrite_posline(poscar,n_line,TrSurf,Atom_Type[i])
             n_line = n_line + 1
 
 # ====================================================
 
-def fix_xyz_number_bottom(poscar_lines,sorted_list,fixnum,reverse=False,debug=False):
+def fix_xyz_number_bottom(poscar,sorted_list,fixnum,reverse=False,debug=False):
     '''
-    Fix atoms from bottom of slab. Need sorted poscar_lines.
+    Fix atoms from bottom of slab. Need sorted poscar.poslines.
     Sorted list
     Use reverse if you want to the points out of this range to be fixed. which is rarely used
     '''
-    poscar_lines[7] = 'Selective dynamics\n'+poscar_lines[7]
 
     TrSurf, FlsSurf = flag_fix(reverse)
-    Atom_Type, Atom_Numb, Atom_St_Line = get_atom_info(poscar_lines)
+    Atom_Type, Atom_Numb, Atom_Line = get_atom_info(poscar)
     if debug:
         print sorted_list
     if fixnum <= 0:
@@ -129,24 +85,23 @@ def fix_xyz_number_bottom(poscar_lines,sorted_list,fixnum,reverse=False,debug=Fa
 
     n_line = 8
     for i in xrange(len(Atom_Numb)):
-        while n_line < Atom_St_Line[i]+Atom_Numb[i]:
+        while n_line < Atom_Line[i]+Atom_Numb[i]:
             if (n_line - 8) in fix_index:
-                poscar_lines[n_line] = '   '+'  '.join(poscar_lines[n_line].split()[0:3])+FlsSurf+'# %s\n' % Atom_Type[i]
+                rewrite_posline(poscar,n_line,FlsSurf,Atom_Type[i])
             else:
-                poscar_lines[n_line] = '   '+'  '.join(poscar_lines[n_line].split()[0:3])+TrSurf+'# %s\n' % Atom_Type[i]
+                rewrite_posline(poscar,n_line,TrSurf,Atom_Type[i])
             n_line = n_line + 1
+
 
 # ====================================================
 
-def fix_xyx_number_sym(poscar_lines,sorted_list,surf_num,reverse=True,debug=False):
+def fix_xyx_number_sym(poscar,sorted_list,surf_num,reverse=True,debug=False):
     '''
     Fix atoms symmetrically.
     surf_num is the number of atoms to relax in each of surface
     '''
-    poscar_lines[7] = 'Selective dynamics\n'+poscar_lines[7]
-
     TrSurf, FlsSurf = flag_fix(reverse)
-    Atom_Type, Atom_Numb, Atom_St_Line = get_atom_info(poscar_lines)
+    Atom_Type, Atom_Numb, Atom_Line = get_atom_info(poscar)
 
     if debug:
         print sorted_list
@@ -159,12 +114,17 @@ def fix_xyx_number_sym(poscar_lines,sorted_list,surf_num,reverse=True,debug=Fals
 
     n_line = 8
     for i in xrange(len(Atom_Numb)):
-        while n_line < Atom_St_Line[i]+Atom_Numb[i]:
+        while n_line < Atom_Line[i]+Atom_Numb[i]:
             if (n_line - 8) in fix_index:
-                poscar_lines[n_line] = '   '+'  '.join(poscar_lines[n_line].split()[0:3])+FlsSurf+'# %s\n' % Atom_Type[i]
+                rewrite_posline(poscar,n_line,FlsSurf,Atom_Type[i])
             else:
-                poscar_lines[n_line] = '   '+'  '.join(poscar_lines[n_line].split()[0:3])+TrSurf+'# %s\n' % Atom_Type[i]
+                rewrite_posline(poscar,n_line,TrSurf,Atom_Type[i])
             n_line = n_line + 1
+
+def rewrite_posline(poscar,n_line,FlagSurf,atomtype):
+    poscar.poslines[n_line] =  "%17.8f%17.8f%17.8f" % \
+                    (poscar.innerpos[n_line-8][0],poscar.innerpos[n_line-8][1],poscar.innerpos[n_line-8][2]) \
+                    + FlagSurf + '#%2s\n' % atomtype
 
 # ====================================================
 
@@ -182,7 +142,6 @@ def Main(ArgList):
     parser.add_argument("-d",dest="direction",default="z",help="Sort according to which direction x, y or z")
     parser.add_argument("-t",action='store_true',help="Using this Tag Set T in Range, Default is False")
     parser.add_argument("-o",dest="Output",default="POSCAR_new",help="Name of New POSCAR")
-#    parser.add_argument("-l",action="store_true",help="List Coordinates after sorted")
     parser.add_argument("-D",action="store_true",help="Debug mode")
 
     opts = parser.parse_args()
@@ -192,10 +151,7 @@ def Main(ArgList):
     NewFileName = opts.Output
     FileName = opts.filename
 
-    PosFile = open(FileName,"r")
-    ofile = open(NewFileName,"w+")
-    lines = PosFile.readlines()
-    PosFile.close()
+    poscar = vasp_read_poscar(FileName)
 
     if opts.direction == 'x':
         drct = 0
@@ -207,25 +163,24 @@ def Main(ArgList):
         print "Wrong in PUT"
         exit()
 
-    all_atom_sort = sort_xyz(lines,drct,opts.D)
+# all_atom_sort is a sorted list
+# the poscar.poslines is already sorted after the sort_coor function
+    all_atom_sort = sort_coor(poscar,drct,opts.D)
     if opts.range is not None:
         start = min(opts.range)
         end = max(opts.range)
-        fix_xyz_range(lines,start,end,drct,opts.t,opts.D)
+        fix_xyz_range(poscar,start,end,drct,opts.t,opts.D)
     elif opts.fixnum is not None:
         if not opts.sym:
-            fix_xyz_number_bottom(lines,all_atom_sort,opts.fixnum,opts.t,opts.D)
+            fix_xyz_number_bottom(poscar,all_atom_sort,opts.fixnum,opts.t,opts.D)
         else:
             print "Symmetric fixing ..."
-            fix_xyx_number_sym(lines,all_atom_sort,opts.fixnum,True,opts.D)
+            fix_xyx_number_sym(poscar,all_atom_sort,opts.fixnum,True,opts.D)
     else:
         print "Specify either range of number of atoms to fix"
         exit()
 
-    for i in xrange(len(lines)):
-        ofile.write(lines[i])
-
-    ofile.close()
+    poscar.write_poscar(opts.Output)
 
 # ====================================================
 

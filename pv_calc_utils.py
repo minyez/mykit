@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-#
-# ver.0.0.1 by M.-Y. Zhang
-#
-# This script offers utilities for initializing and running
-# tasks including standard DFT, LDA/GGA+U, hybrid functional
-# , GW and RPA calculations as well as some basic io utilities
-#
-# Special thanks to Prof. Hong Jiang and Dr. Feng Wu
-#
+# coding=utf-8
+
 # ====================================================
 #
-# Functions and usages listed:
-#
+#     File Name :
+# Creation Date : 2017-05-01
+# Last Modified : Mon 30 Oct 2017 11:58:47 AM CST
+#    Created By : Min-Ye Zhang
+#       Contact : stevezhang@pku.edu.cn
+#       Purpose : This script offers utilities for initializing and running
+#                 tasks including standard DFT, LDA/GGA+U, hybrid functional
+#                 , GW and RPA calculations as well as some basic io utilities
+#                 Special thanks to Prof. Hong Jiang and Dr. Feng Wu
 #
 # ====================================================
 

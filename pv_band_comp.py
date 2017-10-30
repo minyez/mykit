@@ -2,7 +2,7 @@
 #
 # a simple script to get atom-l component of band \psi_{nk} at each k-point
 
-from pv_anal_utils import vasp_read_xml
+from pv_classes import vasp_read_xml
 from argparse import ArgumentParser
 import numpy as np
 import os,sys
@@ -14,7 +14,7 @@ def Main(ArgList):
     description = '''
     Calculate the l-weighted gap, either minimal or k-averaged between two bands
     Also these two values between any occupied and empty band is possible
-    by adding option: -v vb -c cb 
+    by adding option: -v vb -c cb
     '''
 
     parser = ArgumentParser(description=description)
@@ -103,7 +103,7 @@ def Main(ArgList):
 #    print dxml.kpweigh
 #    print sum(dxml.kpweigh)
 #    print kavgap
-            
+
 
 #   Ensure that cb > vb
     if vb > cb:
