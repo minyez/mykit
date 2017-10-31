@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Mon 30 Oct 2017 10:02:16 PM CST
+# Last Modified : Mon 30 Oct 2017 10:51:52 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -61,7 +61,7 @@ class vasp_read_poscar:
         posls = self.poslines
         coor_type = ''
         # delete the 'selevtive dynamics' line
-        if posls[7].startswith('S') or posls.startswith('s'):
+        if posls[7].startswith('S') or posls[7].startswith('s'):
             del self.poslines[7]
         if posls[7].startswith('C') or posls[7].startswith('c') \
             or posls[7].startswith('K') or posls[7].startswith('k'):
@@ -253,8 +253,8 @@ class vasp_read_poscar:
     def check_vacuum_pos(self,zdirt):
         thres_vac = 0.02
         iz = zdirt - 1
-        zmax = max(self.innerpos[:][iz])
-        zmin = min(self.innerpos[:][iz])
+        zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
+        zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
         # if the vacuum is in the middle of the slab/wire, return True
         # else False
         if zmin < thres_vac or (1.0-zmax) < thres_vac:
@@ -285,8 +285,8 @@ class vasp_read_poscar:
             print " In action_add_vacuum:"
             print "  - too small change in vacuum (abs <= 1.0 A). Pass."
             return
-        iz = zdirt - 1
         # check the slab model
+        iz = zdirt - 1
         for ix in xrange(3):
             if (iz is not ix) and self.lattice[iz][ix] > 1.0E-2:
                 print
@@ -300,9 +300,14 @@ class vasp_read_poscar:
             return
 
         if self.coor_type == 'cart':
-            self.action_cart2dirt(False)
+            self.action_cart2dirt(False) # switch to direct system
+        zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
+        zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
+        vac_ori =  self.lattice[iz][iz] * (1.0 - (zmax-zmin))
+        print " In action_add_vacuum:"
+        print "  - Original vacuum thickness: %8.5f" % vac_ori
         self.action_centering(zdirt)
-        self.action_dirt2cart(False)
+        self.action_dirt2cart(False)     # switch to cartisian
 
         self.lattice[iz][iz] = self.lattice[iz][iz] + vacadd
         self.action_shift(vacadd/2.0,zdirt)
