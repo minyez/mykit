@@ -4,7 +4,7 @@
 #
 #     File Name : pv_fix_slab.py
 # Creation Date : 2017-06-20
-# Last Modified : Mon 30 Oct 2017 09:31:28 PM CST
+# Last Modified : Wed 01 Nov 2017 09:14:03 PM CST
 #       Purpose : sort atoms and fix some layers according to needs,
 #                 modified from the script written by Yue-Chao Wang
 #    Created By : Min-Ye Zhang
@@ -80,9 +80,9 @@ def fix_xyz_number_bottom(poscar,sorted_list,fixnum,reverse=False,debug=False):
         fix_index = sorted_list
 
     if reverse:
-        print "Fixing from the bottom..."
+        print " Fixing from the bottom..."
     else:
-        print "Fixing from the top..."
+        print " Fixing from the top..."
 
     n_line = 8
     for i in xrange(len(Atom_Numb)):
@@ -96,13 +96,14 @@ def fix_xyz_number_bottom(poscar,sorted_list,fixnum,reverse=False,debug=False):
 
 # ====================================================
 
-def fix_xyx_number_sym(poscar,sorted_list,surf_num,reverse=True,debug=False):
+def fix_xyz_number_sym(poscar,sorted_list,surf_num,reverse=True,debug=False):
     '''
     Fix atoms symmetrically.
     surf_num is the number of atoms to relax in each of surface
     '''
     TrSurf, FlsSurf = flag_fix(reverse)
     Atom_Type, Atom_Numb, Atom_Line = get_atom_info(poscar)
+    print " Symmetric fixing ..."
 
     if debug:
         print sorted_list
@@ -156,7 +157,7 @@ def Main(ArgList):
 
     drct = opts.direction
     if drct not in [1,2,3]:
-        print "Wrong in PUT"
+        print " Error: invalid direction"
         sys.exit(1)
 
 # all_atom_sort is a sorted list
@@ -171,11 +172,10 @@ def Main(ArgList):
         if not opts.sym:
             fix_xyz_number_bottom(poscar,all_atom_sort,opts.fixnum,opts.t,opts.D)
         else:
-            print "Symmetric fixing ..."
-            fix_xyx_number_sym(poscar,all_atom_sort,opts.fixnum,True,opts.D)
+            fix_xyz_number_sym(poscar,all_atom_sort,opts.fixnum,True,opts.D)
     else:
-        print "Specify either range of number of atoms to fix"
-        exit()
+        print " Error: please specify either range of number of atoms to fix"
+        sys.exit(1)
 
     poscar.write_poscar(opts.Output)
 

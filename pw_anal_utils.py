@@ -5,7 +5,7 @@
 #
 #     File Name : pw_anal_utils.py
 # Creation Date : 2017-08-24
-# Last Modified : Mon 30 Oct 2017 12:05:37 PM CST
+# Last Modified : Wed 01 Nov 2017 05:30:11 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide classes and functions for the analysis
@@ -18,9 +18,23 @@ import subprocess as sp
 
 # ====================================================
 
+def Get_ParentDir(path='PWD'):
+    '''
+    return the parent directory of path.
+    Return: path,                         if path is a directory itself
+            the parent directory of path, if path is a file
+    '''
+    if os.path.isdir(path):
+        parentdir = os.path.abspath(path)
+    if os.path.isfile(path):
+        parentdir = os.path.abspath(path)[:-len(os.path.basename(path))]
+    return parentdir
+
+# ==
+
 def Get_Basename():
     '''
-    return the name of the directory
+    return the name of current directory
     '''
     path = os.environ['PWD']
     dirname = os.path.basename(path)

@@ -39,6 +39,7 @@ def Main(ArgList):
         else:
             print "No SCF files found. Do calculation first."
             sys.exit(1)
+    # get the number of valence electron
     nelec = sp.check_output("grep :NOE %s | tail -1" % scf_file, shell=True).split()[-1]
     try:
         nelec = int(float(nelec))

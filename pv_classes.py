@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Mon 30 Oct 2017 10:51:52 PM CST
+# Last Modified : Wed 01 Nov 2017 09:12:05 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -289,7 +289,7 @@ class vasp_read_poscar:
         iz = zdirt - 1
         for ix in xrange(3):
             if (iz is not ix) and self.lattice[iz][ix] > 1.0E-2:
-                print
+#                print
                 return
             if (iz is not ix) and self.lattice[ix][iz] > 1.0E-2:
                 return
@@ -334,9 +334,9 @@ class vasp_read_poscar:
 
         for i in xrange(self.ntypes):
             Coords = [self.innerpos[x][iz] for x in xrange(blocka[i],blocka[i]+self.atom_num[i])]
-            print Coords
+#            print Coords
             index = sorted(range(self.atom_num[i]),key=lambda k:Coords[k])
-            print index
+#            print index
             temp_list = []
         # sort the coordinates for each type of atoms
             for j in xrange(self.atom_num[i]):
