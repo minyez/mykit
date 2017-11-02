@@ -39,8 +39,15 @@ def Main(ArgList):
         os.chdir(str(i)+'fixed')
         if not i == all_list[-1]:
             index_in_all = all_list.index(i)
-            copy2('../'+str(all_list[index_in_all+1])+'fixed/WAVECAR','WAVECAR')
-            copy2('../'+str(all_list[index_in_all+1])+'fixed/CONTCAR','CONTCAR')
+            try:
+                copy2('../'+str(all_list[index_in_all+1])+'fixed/WAVECAR','WAVECAR')
+            except IOError:
+                print " WAVECAR is not found. Start from scratch."
+            try:
+                copy2('../'+str(all_list[index_in_all+1])+'fixed/CONTCAR','CONTCAR')
+            except IOError:
+                print " CONTCAR from last fixing is not found. Exit."
+                sys.exit(1)
             opt_num = int(sp.check_output("grep -c 'T  T  T' POSCAR_new",shell=True))
             fix_num = natoms - opt_num
             if opts.debug:
