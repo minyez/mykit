@@ -57,7 +57,6 @@ def Main(ArgList):
             else:
                 surf_num = opt_num / 2
                 sp.call("pv_fix_slab.py -f CONTCAR -o POSCAR -n %d -s" % surf_num,shell=True)
-        if opts.debug:
         vasp_vasprun_zmy(vasp_cmd,'out','error')
         os.chdir('..')
 

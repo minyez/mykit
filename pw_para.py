@@ -31,6 +31,7 @@ def remove_machine():
 parser = ArgumentParser()
 parser.add_argument("-n", dest="nproc", help="number of processors to use",type=int, default=1)
 parser.add_argument("-D", dest="debug", help="debug mode",action='store_true')
+parser.add_argument("-f", dest="casename", help="case name",default=None)
 opts = parser.parse_args()
 
 hostname = sp.check_output("hostname",shell=True).split()[0]
@@ -38,8 +39,10 @@ if hostname == "MZ":
     hostname = "localhost"
 if opts.debug:
     print hostname
-
-dirname = Get_Basename()
+if opts.f is None:
+    dirname = Get_Basename()
+else:
+    dirname = opts.casename
 
 if opts.debug:
     print dirname
@@ -54,7 +57,7 @@ else:
     kgen_file = dirname + '.kgen'
 
 nkpt = read_kgen(kgen_file)
-    
+
 if nproc <=1:
     print "Less than 1 processors. No need for parallel calculation."
 else:
