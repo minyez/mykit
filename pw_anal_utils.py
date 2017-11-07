@@ -5,7 +5,7 @@
 #
 #     File Name : pw_anal_utils.py
 # Creation Date : 2017-08-24
-# Last Modified : Wed 01 Nov 2017 05:30:11 PM CST
+# Last Modified : Tue 07 Nov 2017 06:59:57 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide classes and functions for the analysis
@@ -30,7 +30,7 @@ def Get_ParentDir(path='PWD'):
         parentdir = os.path.abspath(path)[:-len(os.path.basename(path))]
     return parentdir
 
-# ==
+# ====================================================
 
 def Get_Basename():
     '''
@@ -54,7 +54,7 @@ def Get_Casename():
 
 # ====================================================
 
-def Read_BandStructure(hybrid=False):
+def Read_BandStructure(case=None,hybrid=False):
     '''
     read the LDA/GGA or HF (hybrid=True) band structure from the case.energy and case.energyhf files, respectively
 
@@ -62,7 +62,8 @@ def Read_BandStructure(hybrid=False):
         A list consisting of nkp members, each member is a nband+1-member list, i.e. [[kx,ky,kz], energy of nband]
     '''
 #   get case from case.struct
-    case = Get_Casename()
+    if case is None:
+        case = Get_Casename()
 
     ifile = case+'.energy'
     Band_Struct = []
