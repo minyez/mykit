@@ -5,7 +5,7 @@
 #
 #     File Name : pc_normal_dos.py
 # Creation Date : 07-11-2017
-# Last Modified : Tue 07 Nov 2017 09:50:50 PM CST
+# Last Modified : Tue 07 Nov 2017 10:51:44 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : Common utility to normalize with respect to the highest peak,
@@ -58,11 +58,13 @@ def Main(ArgList):
             if line_str[0].startswith('#'):
                 continue
             ener1 = float(line_str[0])
+            dos1 = float(line_str[1])
+            if line_str[1] == 'NaN':
+                continue
             if shifts[i] != 0.0 and ((ener1-opts.range[0])*(ener1-opts.range[1])<=0.0):
                 ener.append(ener1+shifts[i])
             else:
                 ener.append(ener1)
-            dos1 = float(line_str[1])
             dos.append(dos1)
             if dos1 > maxval:
                 maxval = dos1
