@@ -5,7 +5,7 @@
 #
 #     File Name : pc_normal_dos.py
 # Creation Date : 07-11-2017
-# Last Modified : Tue 07 Nov 2017 10:51:44 PM CST
+# Last Modified : Wed 08 Nov 2017 08:25:39 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : Common utility to normalize with respect to the highest peak,
@@ -27,12 +27,19 @@ def Main(ArgList):
     parser.add_argument('ifiles',nargs='+',help="data files")
     parser.add_argument("-s",dest='shifts',nargs='+',help="shift of data file",type=float)
     parser.add_argument("-r",dest='range',nargs=2,help="range of shift",type=float,default=[-1000,1000])
+    parser.add_argument("-c",dest='calibrate',nargs=2,help="two points to linearly calibrate the baseline",type=float)
     parser.add_argument("-D",dest='debug',help="flag for debug mode",action='store_true')
 
     opts = parser.parse_args()
     ifiles = opts.ifiles
     shifts = opts.shifts
     peak_locs = [0.0]*len(ifiles)
+    baseline = [0.0]*len(ifiles)
+    peakval = [0.0]*len(ifiles)
+    peaks = []
+    if opts.calibrate is not None:
+        cbp1 = min(opts.calibrate)
+        cbp2 = max(opts.calibrate)
 
     if shifts is None:
         shifts = [0.0]*len(ifiles)
@@ -44,10 +51,12 @@ def Main(ArgList):
 #    print shifts
 
     for i in xrange(len(ifiles)):
+        peak_temp = []
         ifilename = ifiles[i]
         ener = []
         dos  = []
         maxval = -1.0
+        minval = 10000
         loc_norm_peak = 0.0
         with open(ifilename,'r') as if_dos:
             dos_lines = if_dos.readlines()
@@ -69,8 +78,12 @@ def Main(ArgList):
             if dos1 > maxval:
                 maxval = dos1
                 loc_norm_peak = ener1
-# normalize the data
-        dos = [x/maxval*100.0 for x in dos]
+            if dos1 < minval:
+                minval = dos1
+# calibrate the base line and normalize the data
+        dos = [(x-minval)/(maxval-minval)*100.0 for x in dos]
+        baseline[i] = minval
+        peakval[i] = maxval
         peak_locs[i] = loc_norm_peak
 
     for i in xrange(len(ifiles)):
@@ -81,6 +94,7 @@ def Main(ArgList):
             ofilename = ifilename
         with open(ofilename,'w') as of_dos:
             of_dos.write("# original peak at %10.5f\n" % peak_locs[i])
+            of_dos.write("# original peak and baseline: %10.5f,%10.5f\n" % (peakval[i],baseline[i]))
 #            print shifts[i]
             if shifts[i] != 0.0:
                 of_dos.write("# shifted with %10.5f (range %6.2f to %6.2f)\n" % (shifts[i],min(opts.range),max(opts.range)))
