@@ -23,9 +23,9 @@ def Main(ArgList):
     if opts.casename is None:
         casename = Get_Casename()
         case_struct = casename+'.struct'
-#    else:
-#        casename = opts.casename
-#        case_struct = casename.strip()+'.struct'
+    else:
+        casename = opts.casename
+        case_struct = casename.strip()+'.struct'
 
     new_rmt = opts.elements
 
@@ -47,6 +47,7 @@ def Main(ArgList):
     new_rmt_str = ','.join(new_rmt)
     sp.call("setrmt_lapw "+casename+" -a "+new_rmt_str,shell=True)
     copy2(case_struct+'_setrmt',case_struct)
+    os.remove(case_struct+'_setrmt')
 
     # interpolate charge density
     # for spin-polarized case, also need x clminter -up/-dn
