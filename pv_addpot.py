@@ -4,7 +4,7 @@
 
 #     File Name : pv_addpot.py
 # Creation Date : 16-10-2017
-# Last Modified : Mon 16 Oct 2017 06:33:49 PM CST
+# Last Modified : Tue 14 Nov 2017 06:46:14 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : create POTCAR from potcar directory
@@ -13,7 +13,9 @@
 
 import sys
 import os
+from pv_classes import vasp_read_poscar
 from argparse import ArgumentParser
+import fnmatch
 
 # ==============================
 
@@ -23,17 +25,36 @@ def Main(ArgList):
     description = '''Create POTCAR from potcar directory: %s''' % potdir
 
     parser = ArgumentParser(description=description)
-    parser.add_argument('elements',nargs='+',help="Elements name, e.g. Cu, Fe_sv, H_GW, etc")
+    parser.add_argument('-e',dest='elements',default=None,nargs='+',help="Elements name, e.g. Cu, Fe_sv, H_GW, etc")
     parser.add_argument("-x",dest='xc',help="XC functional to generate PAW. LDA or PBE (default).",default='PBE')
+    parser.add_argument("-c",dest='check',help="flag for check mode, checking available POTCARs",action='store_true')
     parser.add_argument("-D",dest='debug',help="flag for debug mode",action='store_true')
 
     opts = parser.parse_args()
     potdir_xc = potdir+'paw_'+opts.xc.upper()+'/'
-    ele = opts.elements
+
+    if not os.path.exists(potdir):
+        print "Invalid POTCAR directory"
+        sys.exit(1)
+
+    if opts.elements is not None:
+        ele = opts.elements
+    else:
+        poscar=vasp_read_poscar()
+        ele = poscar.atom_type
+
     if opts.debug:
         print potdir_xc
-        print opts.elements
+        print ele
         print opts.xc
+
+    if opts.check:
+        for iele in ele:
+            print "%s avail:" % iele
+            for idir in os.listdir(potdir_xc):
+                if fnmatch.fnmatch(idir,iele+'*'):
+                    print " - " + idir
+        return
 
     if not os.path.exists(potdir_xc):
         print "POTCAR directory does not exist. Exit."
@@ -53,6 +74,7 @@ def Main(ArgList):
                     print "POTCAR of %8s found.     Add" % ele[i]
                 else:
                     print "POTCAR of %8s not found. Skip" % ele[i]
+    return
 
 # ==============================
 

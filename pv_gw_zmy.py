@@ -25,13 +25,14 @@ def Main(ArgList):
     parser.add_argument("-x",dest='tag_xc',default=None,help="type of XC functional for input orbitals, None for LEXCH in POTCAR")
     parser.add_argument("-k",dest='nk',default=[6,6,6],help="Number of kpoints for SCF, [kx,ky,kz]")
     parser.add_argument("--kg",dest='nk_gw',default=[6,6,6],help="Number of kpoints for GW, [kgx,kgy,kgz]")
-    parser.add_argument("-m",dest='f_metal',action = 'store_true',help="flag whether system is metal, F-Semicond., T-metal")
-    parser.add_argument("-w",dest='nomega',default=50,help="Number of frequency points")
-    parser.add_argument("-D",dest='debug',action='store_true',help="Debug mode")
+    parser.add_argument("-m",dest='f_metal',action = 'store_true',help="flag for metal system")
+    parser.add_argument("-w",dest='nomega',default=50,help="Number of frequency points. Default 50")
+    parser.add_argument("-D",dest='debug',action='store_true',help="flag for debug mode")
     parser.add_argument("-v",dest='vasp_path',default="vasp",help="Path of vasp executive")
-    parser.add_argument("--gw",dest='gw_mode',default="G0W0",help="Self-consistent level of GW")
-    parser.add_argument("--restart",dest='chg_start',action='store_true',help="start from calculating CHGCAR")
-    parser.add_argument("--wannier",dest='lwannier',action='store_true',help="Use wannier90 to plot band structure")
+    parser.add_argument("--gw",dest='gw_mode',default="G0W0",help="Self-consistent level of GW. Default G0W0")
+    parser.add_argument("--restart",dest='chg_start',action='store_true',help="flag for restarting from SCF")
+    parser.add_argument("--wannier",dest='lwannier',action='store_true',help="flag for wannier90 to plot band structure")
+#    parser.add_argument("--extrap",dest='extrap',action='store_true',help="flag for extrapolating band gap")
 
     opts = parser.parse_args()
     npar = vasp_io_get_NPAR(opts.nproc)
@@ -65,7 +66,7 @@ def Main(ArgList):
         print "Charge has not yet been calculated"
         sys.exit(1)
 
-# if CHGCAR calculated and not start from CHGCAR
+# if CHGCAR calculated and you do not want to start from SCF
     elif os.path.exists(chg_dir+'/CHGCAR') and not opts.chg_start:
         print "Charge calculation done. Move on"
 
@@ -73,7 +74,7 @@ def Main(ArgList):
     else:
         if not os.path.exists(chg_dir):
             common_io_checkdir(chg_dir)
-        else:    
+        else:
             print "Charge calculation done before. Restart"
             common_io_cleandir(chg_dir)
         copy2('POSCAR',chg_dir)
@@ -112,7 +113,7 @@ def Main(ArgList):
         copy2('../'+chg_dir+'/WAVECAR','.')
         vasp_io_change_tag('INCAR','ICHARG')
         vasp_io_change_tag('INCAR','ISTART',new_val=1)
-        
+
     vasp_vasprun_zmy(vasp_cmd,'out','error')
     os.chdir('..')
 
