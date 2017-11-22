@@ -39,7 +39,7 @@ if hostname == "MZ":
     hostname = "localhost"
 if opts.debug:
     print hostname
-if opts.f is None:
+if opts.casename is None:
     dirname = Get_Basename()
 else:
     dirname = opts.casename

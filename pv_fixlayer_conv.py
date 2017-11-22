@@ -13,17 +13,15 @@ def Main(ArgList):
 
     description = '''
     Test the convergence of slab calculation w.r.t fixed layers
-    Fix the bottom side. Asymmetric slab only. Need further implementation'''
+    Fix from the bottom side or symmetric fixing. Combined with pv_fix_slab.py'''
 
     parser = ArgumentParser(description=description)
     parser.add_argument("-n",dest='nproc',type=int,default=1,help="Number of processors ")
-#    parser.add_argument("-r",dest="range",type=int,nargs=2,help="The range of fixed layers")
     parser.add_argument("-s",dest='sym',help="Flag for symmetric fixing",action="store_true")
     parser.add_argument("-v",dest='vasp_path',default="vasp",help="Path of vasp executive")
     parser.add_argument("-D",dest='debug',help="Debug mode",action="store_true")
 
     opts = parser.parse_args()
-#    npar = vasp_io_get_NPAR(opts.nproc)
 
     case_pos = vasp_read_poscar()
     natoms = case_pos.natoms
