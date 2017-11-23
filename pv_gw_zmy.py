@@ -3,104 +3,44 @@
 import sys, os, re
 from shutil import copy2
 from pv_calc_utils import *
+from pv_anal_utils import vasp_anal_get_outcar
 
 # =====================================================
 
-
-# =====================================================
-
-def Main(ArgList):
-
-# =================== Parser ==========================
-
-    description = '''
-    Prepare INCAR files and run the GW calculation
-    Need to first prepare POSCAR and POTCAR
-    '''
-
-    parser = ArgumentParser(description=description)
-    parser.add_argument("-e",dest='encut',type=int,default=0,help="Planewave cutoff. 0 will set largest ENMAX")
-    parser.add_argument("-n",dest='nproc',type=int,default=1,help="Number of processors ")
-    parser.add_argument("-b",dest='nbands',default=None,help="Number of bands")
-    parser.add_argument("-x",dest='tag_xc',default=None,help="type of XC functional for input orbitals, None for LEXCH in POTCAR")
-    parser.add_argument("-k",dest='nk',default=[6,6,6],help="Number of kpoints for SCF, [kx,ky,kz]")
-    parser.add_argument("--kg",dest='nk_gw',default=[6,6,6],help="Number of kpoints for GW, [kgx,kgy,kgz]")
-    parser.add_argument("-m",dest='f_metal',action = 'store_true',help="flag for metal system")
-    parser.add_argument("-w",dest='nomega',default=50,help="Number of frequency points. Default 50")
-    parser.add_argument("-D",dest='debug',action='store_true',help="flag for debug mode")
-    parser.add_argument("-v",dest='vasp_path',default="vasp",help="Path of vasp executive")
-    parser.add_argument("--gw",dest='gw_mode',default="G0W0",help="Self-consistent level of GW. Default G0W0")
-    parser.add_argument("--restart",dest='chg_start',action='store_true',help="flag for restarting from SCF")
-    parser.add_argument("--wannier",dest='lwannier',action='store_true',help="flag for wannier90 to plot band structure")
-#    parser.add_argument("--extrap",dest='extrap',action='store_true',help="flag for extrapolating band gap")
-
-    opts = parser.parse_args()
-    npar = vasp_io_get_NPAR(opts.nproc)
-    nks = opts.nk
-    nks_gw = opts.nk_gw
-    if opts.debug:
-        print nks
-        print nks_gw
-        sys.exit(0)
-    if opts.nbands is not None:
-        nbands = opts.nbands
+# Step 1: self-consistent calculation of charge density
+def step_1_scf(chg_dir,tag_xc,encut,nks,\
+               npar,lmm,vasp_cmd,f_metal=False,smear=[0,0.05]):
+    if not os.path.exists(chg_dir):
+        common_io_checkdir(chg_dir)
     else:
-# setting default, i.e. 8 times the number of processors
-        nbands = 8*opts.nproc
+        print "Charge calculation done before. Restart"
+        common_io_cleandir(chg_dir)
+    copy2('POSCAR',chg_dir)
+    copy2('POTCAR',chg_dir)
+    os.chdir(chg_dir)
 
-# grid of density of states
-    nedos = 3000
-# lmaxmix, change to larger value if f-element present
-    lmm = 4
-# set vasp variable
-    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(opts.nproc,'mpirun',opts.vasp_path)
+    with open('INCAR','w') as incar:
+        vasp_write_incar_minimal_elec(incar,tag_xc,encut,npar=npar,mode_smear=smear)
+    if f_metal:
+        vasp_io_change_tag('INCAR','SIGMA',new_val=0.2)
+    vasp_io_change_tag('INCAR','LMAXMIX',new_val=lmm)
 
-    chg_dir = '1_charge'
-    exact_dir = '2_exact'
-    gw_dir = '3_gw'
+    vasp_write_kpoints_basic(nks)
+    vasp_vasprun_zmy(vasp_cmd,'out','error')
+    os.chdir('..')
 
-
-# 1) run an SCF-calculation for the charge density
-    if not os.path.exists(chg_dir) and opts.chg_start:
-# if CHGCAR does not exist but want to start from CHGCAR, report error
-        print "Charge has not yet been calculated"
-        sys.exit(1)
-
-# if CHGCAR calculated and you do not want to start from SCF
-    elif os.path.exists(chg_dir+'/CHGCAR') and not opts.chg_start:
-        print "Charge calculation done. Move on"
-
-# CHGCAR do not exist, or want to redo CHGCAR calculation
-    else:
-        if not os.path.exists(chg_dir):
-            common_io_checkdir(chg_dir)
-        else:
-            print "Charge calculation done before. Restart"
-            common_io_cleandir(chg_dir)
-        copy2('POSCAR',chg_dir)
-        copy2('POTCAR',chg_dir)
-        os.chdir(chg_dir)
-
-        with open('INCAR','w') as incar:
-            vasp_write_incar_minimal_elec(incar,opts.tag_xc,opts.encut,npar=npar,mode_smear=[0,0.05])
-        if opts.f_metal:
-            vasp_io_change_tag('INCAR','SIGMA',new_val=0.2)
-        vasp_io_change_tag('INCAR','LMAXMIX',new_val=lmm)
-
-        vasp_write_kpoints_basic(nks)
-        vasp_vasprun_zmy(vasp_cmd,'out','error')
-        os.chdir('..')
-
-# 2) run a non-SCF calculation to get desired number of bands
+# Step 2: non-self-consistent calculation of unoccupied orbitals
+def step_2_exact(chg_dir,exact_dir,tag_xc,encut,nks,nks_gw,nbands,nedos,lwannier,\
+                 npar,lmm,vasp_cmd,f_metal=False,smear=[0,0.05]):
     common_io_cleandir(exact_dir)
     copy2('POSCAR',exact_dir)
     copy2('POTCAR',exact_dir)
     os.chdir(exact_dir)
     vasp_write_kpoints_basic(nks_gw)
     with open('INCAR','w') as incar:
-        vasp_write_incar_exact(incar,opts.tag_xc,opts.encut,nb=nbands,npar=npar,mode_smear=[0,0.05],lwannier=opts.lwannier)
+        vasp_write_incar_exact(incar,tag_xc,encut,nb=nbands,npar=npar,mode_smear=smear,lwannier=lwannier)
     vasp_io_change_tag('INCAR','NEDOS',new_val=nedos)
-    if opts.f_metal:
+    if f_metal:
         vasp_io_change_tag('INCAR','SIGMA',new_val=0.2)
 
 # if kpoints for the first and second calculation is the same, then it is not necessary to fix charge density, and the wavefunction in Step 1 can be used
@@ -117,28 +57,165 @@ def Main(ArgList):
     vasp_vasprun_zmy(vasp_cmd,'out','error')
     os.chdir('..')
 
-# 3) run a GW calculation with WAVECAR and WAVEDER from Step 2
+# Step 3: GW calculation
+def step_3_gw(exact_dir,gw_dir,tag_xc,encut,nbands,nedos,nomega,lwannier,\
+              vasp_cmd,encutgw=0,gw_mode="G0W0",f_metal=False,smear=[0,0.05]):
 # need to add more rules
     common_io_cleandir(gw_dir)
     copy2('POSCAR',gw_dir)
     copy2('POTCAR',gw_dir)
     copy2(exact_dir+'/KPOINTS',gw_dir)
     copy2(exact_dir+'/WAVECAR',gw_dir)
-    if not opts.f_metal:
+    if not f_metal:
         copy2(exact_dir+'/WAVEDER',gw_dir)
     os.chdir(gw_dir)
 
     with open('INCAR','w') as incar:
-        vasp_write_incar_exact(incar,opts.tag_xc,opts.encut,nb=nbands,npar=1,mode_smear=[0,0.05],lwannier=opts.lwannier)
+        vasp_write_incar_exact(incar,tag_xc,encut,nb=nbands,npar=1,mode_smear=smear,lwannier=lwannier)
         incar.write(' NEDOS = %s\n' % nedos )
-        incar.write(' NOMEGA = %s\n' % opts.nomega )
-    if opts.gw_mode == "G0W0":
+        incar.write(' NOMEGA = %s\n' % nomega )
+    if encutgw != "0":
+        vasp_io_change_tag('INCAR','ENCUTGW',new_val=encutgw)
+    if gw_mode == "G0W0":
         vasp_io_change_tag('INCAR','ALGO',new_val='GW0')
-    if opts.f_metal:
+    if f_metal:
         vasp_io_change_tag('INCAR','SIGMA',new_val=0.2)
 
     vasp_vasprun_zmy(vasp_cmd,'out','error')
     os.chdir('..')
+
+# =====================================================
+
+def Main(ArgList):
+
+    description = '''
+    Prepare INCAR files and run the GW calculation
+    Need to first prepare POSCAR and POTCAR
+    '''
+    testmode_avail = ['ENCUTGW','NBANDS']
+
+    chg_dir = '1_charge'
+    exact_dir = '2_exact'
+    gw_dir = '3_gw'
+    conv_egw_dir = 'CONV_encutgw'
+    conv_nbs_dir = 'CONV_nbands'
+
+# =================== Parser ==========================
+
+    parser = ArgumentParser(description=description)
+    parser.add_argument("-e",dest='encut',type=int,default=0,help="Planewave cutoff. 0 will set largest ENMAX")
+    parser.add_argument("-n",dest='nproc',type=int,default=1,help="Number of processors ")
+    parser.add_argument("-b",dest='nbands',default=None,help="Number of bands")
+    parser.add_argument("-x",dest='tag_xc',default=None,help="type of XC functional for input orbitals, \
+                        None for LEXCH in POTCAR")
+    parser.add_argument("-k",dest='nk',default=[6,6,6],help="Number of kpoints for SCF, format like [kx,ky,kz]")
+    parser.add_argument("--kg",dest='nk_gw',default=[6,6,6],help="Number of kpoints for GW, format like [kgx,kgy,kgz]")
+    parser.add_argument("-m",dest='f_metal',action = 'store_true',help="flag for metal system")
+    parser.add_argument("-w",dest='nomega',default=50,help="Number of frequency points. Default 50")
+    parser.add_argument("-D",dest='debug',action='store_true',help="flag for debug mode")
+    parser.add_argument("-v",dest='vasp_path',default="vasp",help="Path of vasp executive")
+    parser.add_argument("--gw",dest='gw_mode',default="G0W0",help="Self-consistent level of GW. Default G0W0")
+    parser.add_argument("--restart",dest='chg_start',action='store_true',help="flag for restarting from SCF")
+    parser.add_argument("--wannier",dest='lwannier',action='store_true',help="flag for wannier90 to plot band structure")
+    parser.add_argument("--test",dest='testmode',default=None,help="flag for convergence test with respect to testmode,\
+                        e.g. ENCUTGW, NBANDS")
+
+    opts = parser.parse_args()
+    npar = vasp_io_get_NPAR(opts.nproc)
+    nks = opts.nk
+    nks_gw = opts.nk_gw
+    if opts.debug:
+        print nks
+        print nks_gw
+        sys.exit(0)
+    if opts.nbands is not None:
+        nbands = opts.nbands
+    else:
+# setting default, i.e. 8 times the number of processors
+        nbands = 8*opts.nproc
+
+    testmode = None
+    if opts.testmode is not None:
+        if opts.testmode.upper() in testmode_avail:
+            testmode = opts.testmode.upper()
+        else:
+            print "%s is not supported now. Test mode off." % opts.testmode
+
+# grid of density of states
+    nedos = 3000
+# lmaxmix, change to larger value if f-element present
+    lmm = 4
+# set vasp variable
+    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(opts.nproc,'mpirun',opts.vasp_path)
+
+# ================== End Parser =========================
+
+# 1) run an SCF-calculation for the charge density
+    print "== Step 1: SCF for charge density =="
+#     if CHGCAR does not exist but want to start from CHGCAR, report error
+    if not os.path.exists(chg_dir) and opts.chg_start:
+        print "Charge has not yet been calculated. Exit."
+        sys.exit(1)
+#     if CHGCAR calculated and you do not want to start from SCF
+    elif os.path.exists(chg_dir+'/CHGCAR') and not opts.chg_start:
+        print "Charge calculation done. Move on"
+        print "(Hint: Better check past setting of ENCUT and k-points)"
+#     CHGCAR do not exist, or want to redo CHGCAR calculation
+    else:
+        step_1_scf(chg_dir,tag_xc=opts.tag_xc,encut=opts.encut, nks=nks,npar=npar,\
+                  vasp_cmd=vasp_cmd,f_metal=opts.f_metal,lmm=lmm,smear=[0,0.05])
+
+# IF testmode is not set
+# 2) run a non-SCF calculation to get desired number of bands
+# 3) run a GW calculation with WAVECAR and WAVEDER from Step 2
+    if not testmode:
+        print "== Step 2: Non-SCF for unc. bands =="
+        step_2_exact(chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands,nedos,lwannier=opts.lwannier,\
+                 npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
+
+        print "== Step 3: GW                     =="
+        step_3_gw(exact_dir,gw_dir,opts.tag_xc,opts.encut,nbands=nbands,nedos=nedos,nomega=opts.nomega,\
+                  lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
+
+# IF testmode is set to ENCUTGW
+    elif testmode == 'NBANDS':
+# 2) run a non-SCF calculation to get all bands for the current encut setting
+        common_io_cleandir(conv_nbs_dir)
+        mnpw = int(vasp_anal_get_outcar('mnpw',outcar=chg_dir+'/OUTCAR'))
+        nbands_scf = int(vasp_anal_get_outcar('nb',outcar=chg_dir+'/OUTCAR'))
+        copy2('POSCAR',conv_nbs_dir)
+        copy2('POTCAR',conv_nbs_dir)
+        os.chdir(conv_nbs_dir)
+        print "== Step 2: Non-SCF for unc. bands =="
+        step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=mnpw,nedos=nedos,lwannier=opts.lwannier,\
+                 npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
+        nbands_list = [(nbands_scf + x*int((mnpw-nbands_scf)/20.0)) for x in xrange(14)]
+        for nb in nbands_list:
+            print "== Step 3:    GW   BANDS:%5s    ==" % nb
+            step_3_gw(exact_dir,gw_dir+'_nb_'+str(nb),opts.tag_xc,opts.encut,nbands=nb,nedos=nedos,nomega=opts.nomega,\
+                  lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
+        os.chdir('..')
+
+# IF testmode is set to ENCUTGW
+    elif testmode == 'ENCUTGW':
+        common_io_cleandir(conv_egw_dir)
+        mnpw = int(vasp_anal_get_outcar('mnpw',outcar=chg_dir+'/OUTCAR'))
+        nbands_scf = int(vasp_anal_get_outcar('nb',outcar=chg_dir+'/OUTCAR'))
+        encut = int(vasp_anal_get_outcar('encut',outcar=chg_dir+'/OUTCAR'))
+        nb = 5*nbands_scf
+        copy2('POSCAR',conv_egw_dir)
+        copy2('POTCAR',conv_egw_dir)
+        os.chdir(conv_egw_dir)
+        print "== Step 2: Non-SCF for unc. bands =="
+        step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=mnpw,nedos=nedos,lwannier=opts.lwannier,\
+                 npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
+        egw_list = [encut/16.0*x for x in xrange(1,9)] # up to half of the ENCUT
+        for egw in egw_list:
+            print "== Step 3:    GW ENCUTGW:%7.1f  ==" % egw
+            step_3_gw(exact_dir,gw_dir+'_egw_'+str(egw),opts.tag_xc,opts.encut,nbands=nb,nedos=nedos,encutgw=egw,nomega=opts.nomega,\
+                  lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
+        os.chdir('..')
+
 
 # =====================================================
 

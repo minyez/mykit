@@ -11,6 +11,20 @@ from scipy.optimize import curve_fit
 #from io_utils import *
 
 # ====================================================
+def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
+    '''
+    return the value of key in outcar.
+    '''
+    if key=='mnpw':
+        mnpw = sp.check_output("awk '/maximum number of/ {print $5}' %s | tail -1" % outcar,shell=True)
+        return mnpw
+    if key=='nb' or key=='nbands' or key=='NBANDS':
+        nb = sp.check_output("awk '/NBANDS/ {print $15}' %s | head -1" % outcar,shell=True)
+        return nb
+    if key=='encut' or key=='ENCUT':
+        encut = sp.check_output("awk '/ENCUT/ {print $3}' %s | head -1" % outcar,shell=True)
+        encut = float(encut)
+        return encut
 
 def vasp_anal_get_Ener_Vol(datatype='DFT'):
     '''
