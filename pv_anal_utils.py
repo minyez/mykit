@@ -6,9 +6,9 @@ import sys, os, shutil, copy
 import subprocess as sp
 import numpy as np
 import constants
+from pv_classes import vasp_read_xml
 
 from scipy.optimize import curve_fit
-#from io_utils import *
 
 # ====================================================
 def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
@@ -25,6 +25,15 @@ def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
         encut = sp.check_output("awk '/ENCUT/ {print $3}' %s | head -1" % outcar,shell=True)
         encut = float(encut)
         return encut
+    if key=='ene':
+        ene = sp.check_output("awk '/without/ {print $7}' %s | tail -1" % outcar,shell=True)
+        ene = float(ene)
+        return ene
+    if key=='gap':
+        vaspxml = vasp_read_xml()
+        gap = vaspxml.get_gap()
+        gap = float(gap)
+        return gap
 
 def vasp_anal_get_Ener_Vol(datatype='DFT'):
     '''

@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Wed 01 Nov 2017 09:12:05 PM CST
+# Last Modified : Fri 24 Nov 2017 04:37:24 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -351,7 +351,7 @@ class vasp_read_poscar:
 
 class vasp_read_xml():
 
-    def __init__(self):
+    def __init__(self,agrv=[]):
         tree = etree.parse('vasprun.xml')
         self.root = tree.getroot()
         self.init_section()
@@ -360,7 +360,8 @@ class vasp_read_xml():
         self.read_klist()
         self.read_eigen()
         try:
-            self.read_pwdata()
+            if 'pw' in agrv:
+                self.read_pwdata()
         except AttributeError:
             print "Warning: no PDOS data found"
 
@@ -370,7 +371,6 @@ class vasp_read_xml():
         self.calc = self.root.findall('calculation')[-1]
         self.atominfo = self.root.find('atominfo')
         self.kps = self.root.find('kpoints')
-
 
     def read_para(self):
         # ISPIN: root->parameter->separator name='electronic'->separator name='elecronic spin'->[0]
@@ -392,7 +392,6 @@ class vasp_read_xml():
 
         # initialize the pwav data
         self.pwdata = np.zeros([self.ispin,self.nkp,self.nbands,self.natom,len(self.str_pwaves)])
-
 
         for spin in xrange(self.ispin):
             for kp in xrange(self.nkp):
@@ -422,11 +421,25 @@ class vasp_read_xml():
             for kp in xrange(self.nkp):
                 self.eigen[spin,kp] = np.array([float(x.text.split()[0]) for x in eigen_data[spin][kp]])
 
+    def get_gap(self):
+        # return the gap from eigenvalue information
+        ecbm = 100000.0
+        evbm = -100000.0
+        vbm = self.nelec/2
+        cbm = self.nelec/2 + 1
+        for spin in xrange(self.ispin):
+            for kp in xrange(self.nkp):
+#                print self.eigen[spin,kp,vbm-1],self.eigen[spin,kp,cbm-1]
+                if (self.eigen[spin,kp,vbm-1]> evbm):
+                    evbm = self.eigen[spin,kp,vbm-1]
+                if (self.eigen[spin,kp,cbm-1]< ecbm):
+                    ecbm = self.eigen[spin,kp,cbm-1]
+        gap = ecbm - evbm
+        return gap
 
     def read_klist(self):
 #       klist_index is 1 if auto generator is used
 #       or 0 if mannually included
-#        print self.kps[0]
         if self.kps.find('generation') is not None:
             ki = 1
         else:
@@ -469,5 +482,6 @@ class vasp_read_xml():
 #                weigh += self.pwdata[spin][band][kp][at][pw]
                 weigh += self.pwdata[spin][band][kp][at][pw]
         return weigh
+
 
 
