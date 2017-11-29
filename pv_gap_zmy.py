@@ -14,7 +14,7 @@ def Main(ArgList):
     description = '''
     Give the fundamental band gap and k-averaged gap.
     Also these two values between any occupied and empty band is possible
-    by adding option: -v vb -c cb 
+    by adding option: -v vb -c cb
     '''
 
     parser = ArgumentParser(description=description)
@@ -23,7 +23,7 @@ def Main(ArgList):
     parser.add_argument("-v",dest='vb',help="the index of valence band",type=int,default=0)
     parser.add_argument("-c",dest='cb',help="the index of conduction band",type=int,default=0)
     parser.add_argument("-f",dest='fix_k',help="flag for k-point fixing mode for k-averaged gap. 0 for fixing VBM, 1 for fixing CBM ",type=int,default=-1)
-    parser.add_argument("-i",dest='flag_inv',help="flag for the inverse of gap. Useful for analysis of polarization",action='store_true')
+    parser.add_argument("-i",dest='flag_inv',help="flag for the inverse of gap.",action='store_true')
 
     opts = parser.parse_args()
     vb = opts.vb

@@ -23,7 +23,7 @@ def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
         return nb
     if key=='encut' or key=='ENCUT':
         encut = sp.check_output("awk '/ENCUT/ {print $3}' %s | head -1" % outcar,shell=True)
-        encut = float(encut)
+        encut = int(float(encut))
         return encut
     if key=='ene':
         ene = sp.check_output("awk '/without/ {print $7}' %s | tail -1" % outcar,shell=True)

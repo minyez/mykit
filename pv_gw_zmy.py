@@ -4,6 +4,7 @@ import sys, os, re
 from shutil import copy2
 from pv_calc_utils import *
 from pv_anal_utils import vasp_anal_get_outcar
+from pv_classes import vasp_read_poscar
 
 # =====================================================
 
@@ -131,8 +132,9 @@ def Main(ArgList):
     if opts.nbands is not None:
         nbands = opts.nbands
     else:
-# setting default, i.e. 8 times the number of processors
-        nbands = 8*opts.nproc
+# setting default, i.e. 8 times the number of atoms times nproc
+        poscar = vasp_read_poscar()
+        nbands = 8*poscar.natoms*opts.nproc
 
     testmode = None
     if opts.testmode is not None:
@@ -205,7 +207,10 @@ def Main(ArgList):
         os.chdir('..')
 
         #write to output file
+        if os.path.exists('Gap_NBANDS.dat'):
+            copy2('Gap_NBANDS.dat','Gap_NBANDS.dat_old')
         with open('Gap_NBANDS.dat','w') as f:
+            f.write("#MNPW=%6s\n" % mnpw)
             f.write("#NBANDS gap\n")
             for i in xrange(len(nbands_list)):
                 f.write("%5.1f %12.6f\n" % (nbands_list[i],gap_list[i]))
@@ -221,12 +226,12 @@ def Main(ArgList):
         copy2('POTCAR',conv_egw_dir)
         os.chdir(conv_egw_dir)
         print "== Step 2: Non-SCF for unc. bands =="
-        step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=nb,nedos=nedos,lwannier=opts.lwannier,\
+        step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=nbands,nedos=nedos,lwannier=opts.lwannier,\
                  npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
         egw_list = [encut/10.0*x for x in xrange(1,7)] # up to half of the ENCUT
         for egw in egw_list:
             print "== Step 3:    GW ENCUTGW:%7.1f  ==" % egw
-            step_3_gw(exact_dir,gw_dir+'_egw_'+str(int(egw)),opts.tag_xc,opts.encut,nbands=nb,nedos=nedos,encutgw=egw,nomega=opts.nomega,\
+            step_3_gw(exact_dir,gw_dir+'_egw_'+str(int(egw)),opts.tag_xc,opts.encut,nbands=nbands,nedos=nedos,encutgw=egw,nomega=opts.nomega,\
                   lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
 
         gap_list = []
@@ -237,7 +242,10 @@ def Main(ArgList):
         os.chdir('..')
 
         #write to output file
+        if os.path.exists('Gap_ENCUTGW.dat'):
+            copy2('Gap_ENCUTGW.dat','Gap_ENCUTGW.dat_old')
         with open('Gap_ENCUTGW.dat','w') as f:
+            f.write("#ENCUT=%6s MNPW=%6s NBANDS=%6s\n" % (encut,mnpw,nbands))
             f.write("#ENCUTGW gap\n")
             for i in xrange(len(egw_list)):
                 f.write("%5.1f %12.6f\n" % (egw_list[i],gap_list[i]))
