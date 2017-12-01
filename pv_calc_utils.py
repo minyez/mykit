@@ -5,7 +5,7 @@
 #
 #     File Name :
 # Creation Date : 2017-05-01
-# Last Modified : Mon 30 Oct 2017 11:58:47 AM CST
+# Last Modified : Thu 30 Nov 2017 09:15:02 AM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : This script offers utilities for initializing and running
@@ -252,7 +252,7 @@ def vasp_write_inputs_DOS_calc(ifile="INCAR"):
 
 def vasp_write_incar_minimal_elec(incar,tag_xc,\
                 encut=0,ediff="1E-8",npar=1,\
-                mode_smear=None,wfrestart=False,chrestart=2):
+                mode_smear=None,wfrestart=False,chrestart=2,spin=1):
     '''
     write the minimum INCAR file
     '''
@@ -267,9 +267,10 @@ def vasp_write_incar_minimal_elec(incar,tag_xc,\
         incar.write(" ENCUT = %d\n" % encut)
         incar.write(" PREC = Accurate\n")
     else:
-        incar.write(" PREC = Accurate # ENMAX will be set\n")
+        incar.write(" PREC = Accurate # ENMAX will be used\n")
     incar.write(" LREAL = .False.\n")
     incar.write(" EDIFF = %s\n" % ediff)
+    incar.write(" ISPIN = %s\n" % spin)
 
 # mode_smear indicates the smearing setting and write it in INCAR.
 # Should be None, a list like [ISMEAR, SIGMA], or an integer

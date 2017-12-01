@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Fri 24 Nov 2017 04:37:24 PM CST
+# Last Modified : Thu 30 Nov 2017 09:37:58 AM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -41,8 +41,11 @@ class vasp_read_poscar:
         self.lattice = []
         for i in [2,3,4]:
             self.lattice.append(np.array([float(x) for x in posls[i].split()]))
+        self.lenlat = [np.sqrt(np.dot(x,x)) for x in self.lattice]
         self.lattice = np.array(self.lattice)
+        self.lenlat = np.array(self.lenlat)
         self.volume = np.power(self.scale,3) * np.dot(np.cross(self.lattice[0],self.lattice[1]),self.lattice[2])
+
 
     def __atom_info(self):
         print " Loading atomic info..."
@@ -119,7 +122,6 @@ class vasp_read_poscar:
         give the coordinate of the center of mass
         '''
         pass
-
 
     def action_centering(self,zdirt1=3,zdirt2=None,zdirt3=None):
         dirt_list = [zdirt1-1]

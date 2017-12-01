@@ -24,7 +24,7 @@ def Main(ArgList):
     parser.add_argument("-c",dest='cb',help="the index of conduction band",type=int,default=0)
 #   fix_k not supported yet
 #    parser.add_argument("-f",dest='fix_k',help="flag for k-point fixing mode for k-averaged gap. 0 for fixing VBM, 1 for fixing CBM ",type=int,default=-1)
-    parser.add_argument("-i",dest='flag_inv',help="flag for the inverse of gap. Useful for analysis of polarization",action='store_true')
+    parser.add_argument("-i",dest='flag_inv',help="flag for the inverse of gap.",action='store_true')
     parser.add_argument("-l",dest='vc',help="the atom-l-components over which the valence and the conduction band will be weighed, respectively. E.g. '1s2p' for the transition from type1atom-s orbital to type2atom-p orbital. m-decomposition is not supported yet.",default='0t0t')
     parser.add_argument("-s",dest='showcomp',help="flag for show the band component at each k-point",action='store_true')
 
@@ -33,11 +33,10 @@ def Main(ArgList):
     vb = opts.vb
     cb = opts.cb
     vc = opts.vc.strip()
-    dxml = vasp_read_xml()
+    dxml = vasp_read_xml('pw')
 
 # =====================================================
 
-#    band_struct = vasp_anal_read_eigen(spinpolarzied=False,debug=opts.debug)
     nelec   = dxml.nelec
     nkp     = dxml.nkp
     bandmax = dxml.nbands
@@ -132,7 +131,6 @@ def Main(ArgList):
         print "Calculate inverse of band gap."
     if opts.kav:
         print "k-averged gap between band %i and %i: "%(vb,cb) ,kavgap
-        pass
     else:
 #        vasp_anal_get_gap(band_struct,vb,cb,debug=opts.debug)
         pass
