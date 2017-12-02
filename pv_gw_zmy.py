@@ -148,7 +148,7 @@ def Main(ArgList):
 # lmaxmix, change to larger value if f-element present
     lmm = 4
 # set vasp variable
-    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(opts.nproc,'mpirun',opts.vasp_path)
+    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(opts.nproc, 'mpirun', opts.vasp_path)
 
 # ================== End Parser =========================
 
@@ -164,8 +164,8 @@ def Main(ArgList):
         print "(Hint: Better check past setting of ENCUT and k-points)"
 #     CHGCAR do not exist, or want to redo CHGCAR calculation
     else:
-        step_1_scf(chg_dir,tag_xc=opts.tag_xc,encut=opts.encut, nks=nks,npar=npar,\
-                  vasp_cmd=vasp_cmd,f_metal=opts.f_metal,lmm=lmm,smear=[0,0.05])
+        step_1_scf(chg_dir, tag_xc=opts.tag_xc, encut=opts.encut, nks=nks, npar=npar,\
+                  vasp_cmd=vasp_cmd, f_metal=opts.f_metal, lmm=lmm, smear=[0, 0.05])
 
 # IF testmode is not set
     if not testmode:
@@ -209,18 +209,18 @@ def Main(ArgList):
         #write to output file
         if os.path.exists('Gap_NBANDS.dat'):
             copy2('Gap_NBANDS.dat','Gap_NBANDS.dat_old')
-        with open('Gap_NBANDS.dat','w') as f:
+        with open('Gap_NBANDS.dat', 'w') as f:
             f.write("#MNPW=%6s\n" % mnpw)
             f.write("#NBANDS gap\n")
             for i in xrange(len(nbands_list)):
-                f.write("%5.1f %12.6f\n" % (nbands_list[i],gap_list[i]))
+                f.write("%5.1f %12.6f\n" % (nbands_list[i], gap_list[i]))
 
 # IF testmode is set to ENCUTGW
     elif testmode == 'ENCUTGW':
         common_io_cleandir(conv_egw_dir)
-        mnpw = int(vasp_anal_get_outcar('mnpw',outcar=chg_dir+'/OUTCAR'))
-        nbands_scf = int(vasp_anal_get_outcar('nb',outcar=chg_dir+'/OUTCAR'))
-        encut = int(vasp_anal_get_outcar('encut',outcar=chg_dir+'/OUTCAR'))
+        mnpw = int(vasp_anal_get_outcar('mnpw', outcar=chg_dir+'/OUTCAR'))
+        nbands_scf = int(vasp_anal_get_outcar('nb', outcar=chg_dir+'/OUTCAR'))
+        encut = int(vasp_anal_get_outcar('encut', outcar=chg_dir+'/OUTCAR'))
         nb = 5*nbands_scf
         copy2('POSCAR',conv_egw_dir)
         copy2('POTCAR',conv_egw_dir)

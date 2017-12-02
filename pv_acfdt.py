@@ -5,7 +5,7 @@
 #
 #     File Name : pv_acfdt.py
 # Creation Date : 2017-04-24
-# Last Modified : Mon 30 Oct 2017 12:04:01 PM CST
+# Last Modified : Fri 01 Dec 2017 07:49:18 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : This script is used to calculate and analyze the ACFDT-RPA results in vasp
