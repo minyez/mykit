@@ -1,55 +1,58 @@
 #!/usr/bin/env python
 
-import sys, os, re
+import sys, os
 from shutil import copy2
-from pv_calc_utils import *
+from argparse import ArgumentParser
+from pv_calc_utils import common_io_checkdir, common_io_cleandir, vasp_write_incar_minimal_elec, \
+                          vasp_io_change_tag, vasp_write_kpoints_basic, vasp_write_incar_exact, \
+                          vasp_vasprun_zmy, vasp_vaspcmd_zmy, vasp_io_get_NPAR
 from pv_anal_utils import vasp_anal_get_outcar
 from pv_classes import vasp_read_poscar
 
 # =====================================================
 
 # Step 1: self-consistent calculation of charge density
-def step_1_scf(chg_dir,tag_xc,encut,nks,\
-               npar,lmm,vasp_cmd,f_metal=False,smear=[0,0.05]):
+def step_1_scf(chg_dir, tag_xc, encut, nks,\
+               npar, lmm, vasp_cmd, f_metal=False, smear=[0, 0.05]):
     if not os.path.exists(chg_dir):
         common_io_checkdir(chg_dir)
     else:
         print "Charge calculation done before. Restart"
         common_io_cleandir(chg_dir)
-    copy2('POSCAR',chg_dir)
-    copy2('POTCAR',chg_dir)
+    copy2('POSCAR', chg_dir)
+    copy2('POTCAR', chg_dir)
     os.chdir(chg_dir)
 
-    with open('INCAR','w') as incar:
-        vasp_write_incar_minimal_elec(incar,tag_xc,encut,npar=npar,mode_smear=smear)
+    with open('INCAR', 'w') as incar:
+        vasp_write_incar_minimal_elec(incar, tag_xc, encut, npar=npar, mode_smear=smear)
     if f_metal:
-        vasp_io_change_tag('INCAR','SIGMA',new_val=0.2)
-    vasp_io_change_tag('INCAR','LMAXMIX',new_val=lmm)
+        vasp_io_change_tag('INCAR', 'SIGMA', new_val=0.2)
+    vasp_io_change_tag('INCAR', 'LMAXMIX', new_val=lmm)
 
     vasp_write_kpoints_basic(nks)
     vasp_vasprun_zmy(vasp_cmd,'out','error')
     os.chdir('..')
 
 # Step 2: non-self-consistent calculation of unoccupied orbitals
-def step_2_exact(chg_dir,exact_dir,tag_xc,encut,nks,nks_gw,nbands,nedos,lwannier,\
-                 npar,lmm,vasp_cmd,f_metal=False,smear=[0,0.05]):
+def step_2_exact(chg_dir, exact_dir, tag_xc, encut, nks, nks_gw, nbands, nedos, lwannier,\
+                 npar, lmm, vasp_cmd, f_metal=False, smear=[0, 0.05]):
     common_io_cleandir(exact_dir)
-    copy2('POSCAR',exact_dir)
-    copy2('POTCAR',exact_dir)
+    copy2('POSCAR', exact_dir)
+    copy2('POTCAR', exact_dir)
     os.chdir(exact_dir)
     vasp_write_kpoints_basic(nks_gw)
-    with open('INCAR','w') as incar:
-        vasp_write_incar_exact(incar,tag_xc,encut,nb=nbands,npar=npar,mode_smear=smear,lwannier=lwannier)
-    vasp_io_change_tag('INCAR','NEDOS',new_val=nedos)
+    with open('INCAR', 'w') as incar:
+        vasp_write_incar_exact(incar, tag_xc, encut, nb=nbands, npar=npar, mode_smear=smear, lwannier=lwannier)
+    vasp_io_change_tag('INCAR', 'NEDOS', new_val=nedos)
     if f_metal:
-        vasp_io_change_tag('INCAR','SIGMA',new_val=0.2)
+        vasp_io_change_tag('INCAR', 'SIGMA', new_val=0.2)
 
 # if kpoints for the first and second calculation is the same, then it is not necessary to fix charge density, and the wavefunction in Step 1 can be used
     if not nks == nks_gw:
-        copy2('../'+chg_dir+'/CHGCAR','.')
-        vasp_io_change_tag('INCAR','ISTART')
-        vasp_io_change_tag('INCAR','ICHARG',new_val=11)
-        vasp_io_change_tag('INCAR','LMAXMIX',new_val=lmm)
+        copy2('../'+chg_dir+'/CHGCAR', '.')
+        vasp_io_change_tag('INCAR', 'ISTART')
+        vasp_io_change_tag('INCAR', 'ICHARG', new_val=11)
+        vasp_io_change_tag('INCAR', 'LMAXMIX', new_val=lmm)
     else:
         copy2('../'+chg_dir+'/WAVECAR','.')
         vasp_io_change_tag('INCAR','ICHARG')
