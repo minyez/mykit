@@ -5,7 +5,7 @@
 #
 #     File Name : pv_classes.py
 # Creation Date : 30-10-2017
-# Last Modified : Thu 30 Nov 2017 09:37:58 AM CST
+# Last Modified : Sat 02 Dec 2017 12:39:53 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : provide vasp classes for analysis
@@ -161,6 +161,7 @@ class vasp_read_poscar:
         if self.coor_type == 'dirt':
             print " Direct coordinate system detected. Nothing to do."
             return
+        # use coordinate transformation x_cart = Ax_dirt, x_dirt = A^{-1}x_cart
         for ia in xrange(self.natoms):
             self.innerpos[ia] = np.dot(np.linalg.inv(self.lattice),self.innerpos[ia])
         self.coor_type = 'dirt'
@@ -190,7 +191,7 @@ class vasp_read_poscar:
 
     def write_innerpos_to_lines(self):
         for ia in xrange(self.natoms):
-            self.poslines[ia+8] =  "%17.8f%17.8f%17.8f" % \
+            self.poslines[ia+8] =  "%17.10f%17.10f%17.10f" % \
                     (self.innerpos[ia][0],self.innerpos[ia][1],self.innerpos[ia][2]) \
                     + "  T  T  T " + '#%2s\n' % self.check_atomtype(ia+1)
 

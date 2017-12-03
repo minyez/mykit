@@ -187,10 +187,13 @@ def Main(ArgList):
         copy2('POSCAR',conv_nbs_dir)
         copy2('POTCAR',conv_nbs_dir)
         os.chdir(conv_nbs_dir)
-        nbands_list = [(nbands_scf + x*int((mnpw-nbands_scf)/20.0)) for x in xrange(14)]
-        for i in xrange(len(nbands_list)):
-            if nbands_list[i]%8 != 0:
-                nbands_list[i] = (nbands_list[i]/8 + 1)*8
+        nbands_list = []
+        for x in xrange(14):
+            nbands_ori = nbands_scf + x*int((mnpw-nbands_scf)/20.0)
+            nbands_ori = int(nbands/opts.nproc+1)*opts.nproc
+            if nbands_ori not in nbands_list and (nbands_ori<mnpw):
+                nbands_list.append(nbands_ori)
+
         for nb in nbands_list:
             print "== Step 2: Non-SCF for unc. bands =="
             step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=nb,nedos=nedos,\
