@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 # ==============================
-
 #     File Name : pv_addpot.py
 # Creation Date : 16-10-2017
-# Last Modified : Tue 14 Nov 2017 06:46:14 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
 #       Purpose : create POTCAR from potcar directory
-#
 # ==============================
 
 import sys

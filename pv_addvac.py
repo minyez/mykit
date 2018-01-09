@@ -2,14 +2,10 @@
 # coding=utf-8
 
 # ====================================================
-#
 #     File Name : pv_addvac.py
 # Creation Date : 30-10-2017
-# Last Modified : Mon 30 Oct 2017 10:01:30 PM CST
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
-#       Purpose :
-#
 # ====================================================
 
 import sys
