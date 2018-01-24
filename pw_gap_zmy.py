@@ -15,6 +15,7 @@ def Main(ArgList):
     '''
 
     parser = ArgumentParser(description=description)
+    parser.add_argument("-f",dest='casename',help="casename")
     parser.add_argument("-d",dest='debug',help="flag for debug mode",action='store_true')
     parser.add_argument("--hf",dest='hybrid',help="flag for hybrid functional",action='store_true')
 
@@ -23,14 +24,18 @@ def Main(ArgList):
     Ry2eV = 13.6056917
 
 # =====================================================
+    if not opts.casename:
+        casename = Get_Casename()
+    else:
+        casename = opts.casename
 
-    case = Get_Casename()
-    Band_Struct = Read_BandStructure(opts.hybrid)
+    Band_Struct = Read_BandStructure(casename,opts.hybrid)
+
     if opts.debug:
         print Band_Struct
         print len(Band_Struct)
 
-    scf_file = case+'.scf'
+    scf_file = casename+'.scf'
     if os.path.exists(scf_file):
         pass
     else:

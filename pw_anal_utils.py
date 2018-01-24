@@ -54,7 +54,7 @@ def Get_Casename():
 
 # ====================================================
 
-def Read_BandStructure(case=None,hybrid=False):
+def Read_BandStructure(casename,hybrid=False):
     '''
     read the LDA/GGA or HF (hybrid=True) band structure from the case.energy and case.energyhf files, respectively
 
@@ -62,10 +62,10 @@ def Read_BandStructure(case=None,hybrid=False):
         A list consisting of nkp members, each member is a nband+1-member list, i.e. [[kx,ky,kz], energy of nband]
     '''
 #   get case from case.struct
-    if case is None:
-        case = Get_Casename()
-
-    ifile = case+'.energy'
+    if casename==None:
+        casename = Get_Casename()
+    print "casename: %s" % casename
+    ifile = casename+'.energy'
     Band_Struct = []
     if hybrid or not os.path.exists(ifile):
         print 'Band structure of hybrid functional will be read.'

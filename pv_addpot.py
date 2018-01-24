@@ -20,6 +20,7 @@ import fnmatch
 def Main(ArgList):
 
     #potdir = '/home/stevezhang/software/vasppot-5.2/'
+    print " ============ pv_addpot.py ============"
     potdir = sp.check_output('echo $VASPPOT',shell=True).split()
     if len(potdir)==0:
         print "The environment variable $VASPPOT is not set. Exit."
@@ -27,21 +28,23 @@ def Main(ArgList):
     elif len(potdir)==1:
         potdir = potdir[0]
 
-    print potdir
-
     if not os.path.exists(potdir):
         print "Invalid POTCAR directory"
         sys.exit(1)
 
-    description = '''Create POTCAR from potcar directory: %s''' % potdir
+    description = ' Create POTCAR from potcar directory: %s' % potdir
     parser = ArgumentParser(description=description)
     parser.add_argument('-e',dest='elements',default=None,nargs='+',help="Elements name, e.g. Cu, Fe_sv, H_GW, etc")
     parser.add_argument("-x",dest='xc',help="XC functional to generate PAW. LDA or PBE (default).",default='PBE')
     parser.add_argument("-c",dest='check',help="flag for check mode, checking available POTCARs",action='store_true')
+    parser.add_argument('-i',dest='posin',default='POSCAR',help="POSCAR file for checking mode")
     parser.add_argument("-D",dest='debug',help="flag for debug mode",action='store_true')
 
     opts = parser.parse_args()
     potdir_xc = potdir+'/paw_'+opts.xc.upper()+'/'
+    posin = opts.posin
+
+    print " Finding POTCARs from: %s" % potdir_xc
 
     # check if the XC directory exists    
     if not os.path.exists(potdir_xc):
@@ -50,7 +53,7 @@ def Main(ArgList):
     if opts.elements is not None:
         ele = opts.elements
     else:
-        poscar=vasp_read_poscar()
+        poscar=vasp_read_poscar(posin)
         ele = poscar.atom_type
 
     if opts.debug:
@@ -62,11 +65,12 @@ def Main(ArgList):
         for iele in ele:
             print "%s avail:" % iele
             for idir in os.listdir(potdir_xc):
-                if fnmatch.fnmatch(idir,iele+'*'):
+                if fnmatch.fnmatch(idir,iele):
+                    print " - " + idir
+                if fnmatch.fnmatch(idir,iele+"_*"):
                     print " - " + idir
         return
 
-    print description
     with open('POTCAR','w') as fpot:
         for i in xrange(len(ele)):
             e_potcar = potdir_xc+ele[i]+'/POTCAR'
@@ -77,9 +81,9 @@ def Main(ArgList):
                     lines = fpotcar.readlines()
                     for line in lines:
                         fpot.write(line)
-                print "POTCAR of %8s found.     Add" % ele[i]
+                print " - POTCAR of %8s found.     Add" % ele[i]
             else:
-                print "POTCAR of %8s not found. Skip" % ele[i]
+                print " - POTCAR of %8s not found. Skip" % ele[i]
     return
 
 # ==============================
