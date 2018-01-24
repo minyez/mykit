@@ -24,11 +24,15 @@ def Main(ArgList):
                         help="the thichness of vacuum to add (negative to reduce). In Angstrom")
     parser.add_argument("-i",dest='input',default='POSCAR',help="input file. Default POSCAR")
     parser.add_argument("-o",dest='output',default='POSCAR_new',help="output file. Default POSCAR_new")
+    parser.add_argument("-c",dest='centering',help="flag for putting the geometric center to the center of lattice",action="store_true")
 
     opts = parser.parse_args()
     print " ============ pv_addvac.py ============"
     poscar = vasp_read_poscar(opts.input)
     iz = opts.zdirt - 1
+    if opts.centering:
+        print " --- Centering switched on ---"
+        poscar.action_centering(opts.zdirt)
     print "   Original z: %17.8f" % poscar.lattice[iz][iz]
     poscar.action_add_vacuum(opts.vac,opts.zdirt)
     print "   Changed z: %18.8f" % poscar.lattice[iz][iz]

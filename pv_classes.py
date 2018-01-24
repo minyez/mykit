@@ -12,7 +12,7 @@
 #
 # ====================================================
 
-import sys
+import sys,os
 import numpy as np
 from xml.etree import ElementTree as etree
 
@@ -21,11 +21,23 @@ class vasp_read_poscar:
         print " Reading POSCAR: %s" % PosFile
         with open(PosFile,'r') as f:
             self.poslines = f.readlines()
+        self.filename = PosFile
         self.__comment_info()
         self.__latt_info()
         self.__atom_info()
         self.__coor_info()
         print " POSCAR read."
+
+
+    def __save_to_lines(self):
+        '''
+        save poscar data to poscar lines
+        '''
+        # reload all objects to poslines
+        self.action_change_scale(self.scale)
+        self.write_coortype_to_lines()
+        self.write_innerpos_to_lines()
+        self.write_lattice_to_lines()
 
 
     def __comment_info(self):
@@ -119,30 +131,35 @@ class vasp_read_poscar:
 
     def check_mcenter(self):
         '''
-        give the coordinate of the center of mass
+        give the coordinate of the geometric center
         '''
         pass
 
+
     def action_centering(self,zdirt1=3,zdirt2=None,zdirt3=None):
-        dirt_list = [zdirt1-1]
-        if (zdirt2 is not None) and ((zdirt2-1) not in dirt_list):
-            dirt_list.append(zdirt2-1)
-        if (zdirt3 is not None) and ((zdirt3-1) not in dirt_list):
-            dirt_list.append(zdirt2-1)
+        print " In action_centering:"
+        dirt_list = [zdirt1]
+        if (zdirt2 is not None) and (zdirt2 not in dirt_list):
+            dirt_list.append(zdirt2)
+        if (zdirt3 is not None) and (zdirt3 not in dirt_list):
+            dirt_list.append(zdirt2)
         if self.coor_type == 'cart':
             print " Cartisian coordinate system detected. Centering is not supported yet. Pass"
             return
 
-        for iz in dirt_list:
-            if self.check_vacuum_pos(iz+1):
+        for zdirt in dirt_list:
+            iz = zdirt - 1
+            if self.check_vacuum_pos(zdirt):
                 print "  - Vacuum in the middle detected. Not supported currently. Pass."
                 continue
             else:
-                surf_atom = [self.check_extreme_atom(0.0,3,False,1.0),self.check_extreme_atom(0.0,3,True,1.0)]
+                surf_atom = [self.check_extreme_atom(0.0,zdirt,False,1.0),self.check_extreme_atom(0.0,zdirt,True,1.0)]
+                # debug
+                # print surf_atom
                 shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
-                if shift >= 1E-3:
-                    self.action_shift(shift,iz+1)
-        self.write_innerpos_to_lines()
+                self.action_shift(shift,zdirt)
+        print " Complete centering."
+        #self.write_innerpos_to_lines()
 
 
     def action_dirt2cart(self,l_write=True):
@@ -203,17 +220,23 @@ class vasp_read_poscar:
             self.poslines[7] = 'Selective dynamics\nDirect\n'
 
 
-    def write_poscar(self,OutFile='POSCAR_new',l_reload=False):
+    def write_poscar(self,OutFile='POSCAR_new',f_reload=True):
         print " Write POSCAR: %s" % OutFile
-        # reload all objects to poslines
-        if l_reload:
-            self.action_change_scale(self.scale)
-            self.write_coortype_to_lines()
-            self.write_innerpos_to_lines()
-            self.write_lattice_to_lines()
-        with open(OutFile,'w+') as f:
-            for i in xrange(len(self.poslines)):
-                f.write(self.poslines[i])
+        if f_reload:
+            print " - Load modified atomic information to poslines"
+            self.__save_to_lines()
+        if OutFile is not None:
+            if OutFile==self.filename:
+                print " - Warning: OutFile same as input. Change input to %s.old" % self.filename
+                os.rename(self.filename,self.filename+'.old') 
+                self.filename = self.filename + '.old'
+            with open(OutFile,'w+') as f:
+                for i in xrange(len(self.poslines)):
+                    f.write(self.poslines[i])
+            print " - Done output: %s" % OutFile
+        else:
+            print " - Invalid output filename: None. Pass"
+
 
 
 # ===========================================================
@@ -282,12 +305,14 @@ class vasp_read_poscar:
 
 
     def action_add_vacuum(self,vacadd,zdirt=3):
-        # add length to the vacuum region of slab model. In Angstrom unit
-        # 1D case and middle vacuum case to be implemented
-        if abs(vacadd) < 1.0:
-            print " In action_add_vacuum:"
-            print "  - too small change in vacuum (abs <= 1.0 A). Pass."
-            return
+        '''
+        add length to the vacuum region of slab model. In Angstrom unit.
+        1D case and middle vacuum case to be implemented
+        '''
+        print " In action_add_vacuum:"
+        #if abs(vacadd) < 0.1:
+        #    print "  - too small change in vacuum (abs <= 1.0 A). Pass."
+        #    return
         # check the slab model
         iz = zdirt - 1
         for ix in xrange(3):
@@ -298,7 +323,6 @@ class vasp_read_poscar:
                 return
 
         if self.check_vacuum_pos(zdirt):
-            print " In action_add_vacuum:"
             print "  - Vacuum in the middle detected. Not supported currently. Pass."
             return
 
@@ -307,14 +331,16 @@ class vasp_read_poscar:
         zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
         zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
         vac_ori =  self.lattice[iz][iz] * (1.0 - (zmax-zmin))
-        print " In action_add_vacuum:"
         print "  - Original vacuum thickness: %8.5f" % vac_ori
-        self.action_centering(zdirt)
+
         self.action_dirt2cart(False)     # switch to cartisian
 
         self.lattice[iz][iz] = self.lattice[iz][iz] + vacadd
-        self.action_shift(vacadd/2.0,zdirt)
+        # shift the atoms in zdirt by half of vacadd
+        self.action_shift(vacadd/2.0,zdirt,False)
         self.action_cart2dirt(True)
+
+        #self.action_centering(zdirt)
         self.write_lattice_to_lines()
 
 

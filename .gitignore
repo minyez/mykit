@@ -1,2 +1,4 @@
 # ignore all complied files
 *.pyc
+*.swp
+*.o
