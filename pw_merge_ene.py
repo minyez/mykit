@@ -17,6 +17,7 @@ from pw_anal_utils import Get_Casename
 import os,sys
 import argparse
 import subprocess as sp
+import fnmatch
 
 def Main(ArgList):
 
@@ -33,21 +34,29 @@ def Main(ArgList):
 
     casename = Get_Casename()
     filename = opts.filename
-    nproc=int(sp.check_output('ls %s.energy_* | wc -l' % casename,shell=True))
+    
+    files_list = fnmatch.fnmatch('./',casename+'.'+filename+'_*')
+    
+    if files_list == False:
+        nproc = 0
+    else:
+        nproc = len(files_list)
 
-    nat=w2k_get(casename,'nat') #number of atoms
-    sp.check_call('cat %s.%s_1 > %s.%s' %(casename,filename,casename,filename),shell=True)
-    energy_file=file('%s.%s' %(casename,filename),'a')
-
-    for i in xrange(nproc-1):
-        append_file=file(casename+'.'+filename+'_'+str(i+2),'r')
-        for j in xrange(nat*2): #skip lines of linearization energy
-            append_file.readline()
-        for line in append_file:
-            energy_file.write(line) #append lines of eigenvalues of kpoints
-        append_file.close()
-
-    energy_file.close()
+    # skip merging when the calculation is serial
+    if nproc==0:
+        print "Serial calculation detected. No need to merge."
+    else:
+        nat=w2k_get(casename,'nat') #number of atoms
+        sp.check_call('cat %s.%s_1 > %s.%s' %(casename,filename,casename,filename),shell=True)
+        energy_file=file('%s.%s' %(casename,filename),'a')
+        for i in xrange(nproc-1):
+            append_file=file(casename+'.'+filename+'_'+str(i+2),'r')
+            for j in xrange(nat*2): #skip lines of linearization energy
+                append_file.readline()
+            for line in append_file:
+                energy_file.write(line) #append lines of eigenvalues of kpoints
+            append_file.close()
+        energy_file.close()
 
 # ==============================
 
