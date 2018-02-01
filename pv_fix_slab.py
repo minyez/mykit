@@ -4,7 +4,6 @@
 #
 #     File Name : pv_fix_slab.py
 # Creation Date : 2017-06-20
-# Last Modified : Wed 01 Nov 2017 09:14:03 PM CST
 #       Purpose : sort atoms and fix some layers according to needs,
 #                 modified from the script written by Yue-Chao Wang
 #    Created By : Min-Ye Zhang
@@ -15,7 +14,7 @@
 import sys
 import argparse
 from pv_classes import vasp_read_poscar
-from pv_slab_utils import sort_coor, flag_fix
+from pv_slab_utils import flag_fix
 
 # ====================================================
 
@@ -41,11 +40,12 @@ def fix_xyz_range(poscar,start,end,direct,reverse=False,debug=False):
     Use reverse if you want to the points out of this range to be fixed. which is rarely used
     '''
 
+    # index of direction, 0|1|2
     idir = direct - 1
     TrSurf, FlsSurf = flag_fix(reverse)
     Atom_Type, Atom_Numb, Atom_Line = get_atom_info(poscar)
 
-    rewrite_poscar(poscar,Atom_Numb,Atom_Type,fix_index,TrSurf,FlsSurf)
+    #rewrite_poscar(poscar,Atom_Numb,Atom_Type,fix_index,TrSurf,FlsSurf)
     n_line = 8
     for i in xrange(len(Atom_Numb)):
         while n_line < Atom_Line[i]+Atom_Numb[i]:

@@ -215,7 +215,7 @@ def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False,f_slab=None):
         pass
     else:
         if f_slab in [1,2,3]:
-            nks[f_slab] = 1
+            nks[f_slab-1] = 1
 
     if debug: print nks
     if mode == 'G':
