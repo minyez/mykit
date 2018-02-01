@@ -35,6 +35,22 @@ def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
         gap = float(gap)
         return gap
 
+def vasp_anal_get_enmax(potcar='POTCAR'):
+    '''
+    Get the largest ENMAX in the potcar file (default POTCAR)
+    '''
+    if not os.path.exists(potcar):
+        print " Error: POTCAR file not found: %s" % potcar
+        print " Exit."
+        sys.exit(1)
+
+    # sort in the increasing order, get the last value
+    enmax_str = sp.check_output("awk '/ENMAX/ {print $3}' %s | sort | tail -1" % potcar,shell=True)
+    # for example, ENMAX = 400.000;
+    enmax = float(enmax_str.split(';')[0])
+    return enmax
+
+
 def vasp_anal_get_Ener_Vol(datatype='DFT'):
     '''
     Get calculated total energy and volume

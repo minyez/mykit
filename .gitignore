@@ -2,3 +2,7 @@
 *.pyc
 *.swp
 *.o
+POTCAR
+POSCAR
+KPOINTS
+INCAR*
