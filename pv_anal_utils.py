@@ -15,25 +15,35 @@ def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
     '''
     return the value of key in outcar.
     '''
+# maximum number of plane wave, i.e. the maximum size of representation matrix
     if key=='mnpw':
         mnpw = sp.check_output("awk '/maximum number of/ {print $5}' %s | tail -1" % outcar,shell=True)
         return mnpw
+# NBANDS
     if key=='nb' or key=='nbands' or key=='NBANDS':
         nb = sp.check_output("awk '/NBANDS/ {print $15}' %s | head -1" % outcar,shell=True)
         return nb
+# ENCUT
     if key=='encut' or key=='ENCUT':
         encut = sp.check_output("awk '/ENCUT/ {print $3}' %s | head -1" % outcar,shell=True)
         encut = int(float(encut))
         return encut
-    if key=='ene':
+# converged G.S. energy
+    if key=='ene' or key=='energy':
         ene = sp.check_output("awk '/without/ {print $7}' %s | tail -1" % outcar,shell=True)
         ene = float(ene)
         return ene
+# total number of k-points used
+    if key=='nkp':
+        nkp = sp.check_output("awk '/NKPTS/ {print $4}' %s | head -1" % outcar,shell=True)
+        nkp = int(nkp)
+        return nkp
+# band gap. Use vaspxml class to obtain the value
     if key=='gap':
         vaspxml = vasp_read_xml()
         gap = vaspxml.get_gap()
-        gap = float(gap)
         return gap
+
 
 def vasp_anal_get_enmax(potcar='POTCAR'):
     '''

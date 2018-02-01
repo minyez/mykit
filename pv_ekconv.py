@@ -15,12 +15,121 @@
 import sys, os
 from shutil import copy2
 from datetime import datetime
+from fnmatch import fnmatch
 from argparse import ArgumentParser
 from pv_classes import vasp_read_poscar
-from pv_anal_utils import vasp_anal_get_enmax
+from pv_anal_utils import vasp_anal_get_enmax, vasp_anal_get_outcar
 from pv_calc_utils import vasp_vaspcmd_zmy, vasp_vasprun_zmy, vasp_write_incar_minimal_elec, \
                           vasp_io_get_NPAR, vasp_write_kpoints_basic, common_io_checkdir, \
                           vasp_io_change_tag
+
+def run_calculation(poscar, \
+                    encut_dir_prefix, encut_list, \
+                    kleng_dir_prefix, kleng_list, \
+                    f_slab=0, vasp_cmd='vasp', viewmode=True):
+    # loop over encut in the ENCUT list
+    for encut in encut_list:
+        print " ---------- ENCUT = %s ----------" % encut
+        encut_dir = common_io_checkdir(encut_dir_prefix+str(int(encut)))
+        # copy POSCAR POTCAR INCAR
+        copy2('POSCAR', encut_dir+'/POSCAR')
+        copy2('POTCAR', encut_dir+'/POTCAR')
+        copy2('INCAR' , encut_dir+'/INCAR')
+        os.chdir(encut_dir)
+        # change ENCUT in INCAR to the target value, i.e. encut
+        vasp_io_change_tag('INCAR','ENCUT',new_val=encut,backup=False)
+        # loop over kleng in klength list
+        for kleng in kleng_list:
+            # check if this setting is calculated
+            kleng_dir = kleng_dir_prefix+str(kleng)
+            if os.path.exists(kleng_dir):
+                print " - Warning: encut_%s_kleng_%i already calculated. Pass" % (encut,kleng)
+                continue
+            common_io_checkdir(kleng_dir)
+            # copy POSCAR POTCAR INCAR
+            copy2('POSCAR', kleng_dir+'/POSCAR')
+            copy2('POTCAR', kleng_dir+'/POTCAR')
+            copy2('INCAR' , kleng_dir+'/INCAR')
+            os.chdir(kleng_dir)
+
+            # write KPOINTS
+            nks = [int(kleng/x) for x in poscar.lenlat]
+            if f_slab in [1,2,3]:
+                nks[f_slab-1] = 1
+            print " calculating with kmesh: %i %i %i" % (nks[0],nks[1],nks[2])
+            vasp_write_kpoints_basic(nks,'G',f_slab=f_slab)
+
+            # perform calculation
+            if not viewmode:
+                vasp_vasprun_zmy(vasp_cmd,'out','error')
+            os.chdir('..')
+        os.chdir('..')
+
+    return
+
+
+def mode_obtain_data(encut_dir_prefix, kleng_dir_prefix, datakey_list):
+
+    print " ------------  check data  ------------"
+    nkey = len(datakey_list)
+    #print nkey
+    encut_dir_list = []
+    for idir in os.listdir('.'):
+        if fnmatch(idir,encut_dir_prefix+'*'):
+            encut_dir_list.append(idir)
+    encut_list = [int(x.split('_')[-1]) for x in encut_dir_list]
+    encut_list.sort()
+    nkp_list_whole = []
+    data_list_whole = [] 
+    for i in xrange(nkey):
+        data_list_whole.append([])
+
+    #return encut_list, nkp_list_whole, data_list_whole
+
+    for encut_dir in encut_dir_list:
+        os.chdir(encut_dir)
+        kleng_dir_list = []
+        nkp_list_i = []
+        data_list_i = []
+        for i in xrange(nkey):
+            data_list_i.append([])
+
+        for idir in os.listdir('.'):
+            if fnmatch(idir,kleng_dir_prefix+'*'):
+                kleng_dir_list.append(idir)
+        
+        # sort kleng_dir_list
+        kleng_dir_list.sort(key=lambda x: int(x.split('_')[-1]))
+
+        for kleng_dir in kleng_dir_list:
+            os.chdir(kleng_dir)
+            if os.path.exists('OUTCAR'):
+                nkp_list_i.append(vasp_anal_get_outcar('nkp'))
+                for i in xrange(nkey):
+                    data_list_i[i].append(vasp_anal_get_outcar(datakey_list[i]))
+            os.chdir('..')
+
+        nkp_list_whole.append(nkp_list_i)
+        for i in xrange(nkey):
+            data_list_whole[i].append(data_list_i[i])
+        os.chdir('..')
+
+    return encut_list, nkp_list_whole, data_list_whole
+
+
+def plot_data(legend_list, xdata_list, ydata_list, ykey):
+    # encut as legend
+    # nkp as x, the calculated value as y
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    for i in xrange(len(legend_list)):
+        ax.plot(xdata_list[i],ydata_list[i],label="ENCUT = %i"%legend_list[i])
+    ax.set_xlabel("NKP") 
+    ax.set_ylabel(ykey) 
+    ax.legend()
+    plt.show()
+
 
 def Main(ArgList):
     # Parser part
@@ -37,11 +146,24 @@ def Main(ArgList):
     parser.add_argument("--spin",dest='ispin',type=int, default=1, help="ispin for spin-polarization")
     parser.add_argument("--slab",dest='zdir',type=int, default=0, help="non-periodic direction for slab model. 1|2|3 for a1|a2|a3. Default 0 for 3D periodic.")
     parser.add_argument("-V",dest='view',action='store_true',help="flag for view mode, i.e. view parameters and do not calculate")
-    parser.add_argument("-C",dest='clean',action='store_true',help="flag for cleanup of large files, e.g. WAVECAR")
+    parser.add_argument("--clean",dest='clean',action='store_true',help="flag for cleanup of large files, e.g. WAVECAR")
+    parser.add_argument("--data",dest='checkdata',action='store_true',help="flag for data check mode")
     parser.add_argument("-v",dest='vasp_path',default="vasp",help="path of vasp executive")
     opts = parser.parse_args()
 
+    # define directory prefix
+    encut_dir_prefix = "encut_"
+    kleng_dir_prefix = "kleng_"
+
     print " ============ pv_ekconv.py ============"
+
+    # if data check mode is selected
+    if opts.checkdata:
+        datakey_list = ['ene']
+        encut_list, nkp_list, data_list = mode_obtain_data(encut_dir_prefix, kleng_dir_prefix, datakey_list)
+        plot_data(encut_list, nkp_list, data_list[0], datakey_list[0])
+        return
+
     # check if POTCAR exists and get the enmax from POTCAR
     if not os.path.exists('POTCAR'):
         print " Error: POTCAR not found. Use pv_addpot.py to generate one. Exit."
@@ -63,12 +185,13 @@ def Main(ArgList):
     kleng_s = opts.l
 
     npar = vasp_io_get_NPAR(opts.nproc)
+    
+    # set viewmode
+    viewmode = False
+    if opts.view:
+        viewmode = True
 
-    # define directory prefix
-    encut_dir_prefix = "encut_"
-    kleng_dir_prefix = "kleng_"
-
-    # check if INCAR exists. 
+    # check if custom INCAR exists. 
     # If not, generate the minimal electronic INCAR according to the options
     if not os.path.exists('INCAR'):
         print " Error: INCAR not found. Generate minimal from options."
@@ -94,45 +217,14 @@ def Main(ArgList):
     # get starting time
     dt_s = datetime.now()
     # loop over encut in ENCUT list
-    for encut in encut_list:
-        print " ---------- ENCUT = %s ----------" % encut
-        encut_dir = common_io_checkdir(encut_dir_prefix+str(int(encut)))
-        # copy POSCAR POTCAR INCAR
-        copy2('POSCAR', encut_dir+'/POSCAR')
-        copy2('POTCAR', encut_dir+'/POTCAR')
-        copy2('INCAR' , encut_dir+'/INCAR')
-        os.chdir(encut_dir)
-        # change ENCUT in INCAR to the target value, i.e. encut
-        vasp_io_change_tag('INCAR','ENCUT',new_val=encut,backup=False)
-        # loop over kleng in klength list
-        for kleng in kleng_list:
-            # check if this setting is calculated
-            kleng_dir = kleng_dir_prefix+str(kleng)
-            if os.path.exists(kleng_dir):
-                print " - Warning: encut_%s_kleng_%i already calculated. Pass" % (encut,kleng)
-                continue
-            common_io_checkdir(kleng_dir)
-            # copy POSCAR POTCAR INCAR
-            copy2('POSCAR', kleng_dir+'/POSCAR')
-            copy2('POTCAR', kleng_dir+'/POTCAR')
-            copy2('INCAR' , kleng_dir+'/INCAR')
-            os.chdir(kleng_dir)
-            # write KPOINTS
-            nks = [int(kleng/x) for x in poscar.lenlat]
-            print " calculating with kmesh: %i %i %i" % (nks[0],nks[1],nks[2])
-            vasp_write_kpoints_basic(nks,'G',f_slab=opts.zdir)
-
-            # perform calculation
-            if not opts.view:
-                vasp_vasprun_zmy(vasp_cmd,'out','error')
-            os.chdir('..')
-        os.chdir('..')
+    run_calculation(poscar, encut_dir_prefix, encut_list, \
+                    kleng_dir_prefix, kleng_list, opts.zdir, vasp_cmd, viewmode=viewmode)
     # get end time
     dt_e = datetime.now()
 
     # write executed command in a log file, for future checking
     logfile = 'ekconv.log'
-    if not opts.view:
+    if not viewmode:
         if os.path.exists(logfile):
             os.rename(logfile,logfile+'_old')
         with open(logfile,'w') as f_log:
@@ -141,7 +233,8 @@ def Main(ArgList):
             f_log.write("# command: %s \n" % " ".join(sys.argv))
             f_log.write("# encut_list: %s \n" % "".join(str(encut_list)))
             f_log.write("# kleng_list: %s \n" % "".join(str(kleng_list)))
-        
+
+    return
 
 # ==============================
 
