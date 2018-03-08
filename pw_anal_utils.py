@@ -26,8 +26,10 @@ def Get_ParentDir(path='PWD'):
     '''
     if os.path.isdir(path):
         parentdir = os.path.abspath(path)
-    if os.path.isfile(path):
+    elif os.path.isfile(path):
         parentdir = os.path.abspath(path)[:-len(os.path.basename(path))]
+    else:
+        parentdir = None
     return parentdir
 
 # ====================================================

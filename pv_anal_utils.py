@@ -33,7 +33,7 @@ def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
         ene = sp.check_output("awk '/without/ {print $7}' %s | tail -1" % outcar,shell=True)
         ene = float(ene)
         return ene
-# total number of k-points used
+# total number of irreducible k-points
     if key=='nkp':
         nkp = sp.check_output("awk '/NKPTS/ {print $4}' %s | head -1" % outcar,shell=True)
         nkp = int(nkp)

@@ -41,7 +41,13 @@ def Main(ArgList):
     parser.add_argument("-D",dest='debug',help="flag for debug mode",action='store_true')
 
     opts = parser.parse_args()
-    potdir_xc = potdir+'/paw_'+opts.xc.upper()+'/'
+    if potdir.endswith('5.2') or potdir.endswith('5.3'):
+    # nomenclature suits for vasp-5.2 and vasp-5.3
+        potdir_xc = potdir+'/paw_'+opts.xc.upper()+'/'
+    elif potdir.endswith('5.4'):
+    # nomenclature suits for vasp-5.4
+        potdir_xc = potdir+'/potpaw_'+opts.xc.upper()+'/'
+
     posin = opts.posin
 
     print " Finding POTCARs from: %s" % potdir_xc

@@ -6,3 +6,7 @@ POTCAR
 POSCAR
 KPOINTS
 INCAR*
+*.struct
+*.sh
+optimize.job
+test.py
