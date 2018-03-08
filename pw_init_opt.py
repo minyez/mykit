@@ -20,6 +20,7 @@ def pw_init_optimize_job(ArgList):
     '''
     
     parser = ArgumentParser(description=description)
+    parser.add_argument("-c", dest="casename", help="casename", default=None)
     parser.add_argument("-t", dest="stype", help="type of optimization.",type=int, default=1)
     parser.add_argument("-n", dest="nstruct", help="number of structures to calculate",type=int, default=11)
     parser.add_argument("-s", dest="st", help="starting value. Integer",type=int, default=-10)
@@ -31,7 +32,10 @@ def pw_init_optimize_job(ArgList):
     
     opts = parser.parse_args()
     
-    casename = Get_Basename() 
+    if opts.casename == None:
+        casename = Get_Basename() 
+    else:
+        casename = opts.casename
     
     ns = opts.nstruct
     st = float(opts.st)

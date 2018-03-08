@@ -36,7 +36,7 @@ def get_optimized_latt_const(casename, optdir, reference_struct):
             break
     h_ref.close()
 
-    lattconst_ref_list = float(lattconst_ref_list)
+    lattconst_ref_list = [float(x) for x in lattconst_ref_list]
     a_ref, b_ref, c_ref = lattconst_ref_list[0], lattconst_ref_list[1], \
                           lattconst_ref_list[2]
     boa_ref = b_ref/a_ref
@@ -49,9 +49,19 @@ def get_optimized_latt_const(casename, optdir, reference_struct):
     lattconst_list = []
     for idir in os.listdir('.'):
         if fnmatch.fnmatch(idir,casename+'_'+optdir+'_*'):
-            calcdir_list.append(idir)
+            if os.path.isdir(idir):
+                calcdir_list.append(idir)
 
-    item_list = [int(x.split(casename+'_'+optdir)[1].split('_')[0]) for x in calcdir_list]
+    item_list = []
+    for x in calcdir_list:
+        dir_suffix = x.split(casename+'_'+optdir)[1]
+        for y in dir_suffix.split('_'):
+            # append the first non-None element 
+            if y != '':
+                item_list.append(float(y))
+                break
+    
+    #item_list = [float(x.split(casename+'_'+optdir)[1].split('_')[1]) for x in calcdir_list]
 
     for calcdir in calcdir_list:
         tote = 0
@@ -70,7 +80,7 @@ def get_optimized_latt_const(casename, optdir, reference_struct):
         h_struct = open(casename+'.struct','r')
         for i, line in enumerate(h_struct):
             if i == 3:
-                lattconst_list.append(float(line.split()))
+                lattconst_list.append([float(x) for x in line.split()])
             elif i >= 4:
                 break
         h_struct.close()
@@ -106,16 +116,19 @@ def get_optimized_latt_const(casename, optdir, reference_struct):
         b_opt = b_ref * optratio
         c_opt = c_ref * optratio
 
+    print("    Optimized value: %10.6f" % optval)
+    print("    Init. latt. const.: %10.6f%10.6f%10.6f" % (a_ref, b_ref, c_ref))
+    print("    Optd. latt. const.: %10.6f%10.6f%10.6f" % (a_opt, b_opt, c_opt))
     return a_opt, b_opt, c_opt
 
 
 def rewrite_latt_const(a, b, c, struct_old, struct_new):
-    with open(struct_old, 'w') as h_s_old:
+    with open(struct_old, 'r') as h_s_old:
         lines = h_s_old.readlines()
 
     lines[3] = "%10.6f%10.6f%10.6f%10.6f%10.6f%10.6f\n" % (a,b,c,90,90,90)
 
-    with open(struct_new, 'r') as h_s_new:
+    with open(struct_new, 'w') as h_s_new:
         for line in lines:
             h_s_new.write(line)
 
@@ -166,6 +179,7 @@ def Main(ArgList):
     parser.add_argument("--ecut", dest="ecut", help="Core-valence splitting in init_lapw. Default: -8.0 (Ry)", type=float, default=-8.0)
     parser.add_argument("--ccmd", dest="f_calccmd", help="file containing calculation command. Default: run_lapw -ec 0.000001", default=None)
     parser.add_argument("--save", dest="savelapwdname", help="Naming of the directory of savelapw command. Mustn't have space", default=None)
+    parser.add_argument("-D", dest="debug",help="flag for debug mode.", action="store_true")
 
     opts = parser.parse_args()
 
@@ -190,15 +204,31 @@ def Main(ArgList):
     coa_options = ['-t','3','--run','-n','7','-s','-6','-e','6']
     vol_options = ['-t','1','--run','-n','9','-s','-8','-e','8']
 
+    refined_ArgList = ArgList
+    # remove the options that pw_init_optimize_job does not have
+    # explicitly, --vxc, --nkp, --ecut
+    for opt in ['--vxc','--nkp','--ecut']:
+        if opt in refined_ArgList:
+            opt_index = refined_ArgList.index(opt)
+            # delete the tag
+            del refined_ArgList[opt_index]
+            # delete the value
+            del refined_ArgList[opt_index]
+
+    # change the cal_ccmd file to the absolute path
+    if '--ccmd' in refined_ArgList:
+        ccmd_index = refined_ArgList.index('--ccmd')
+        refined_ArgList[ccmd_index+1] = os.path.abspath(opts.f_calccmd)
+
     # set the batch init_lapw command
-    init_lapw_cmd = 'init_lapw -b' + ' -ecut %s'%opts.ecut + ' -vxc %s'%opts.vxc + ' -nkp %s'%opts.nkp
+    init_lapw_cmd = 'init_lapw -b' + ' -ecut %s'%opts.ecut + ' -vxc %s'%opts.vxc + ' -numk %s'%opts.nkp
 
     try:
         assert opts.nrounds > 0
     except:
         raise ValueError("nrounds should be positive.")
 
-    return
+    #return
 
     for i in xrange(opts.nrounds):
         round_dir = 'round-%s'%(i+1)
@@ -219,17 +249,17 @@ def Main(ArgList):
         # perform b/a optimization
         print("Start optimization Round %d" % (i+1))
         print("  Type: boa")
-        perform_optimization(casename, 'boa', init_lapw_cmd, ArgList.extend(boa_options), \
+        perform_optimization(casename, 'boa', init_lapw_cmd, refined_ArgList.extend(boa_options), \
                              case_round_init_struct, case_boa_optd_struct)
 
         # perform c/a optimization
         print("  Type: coa")
-        perform_optimization(casename, 'coa', init_lapw_cmd, ArgList.extend(coa_options), \
+        perform_optimization(casename, 'coa', init_lapw_cmd, refined_ArgList.extend(coa_options), \
                              case_boa_optd_struct, case_coa_optd_struct)
 
         # perform EOS calculation with fixed abc ratio
         print("  Type: vol")
-        perform_optimization(casename, 'vol', init_lapw_cmd, ArgList.extend(vol_options), \
+        perform_optimization(casename, 'vol', init_lapw_cmd, refined_ArgList.extend(vol_options), \
                              case_coa_optd_struct, case_round_optd_struct)
 
         # finish of one optimization round

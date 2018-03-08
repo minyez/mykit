@@ -106,7 +106,7 @@ def vasp_anal_fit_EOS(name_ifile='Ener_Vol',nfu=1,eostype='BM',fixBp=False):
         data = [ np.array(vol), np.array(ene) ]
         return data
 
-    read_Ener_Vol(name_ifile,nfu)
+    data = read_Ener_Vol(name_ifile,nfu)
 
     if eostype == 'BM':
     # initialize fitting parameter
@@ -127,7 +127,7 @@ def vasp_anal_fit_EOS(name_ifile='Ener_Vol',nfu=1,eostype='BM',fixBp=False):
                 raise "B' should be fixed with a float value"
             Bp = args.f
             popt, pcov = curve_fit(lambda V,E0,V0,B0: BMEOS(V,E0,V0,B0,Bp), data[0],data[1], p0 = [E0,V0,B0])
-        opt_para = [popt[0], popt[1], popt[2]*eVpA32GPa, popt[3]]
+        opt_para = [popt[0], popt[1], popt[2], popt[3]]
 # need to modify to output the errors
 # return a list containing optimized parameters
     return opt_para
