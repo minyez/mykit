@@ -27,11 +27,14 @@ def pw_init_optimize_job(ArgList):
     parser.add_argument("-e", dest="ed", help="ending value. Integer",type=int, default=10)
     parser.add_argument("--ccmd", dest="f_calccmd", help="file containing calculation command. Default: run_lapw -ec 0.000001", default=None)
     parser.add_argument("--save", dest="savelapwdname", help="Naming of the directory of savelapw command. Mustn't have space", default=None)
-    parser.add_argument("-D", dest="debug", help="debug mode",action='store_true')
     parser.add_argument("--run", dest="f_run", help="flag for running the optimization",action='store_true')
+    parser.add_argument("-D", dest="debug", help="debug mode",action='store_true')
     
-    opts = parser.parse_args()
-    
+    opts = parser.parse_args(ArgList[1:])
+   
+    if opts.debug:
+        print(ArgList)
+
     if opts.casename == None:
         casename = Get_Basename() 
     else:

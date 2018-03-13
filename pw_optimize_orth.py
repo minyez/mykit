@@ -17,10 +17,12 @@ from shutil import copy2
 from argparse import ArgumentParser
 from pw_anal_utils import Get_Casename
 from pw_init_opt import pw_init_optimize_job
-from pv_calc_utils import common_io_checkdir
+from pv_calc_utils import common_io_cleandir
 from pv_anal_utils import vasp_anal_fit_EOS
+from pw_para import pw_gen_machine_files
 
-def get_optimized_latt_const(casename, optdir, reference_struct):
+
+def get_optimized_latt_const(casename, optdir, reference_struct, target_scale=1.0):
     '''
     use equation of state to get the optimized boa/coa/vol
     casename: the casename
@@ -119,6 +121,16 @@ def get_optimized_latt_const(casename, optdir, reference_struct):
     print("    Optimized value: %10.6f" % optval)
     print("    Init. latt. const.: %10.6f%10.6f%10.6f" % (a_ref, b_ref, c_ref))
     print("    Optd. latt. const.: %10.6f%10.6f%10.6f" % (a_opt, b_opt, c_opt))
+
+    if (optdir == 'vol') and (target_scale != 1.0):
+        a_scale = target_scale**(1./3.)
+        a_opt *= a_scale
+        b_opt *= a_scale
+        c_opt *= a_scale
+        print("    ATTENTION: Using volume scaling:  %8.4f"  % target_scale)
+        print("                     lattice scaling: %10.6f" % a_scale)
+        print("    Scal. latt. const.: %10.6f%10.6f%10.6f" % (a_opt, b_opt, c_opt))
+
     return a_opt, b_opt, c_opt
 
 
@@ -133,7 +145,7 @@ def rewrite_latt_const(a, b, c, struct_old, struct_new):
             h_s_new.write(line)
 
 
-def perform_optimization(casename, optdir, init_lapw_cmd, options, starting_struct, optimized_struct):
+def perform_optimization(casename, optdir, init_lapw_cmd, init_opt_ArgList, starting_struct, optimized_struct, nproc=1, target_scale=1.0):
     '''
     casename
     optdir: boa, coa or vol, corresponding to optimization of b/a, c/a and volume
@@ -143,16 +155,20 @@ def perform_optimization(casename, optdir, init_lapw_cmd, options, starting_stru
     optimized_struct: the path to save the optimized structure
     '''
     os.chdir(optdir)
-    common_io_checkdir(casename)
+    common_io_cleandir(casename)
     copy2('../'+starting_struct, casename+'/'+casename+'.struct')
     os.chdir(casename)
 
+    para_ArgList = ['pycmd','-n',str(nproc),'-f',casename]
+
     # init_lapw
     sp.check_output(init_lapw_cmd, stderr=sp.STDOUT, shell=True)
-    pw_init_optimize_job(options)
+    if nproc != 1:
+        pw_gen_machine_files(para_ArgList)
+    pw_init_optimize_job(init_opt_ArgList)
 
     # get the optimized lattice constants for the particular type of optimization
-    a, b, c = get_optimized_latt_const(casename, optdir, '../../'+starting_struct)
+    a, b, c = get_optimized_latt_const(casename, optdir, '../../'+starting_struct, target_scale)
     # rewrite the lattice constants in the struct file and save to a new one
     rewrite_latt_const(a, b, c, '../../'+starting_struct, '../../'+optimized_struct)
 
@@ -160,6 +176,9 @@ def perform_optimization(casename, optdir, init_lapw_cmd, options, starting_stru
 
 
 def Main(ArgList):
+    '''
+    TODO: restart the optimization from a particular round, default is the last round
+    '''
     
     description='''
     Optimize an orthnormbic lattice with MSR1a method for minimization of inner coordinates.
@@ -174,14 +193,28 @@ def Main(ArgList):
     parser = ArgumentParser(description=description)
     parser.add_argument("-c", dest="casename", help="Case name", default=None)
     parser.add_argument("-n", dest="nrounds", help="The maximum number of optimization rounds",type=int, default=1)
+    parser.add_argument("-v", dest="target_volume", help="The target volume for shape optimization, e.g. -4.0 will set the volume to 1.04x the optimized volume. Avoid absolute value smaller than 1.0",type=float, default=0.0)
     parser.add_argument("--vxc", dest="vxc", help="XC functional to use. Default: 13 (XC_PBE)", type=int, default=13)
     parser.add_argument("--nkp", dest="nkp", help="Total number of k-points in BZ", type=int, default=1000)
+    parser.add_argument("--rest", dest="restart", help="Restart from specified round", type=int, default=0)
+    parser.add_argument("--para", dest="nproc", help="Number of processors for parallel calculation. Default 1", type=int, default=1)
     parser.add_argument("--ecut", dest="ecut", help="Core-valence splitting in init_lapw. Default: -8.0 (Ry)", type=float, default=-8.0)
     parser.add_argument("--ccmd", dest="f_calccmd", help="file containing calculation command. Default: run_lapw -ec 0.000001", default=None)
     parser.add_argument("--save", dest="savelapwdname", help="Naming of the directory of savelapw command. Mustn't have space", default=None)
-    parser.add_argument("-D", dest="debug",help="flag for debug mode.", action="store_true")
+    parser.add_argument("-D", dest="debug",help="Flag for debug mode", action="store_true")
 
-    opts = parser.parse_args()
+    opts = parser.parse_args(ArgList[1:])
+
+    ArgList_para_not_in_init_optimize_job = ['--vxc','--ecut','--nkp','--rest','--para','-v','-n'] 
+
+    # absolute value of target_volume smaller than target_volume_shres will be discarded
+    # and 1.0 will be set for target_scale
+    target_volume_shres = 1.0
+
+    if abs(opts.target_volume)<target_volume_shres:
+        target_scale=1.0
+    else:
+        target_scale= 1.0 + opts.target_volume/100
 
     if opts.casename is None:
         casename = Get_Casename()
@@ -198,6 +231,14 @@ def Main(ArgList):
         print("ERROR: %s.struct is not found. Exit" % casename)
         sys.exit(1)
 
+    # record the optimization options in file_options
+    file_options = 'pw_opt_orth.options'
+    if os.path.exists(file_options):
+        copy2(file_options,file_options+'.old')
+    with open(file_options,'w') as h_options:
+        h_options.write(' '.join(ArgList))
+
+
     # use a smaller number of structures (7) in b/a and c/a calculations
     # to avoid NN error (touching spheres)
     boa_options = ['-t','4','--run','-n','7','-s','-6','-e','6']
@@ -206,8 +247,7 @@ def Main(ArgList):
 
     refined_ArgList = ArgList
     # remove the options that pw_init_optimize_job does not have
-    # explicitly, --vxc, --nkp, --ecut
-    for opt in ['--vxc','--nkp','--ecut']:
+    for opt in ArgList_para_not_in_init_optimize_job:
         if opt in refined_ArgList:
             opt_index = refined_ArgList.index(opt)
             # delete the tag
@@ -228,12 +268,15 @@ def Main(ArgList):
     except:
         raise ValueError("nrounds should be positive.")
 
-    #return
+    try:
+        assert opts.restart >= 0
+    except:
+        raise ValueError("The round to restart should be non-negative.")
 
-    for i in xrange(opts.nrounds):
+    for i in xrange(opts.restart, opts.restart+opts.nrounds):
         round_dir = 'round-%s'%(i+1)
         round_dir_prev = 'round-%s'%i
-        common_io_checkdir(round_dir)
+        common_io_cleandir(round_dir)
 
         if i == 0:
             copy2(case_struct,round_dir+'/'+case_round_init_struct)
@@ -242,25 +285,26 @@ def Main(ArgList):
                   round_dir+'/'+case_round_init_struct)
 
         os.chdir(round_dir)
-        common_io_checkdir('boa')
-        common_io_checkdir('coa')
-        common_io_checkdir('vol')
+        common_io_cleandir('boa')
+        common_io_cleandir('coa')
+        common_io_cleandir('vol')
         
         # perform b/a optimization
         print("Start optimization Round %d" % (i+1))
         print("  Type: boa")
-        perform_optimization(casename, 'boa', init_lapw_cmd, refined_ArgList.extend(boa_options), \
-                             case_round_init_struct, case_boa_optd_struct)
+        perform_optimization(casename, 'boa', init_lapw_cmd, refined_ArgList + boa_options, \
+                             case_round_init_struct, case_boa_optd_struct, nproc=opts.nproc)
 
         # perform c/a optimization
         print("  Type: coa")
-        perform_optimization(casename, 'coa', init_lapw_cmd, refined_ArgList.extend(coa_options), \
-                             case_boa_optd_struct, case_coa_optd_struct)
+        perform_optimization(casename, 'coa', init_lapw_cmd, refined_ArgList + coa_options, \
+                             case_boa_optd_struct, case_coa_optd_struct, nproc=opts.nproc)
 
         # perform EOS calculation with fixed abc ratio
         print("  Type: vol")
-        perform_optimization(casename, 'vol', init_lapw_cmd, refined_ArgList.extend(vol_options), \
-                             case_coa_optd_struct, case_round_optd_struct)
+        perform_optimization(casename, 'vol', init_lapw_cmd, refined_ArgList + vol_options, \
+                             case_coa_optd_struct, case_round_optd_struct, nproc=opts.nproc, \
+                             target_scale=target_scale)
 
         # finish of one optimization round
         print("Finish optimization Round %d" % (i+1))
