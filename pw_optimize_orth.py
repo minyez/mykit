@@ -201,11 +201,13 @@ def Main(ArgList):
     parser.add_argument("--ecut", dest="ecut", help="Core-valence splitting in init_lapw. Default: -8.0 (Ry)", type=float, default=-8.0)
     parser.add_argument("--ccmd", dest="f_calccmd", help="file containing calculation command. Default: run_lapw -ec 0.000001", default=None)
     parser.add_argument("--save", dest="savelapwdname", help="Naming of the directory of savelapw command. Mustn't have space", default=None)
+    parser.add_argument("--eos", dest="f_eos",help="Flag for equation-of-state mode, i.e. the volume optimization is skipped", action="store_true")
     parser.add_argument("-D", dest="debug",help="Flag for debug mode", action="store_true")
 
     opts = parser.parse_args(ArgList[1:])
 
     ArgList_para_not_in_init_optimize_job = ['--vxc','--ecut','--nkp','--rest','--para','-v','-n'] 
+    ArgList_opt_not_in_init_optimize_job  = ['--eos']
 
     # absolute value of target_volume smaller than target_volume_shres will be discarded
     # and 1.0 will be set for target_scale
@@ -255,6 +257,12 @@ def Main(ArgList):
             # delete the value
             del refined_ArgList[opt_index]
 
+    for opt in ArgList_opt_not_in_init_optimize_job:
+        if opt in refined_ArgList:
+            opt_index = refined_ArgList.index(opt)
+            # delete the tag
+            del refined_ArgList[opt_index]
+
     # change the cal_ccmd file to the absolute path
     if '--ccmd' in refined_ArgList:
         ccmd_index = refined_ArgList.index('--ccmd')
@@ -300,11 +308,15 @@ def Main(ArgList):
         perform_optimization(casename, 'coa', init_lapw_cmd, refined_ArgList + coa_options, \
                              case_boa_optd_struct, case_coa_optd_struct, nproc=opts.nproc)
 
-        # perform EOS calculation with fixed abc ratio
-        print("  Type: vol")
-        perform_optimization(casename, 'vol', init_lapw_cmd, refined_ArgList + vol_options, \
-                             case_coa_optd_struct, case_round_optd_struct, nproc=opts.nproc, \
-                             target_scale=target_scale)
+        if not opts.f_eos:
+            # perform EOS calculation with fixed abc ratio
+            print("  Type: vol")
+            perform_optimization(casename, 'vol', init_lapw_cmd, refined_ArgList + vol_options, \
+                                 case_coa_optd_struct, case_round_optd_struct, nproc=opts.nproc, \
+                                 target_scale=target_scale)
+        else:
+            print("  Equation-of-State set, skip volume optimization.")
+            copy2(case_coa_optd_struct, case_round_optd_struct)
 
         # finish of one optimization round
         print("Finish optimization Round %d" % (i+1))

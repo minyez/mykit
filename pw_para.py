@@ -76,7 +76,7 @@ def pw_gen_machine_files(ArgList):
         with open('.machines','w') as f:
             for x in kptlist:
                 f.write(x+':'+hostname+'\n')
-            f.write("\ngranularity:1\nextrafine:1\n")
+            f.write("\ngranularity:1\nextrafine:1")
     
     remove_machine()
 
