@@ -159,7 +159,7 @@ def perform_optimization(casename, optdir, init_lapw_cmd, init_opt_ArgList, star
     copy2('../'+starting_struct, casename+'/'+casename+'.struct')
     os.chdir(casename)
 
-    para_ArgList = ['pycmd','-n',str(nproc),'-f',casename]
+    para_ArgList = ['void_python_cmd','-n',str(nproc),'-f',casename]
 
     # init_lapw
     sp.check_output(init_lapw_cmd, stderr=sp.STDOUT, shell=True)
@@ -173,6 +173,17 @@ def perform_optimization(casename, optdir, init_lapw_cmd, init_opt_ArgList, star
     rewrite_latt_const(a, b, c, '../../'+starting_struct, '../../'+optimized_struct)
 
     os.chdir('../..')
+
+def perform_test_diff(casename, final_round_name, init_lapw_cmd, starting_struct, optimized_struct, nproc=1):
+
+    testdir = "testdiff"
+    initdir = "init"
+    optddir = "optd"
+    
+    os.mkdir(testdir)
+
+    dict_dir_struct = {initdir: starting_struct, optddir: optimized_struct}
+
 
 
 def Main(ArgList):
@@ -196,7 +207,8 @@ def Main(ArgList):
     parser.add_argument("-v", dest="target_volume", help="The target volume for shape optimization, e.g. -4.0 will set the volume to 1.04x the optimized volume. Avoid absolute value smaller than 1.0",type=float, default=0.0)
     parser.add_argument("--vxc", dest="vxc", help="XC functional to use. Default: 13 (XC_PBE)", type=int, default=13)
     parser.add_argument("--nkp", dest="nkp", help="Total number of k-points in BZ", type=int, default=1000)
-    parser.add_argument("--rest", dest="restart", help="Restart from specified round", type=int, default=0)
+    parser.add_argument("--rest", dest="restart", help="Restart from specified round. Default 0", type=int, default=0)
+    parser.add_argument("--endt", dest="f_testdiff", help="Flag for static calculation testing the difference in the initial and optimized structure in the final round. NOT DONE YET", action="store_true")
     parser.add_argument("--para", dest="nproc", help="Number of processors for parallel calculation. Default 1", type=int, default=1)
     parser.add_argument("--ecut", dest="ecut", help="Core-valence splitting in init_lapw. Default: -8.0 (Ry)", type=float, default=-8.0)
     parser.add_argument("--ccmd", dest="f_calccmd", help="file containing calculation command. Default: run_lapw -ec 0.000001", default=None)
@@ -207,7 +219,7 @@ def Main(ArgList):
     opts = parser.parse_args(ArgList[1:])
 
     ArgList_para_not_in_init_optimize_job = ['--vxc','--ecut','--nkp','--rest','--para','-v','-n'] 
-    ArgList_opt_not_in_init_optimize_job  = ['--eos']
+    ArgList_opt_not_in_init_optimize_job  = ['--eos','--endt']
 
     # absolute value of target_volume smaller than target_volume_shres will be discarded
     # and 1.0 will be set for target_scale
@@ -274,7 +286,7 @@ def Main(ArgList):
     try:
         assert opts.nrounds > 0
     except:
-        raise ValueError("nrounds should be positive.")
+        print("WARNING: non-positive nrounds is set, skip optimization")
 
     try:
         assert opts.restart >= 0
@@ -322,6 +334,10 @@ def Main(ArgList):
         print("Finish optimization Round %d" % (i+1))
         os.chdir('..')
 
+    if opts.f_testdiff:
+    # calculate the final optimized structure
+        perform_test_diff(casename, round_dir, init_lapw_cmd, \
+                          case_round_init_struct, case_round_optd_struct, opts.nproc)
 
 # ==============================
 
