@@ -25,7 +25,7 @@ def read_atom_info(poscar='POSCAR'):
     atom_type_list = []
     natoms_list = []
     with open(poscar,'r') as h_poscar:
-        for i in xrange(8):
+        for i in range(8):
             line = h_poscar.readline()
             if i == 5:
                 atom_type_list = line.split()
@@ -42,10 +42,10 @@ def read_doscar(dosfile='DOSCAR'):
     with open(dosfile,'r') as h_dos:
         doslines = h_dos.readlines()
     # split lines
-    for i in xrange(len(doslines)):
+    for i in range(len(doslines)):
         doslines[i] = doslines[i].split()
 
-    # the first 5 lines includes the number of atoms, the number of energy grids,
+    # the first 5 lines include the number of atoms, the number of energy grids,
     # the coordinate system and the name of the system
     natoms_tot = int(doslines[0][0])
     nedos = int(doslines[5][2])
@@ -63,8 +63,10 @@ def read_doscar(dosfile='DOSCAR'):
     # total DOS
     total_dos = []
     if ispin == 1:
+    # total_dos is a single 1d numpy array for spin-unpolarized calculation
         total_dos = [float(x[1]) for x in doslines[6:6+nedos]]
     else:
+    # total_dos is a nx2 numpy array for spin-polarized calculation
         for x in doslines[6:6+nedos]:
             total_dos.append([float(x[1]), float(x[2])]) 
 
@@ -72,7 +74,7 @@ def read_doscar(dosfile='DOSCAR'):
 
     pdos = []
 
-    for iatom in xrange(natoms_tot):
+    for iatom in range(natoms_tot):
         pdos_atom = []
         for line in doslines[6+(iatom+1)*(nedos+1):6+(iatom+2)*(nedos+1)-1]:
             pdos_atom.append([float(x) for x in line[1:]])
@@ -89,7 +91,7 @@ def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fe
 
     ntype = len(natoms_list)
     nedos = len(energy_grid)
-    atom_start_line = [sum(natoms_list[:iatom]) for iatom in xrange(ntype)]
+    atom_start_line = [sum(natoms_list[:iatom]) for iatom in range(ntype)]
 
     # set fermi level to energy zero
     energy_grid = energy_grid - fermi_level
@@ -98,9 +100,9 @@ def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fe
     pdos_shape = pdos[0].shape
 
     # sum over atoms
-    for itype in xrange(ntype):
+    for itype in range(ntype):
         dos_sum_in_atom = np.zeros(pdos_shape, dtype='float64')
-        for iatom in xrange(atom_start_line[itype], atom_start_line[itype]+natoms_list[itype]):
+        for iatom in range(atom_start_line[itype], atom_start_line[itype]+natoms_list[itype]):
             dos_sum_in_atom = np.add(dos_sum_in_atom, pdos[iatom])
         list_dos_sum_in_atom.append(dos_sum_in_atom)
 
@@ -113,18 +115,18 @@ def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fe
     # s-up, p-up, d-up, f-up, ..., s-dn, p-dn, d-dn, f-dn, ...
     list_dos_sum_in_atom_and_m = []
 
-    for itype in xrange(ntype):
+    # sum up according to the type of atom
+    for itype in range(ntype):
         if ispin == 1:
             dos_sum_in_atom_and_m = []
-            for l in xrange(lmax+1):
+            for l in range(lmax+1):
                 temp_array = list_dos_sum_in_atom[itype][:,l*l:l*l+2*l+1].sum(axis=1)
                 dos_sum_in_atom_and_m.append(temp_array)
             dos_sum_in_atom_and_m = np.array(dos_sum_in_atom_and_m).transpose()
-            #print(dos_sum_in_atom_and_m)
             list_dos_sum_in_atom_and_m.append(dos_sum_in_atom_and_m)
         elif ispin == 2:
             dos_sum_in_atom_and_m = []
-            for l in xrange(lmax+1):
+            for l in range(lmax+1):
                 # spin up
                 temp_array = list_dos_sum_in_atom[itype][:,2*l*l:2*l*l+(2*l+1)*2:2].sum(axis=1)
                 dos_sum_in_atom_and_m.append(temp_array)
@@ -132,7 +134,6 @@ def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fe
                 temp_array = list_dos_sum_in_atom[itype][:,2*l*l+1:2*l*l+1+(2*l+1)*2:2].sum(axis=1)
                 dos_sum_in_atom_and_m.append(temp_array)
             dos_sum_in_atom_and_m = np.array(dos_sum_in_atom_and_m).transpose()
-            #print(dos_sum_in_atom_and_m)
             list_dos_sum_in_atom_and_m.append(dos_sum_in_atom_and_m)
 
     # export to dos.dat if ISPIN=1
@@ -142,15 +143,17 @@ def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fe
         with open('dos.dat','w') as h_dos:
             # write header
             h_dos.write("#energy    ")
-            for itype in xrange(ntype):
-                for l in xrange(lmax+1):
+            h_dos.write("        tot")
+            for itype in range(ntype):
+                for l in range(lmax+1):
                     h_dos.write("       %2s-%1s" % (atom_type_list[itype], l_dict[l]))
             h_dos.write("\n")
 
-            for i in xrange(nedos):
+            for i in range(nedos):
                 h_dos.write("%11.6f" % energy_grid[i])
-                for itype in xrange(ntype):
-                    for l in xrange(lmax+1):
+                h_dos.write("%11.6f" % total_dos[i])
+                for itype in range(ntype):
+                    for l in range(lmax+1):
                         h_dos.write("%11.6f" % list_dos_sum_in_atom_and_m[itype][i][l])
                 h_dos.write("\n")
 
