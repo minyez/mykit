@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys, os
 from shutil import copy2
 from argparse import ArgumentParser
@@ -17,7 +18,7 @@ def step_1_scf(chg_dir, tag_xc, encut, nks,\
     if not os.path.exists(chg_dir):
         common_io_checkdir(chg_dir)
     else:
-        print "Charge calculation done before. Restart"
+        print("Charge calculation done before. Restart")
         common_io_cleandir(chg_dir)
     copy2('POSCAR', chg_dir)
     copy2('POTCAR', chg_dir)
@@ -31,7 +32,12 @@ def step_1_scf(chg_dir, tag_xc, encut, nks,\
 
     vasp_write_kpoints_basic(nks)
     vasp_vasprun_zmy(vasp_cmd,'out','error')
+    # get the maximum number of planewaves
+    mnpw = vasp_anal_get_outcar('mnpw')
     os.chdir('..')
+    return mnpw
+
+# ==================================================
 
 # Step 2: non-self-consistent calculation of unoccupied orbitals
 def step_2_exact(chg_dir, exact_dir, tag_xc, encut, nks, nks_gw, nbands, nedos, lwannier,\
@@ -60,6 +66,8 @@ def step_2_exact(chg_dir, exact_dir, tag_xc, encut, nks, nks_gw, nbands, nedos, 
 
     vasp_vasprun_zmy(vasp_cmd,'out','error')
     os.chdir('..')
+
+# ==================================================
 
 # Step 3: GW calculation
 def step_3_gw(exact_dir,gw_dir,tag_xc,encut,nbands,nedos,nomega,lwannier,\
@@ -129,22 +137,24 @@ def Main(ArgList):
     nks = opts.nk
     nks_gw = opts.nk_gw
     if opts.debug:
-        print nks
-        print nks_gw
+        print(nks)
+        print(nks_gw)
         sys.exit(0)
     if opts.nbands is not None:
         nbands = opts.nbands
     else:
 # setting default, i.e. 8 times the number of atoms times nproc
-        poscar = vasp_read_poscar()
-        nbands = 8*poscar.natoms*opts.nproc
+# DEPRECATED
+#        poscar = vasp_read_poscar()
+#        nbands = 8*poscar.natoms*opts.nproc
+        nbands = 0
 
     testmode = None
     if opts.testmode is not None:
         if opts.testmode.upper() in testmode_avail:
             testmode = opts.testmode.upper()
         else:
-            print "%s is not supported now. Test mode off." % opts.testmode
+            print("%s is not supported now. Test mode off." % opts.testmode)
 
 # grid of density of states
     nedos = 3000
@@ -156,29 +166,31 @@ def Main(ArgList):
 # ================== End Parser =========================
 
 # 1) run an SCF-calculation for the charge density
-    print "== Step 1: SCF for charge density =="
+    print("== Step 1: SCF for charge density ==")
 #     if CHGCAR does not exist but want to start from CHGCAR, report error
     if not os.path.exists(chg_dir) and opts.chg_start:
-        print "Charge has not yet been calculated. Exit."
+        print("Charge has not yet been calculated. Exit.")
         sys.exit(1)
 #     if CHGCAR calculated and you do not want to start from SCF
     elif os.path.exists(chg_dir+'/CHGCAR') and not opts.chg_start:
-        print "Charge calculation done. Move on"
-        print "(Hint: Better check past setting of ENCUT and k-points)"
+        print("Charge calculation done. Move on")
+        print("(Hint: Better check past setting of ENCUT and k-points)")
 #     CHGCAR do not exist, or want to redo CHGCAR calculation
     else:
-        step_1_scf(chg_dir, tag_xc=opts.tag_xc, encut=opts.encut, nks=nks, npar=npar,\
+        mnpw = step_1_scf(chg_dir, tag_xc=opts.tag_xc, encut=opts.encut, nks=nks, npar=npar,\
                   vasp_cmd=vasp_cmd, f_metal=opts.f_metal, lmm=lmm, smear=[0, 0.05])
+        if nbands == 0:
+            nbands = mnpw
 
 # IF testmode is not set
     if not testmode:
 # 2) run a non-SCF calculation to get desired number of bands
 # 3) run a GW calculation with WAVECAR and WAVEDER from Step 2
-        print "== Step 2: Non-SCF for unc. bands =="
+        print("== Step 2: Non-SCF for unc. bands ==")
         step_2_exact(chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands,nedos,lwannier=opts.lwannier,\
                  npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
 
-        print "== Step 3: GW                     =="
+        print("== Step 3: GW                     ==")
         step_3_gw(exact_dir,gw_dir,opts.tag_xc,opts.encut,nbands=nbands,nedos=nedos,nomega=opts.nomega,\
                   lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
 
@@ -198,10 +210,10 @@ def Main(ArgList):
                 nbands_list.append(nbands_ori)
 
         for nb in nbands_list:
-            print "== Step 2: Non-SCF for unc. bands =="
+            print("== Step 2: Non-SCF for unc. bands ==")
             step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=nb,nedos=nedos,\
                     lwannier=opts.lwannier, npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
-            print "== Step 3:    GW   BANDS:%5s    ==" % nb
+            print("== Step 3:    GW   BANDS:%5s    ==" % nb)
             step_3_gw(exact_dir,gw_dir+'_nb_'+str(nb),opts.tag_xc,opts.encut,nbands=nb,nedos=nedos,nomega=opts.nomega,\
                   lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
 
@@ -231,12 +243,12 @@ def Main(ArgList):
         copy2('POSCAR',conv_egw_dir)
         copy2('POTCAR',conv_egw_dir)
         os.chdir(conv_egw_dir)
-        print "== Step 2: Non-SCF for unc. bands =="
+        print("== Step 2: Non-SCF for unc. bands ==")
         step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=nbands,nedos=nedos,lwannier=opts.lwannier,\
                  npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
         egw_list = [encut/10.0*x for x in xrange(1,7)] # up to half of the ENCUT
         for egw in egw_list:
-            print "== Step 3:    GW ENCUTGW:%7.1f  ==" % egw
+            print("== Step 3:    GW ENCUTGW:%7.1f  ==" % egw)
             step_3_gw(exact_dir,gw_dir+'_egw_'+str(int(egw)),opts.tag_xc,opts.encut,nbands=nbands,nedos=nedos,encutgw=egw,nomega=opts.nomega,\
                   lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
 
