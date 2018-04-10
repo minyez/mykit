@@ -83,19 +83,19 @@ def common_read_chemical_formula(chem_formula, debug=False):
     return atom_type, natom_list
             
 
-
-# ==============================
-
-if __name__ == "__main__":
-    if len(sys.argv) > 3:
-        print("Error: too many argumetns. Need the chemical formula only, e.g. Si1O2")
-        sys.exit(1)
-    elif len(sys.argv) == 3:
-        common_read_chemical_formula(sys.argv[1], debug=sys.argv[2])
-    elif len(sys.argv) == 2:
-        common_read_chemical_formula(sys.argv[1])
-    elif len(sys.argv) == 1:
-        # print a simple help
-        print("Usage: pc_readce.py chem_formula [debug]")
-        sys.exit(2)
-
+#
+## ==============================
+#
+#if __name__ == "__main__":
+#    if len(sys.argv) > 3:
+#        print("Error: too many argumetns. Need the chemical formula only, e.g. Si1O2")
+#        sys.exit(1)
+#    elif len(sys.argv) == 3:
+#        common_read_chemical_formula(sys.argv[1], debug=sys.argv[2])
+#    elif len(sys.argv) == 2:
+#        common_read_chemical_formula(sys.argv[1])
+#    elif len(sys.argv) == 1:
+#        # print a simple help
+#        print("Usage: pc_readce.py chem_formula [debug]")
+#        sys.exit(2)
+#

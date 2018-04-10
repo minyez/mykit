@@ -65,8 +65,8 @@ def pc_sync_mykit(ArgList):
     rsync_cmd = "rsync -qazru --inplace "
     local_mykit_path = os.path.dirname(os.path.abspath(__file__))
 
-    print(supercomputer_sites)
-    print(local_mykit_path)
+    #print(supercomputer_sites)
+    #print(local_mykit_path)
 
     for site in supercomputer_sites:
         pc_test_connection(site)

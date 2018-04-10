@@ -2,6 +2,7 @@
 *.pyc
 *.swp
 *.o
+# ignore the test files
 POTCAR
 POSCAR
 KPOINTS
@@ -10,4 +11,6 @@ INCAR*
 *.sh
 optimize.job
 test.py
+
+# ignore private files
 scsites
