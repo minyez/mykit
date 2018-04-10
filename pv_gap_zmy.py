@@ -2,6 +2,7 @@
 #
 # a simple script to get fundamental gap and k-point-averaged band gap
 
+from __future__ import print_function
 from pv_anal_utils import vasp_anal_get_gap,vasp_anal_read_eigen,\
                           vasp_anal_get_kavgap
 from argparse import ArgumentParser
@@ -19,7 +20,7 @@ def Main(ArgList):
 
     parser = ArgumentParser(description=description)
     parser.add_argument("-D",dest='debug',help="flag for debug mode",action='store_true')
-    parser.add_argument("-k",dest='kav',help="flag for print k-averaged gap",action='store_true')
+    parser.add_argument("-k",dest='kav',help="flag for print( k-averaged gap",action='store_true')
     parser.add_argument("-v",dest='vb',help="the index of valence band",type=int,default=0)
     parser.add_argument("-c",dest='cb',help="the index of conduction band",type=int,default=0)
     parser.add_argument("-f",dest='fix_k',help="flag for k-point fixing mode for k-averaged gap. 0 for fixing VBM, 1 for fixing CBM ",type=int,default=-1)
@@ -39,7 +40,7 @@ def Main(ArgList):
     try:
         assert vb >= 0 and cb >= 0
     except AssertionError:
-        print "Invalid band index"
+        print( "Invalid band index")
         sys.exit(1)
 
     if vb == 0 and cb == 0:
@@ -64,12 +65,12 @@ def Main(ArgList):
     elif vb == cb:
         cb = cb + 1
     if vb > nelec/2:
-        print "Warning: dealing with two empty bands: %3i  %3i" % (vb,cb)
+        print( "Warning: dealing with two empty bands: %3i  %3i" % (vb,cb))
     if cb < nelec/2:
-        print "Warning: dealing with two occupied bands: %3i  %3i" % (vb,cb)
+        print( "Warning: dealing with two occupied bands: %3i  %3i" % (vb,cb))
 
     if vb == nelec/2 and cb == (nelec/2+1):
-        print "Calculate the minimal valence-conduction gap"
+        print( "Calculate the minimal valence-conduction gap")
     if opts.kav:
         kavgap = vasp_anal_get_kavgap(band_struct,vb,cb,fix_k=opts.fix_k,inv=opts.flag_inv,debug=opts.debug)
     else:

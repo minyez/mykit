@@ -10,3 +10,4 @@ INCAR*
 *.sh
 optimize.job
 test.py
+scsites
