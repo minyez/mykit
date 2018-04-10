@@ -20,7 +20,7 @@ import subprocess as sp
 import commands, string
 from argparse import ArgumentParser
 from math import sqrt
-from io_utils import *
+#from io_utils import *
 
 # ====================================================
 # need bugfix
