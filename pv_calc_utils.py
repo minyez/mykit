@@ -130,6 +130,7 @@ def vasp_io_set_XC_type(incar,tag_xc):
         'RPBE':   ' GGA = RP\n',
         'PBE0':   '%s' % tag_PBE0,
         'HSE06':  '%s HFSCREEN = 0.2\n' % tag_PBE0,
+        'HF':  '%s AEXX = 1.0\n' % tag_PBE0,
         'SCAN': ' METAGGA = SCAN\n',
         }
 

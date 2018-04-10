@@ -73,13 +73,14 @@ def pv_write_hf_sequence(nproc, vasp_path, incar_pre='INCAR_1', incar_coarse='IN
 
 def pv_prepare_hf_calculation(ArgList):
 
-    description = '''Prepare the input files and python executive script for an HSE06 hybrid functional caluclation.'''
+    description = '''Prepare the input files and python executive script for a hybrid functional caluclation (PBE0, HSE06, HF).'''
 
     parser = ArgumentParser(description=description)
     group1 = parser.add_mutually_exclusive_group()
 
     parser.add_argument("-e",dest='encut',type=int,default=0,help="Planewave cutoff. 0 will set largest ENMAX")
     parser.add_argument("-n",dest='nproc',type=int,default=1,help="Number of processors ")
+    parser.add_argument("-x",dest='tag_xc',default='HSE06',help="Type of hybrid functional. HSE06|PBE0|HF")
     parser.add_argument("-v",dest='vasp_path',default="vasp",help="Path of vasp executive")
     group1.add_argument("--nkred",dest='nkred',type=int,default=1,help="NKRED set in the coarse calculation of HF ")
     group1.add_argument("--nkredxyz",dest='nkredxyz',help="NKREDX/Y/Z set in the coarse calculation of HF, [X,Y,Z]")
@@ -96,16 +97,16 @@ def pv_prepare_hf_calculation(ArgList):
     with open('INCAR_1','w') as incar:
         vasp_write_incar_minimal_elec(incar,'PBE',encut=encut,npar=npar,spin=ispin)
     with open('INCAR_2','w') as incar:
-        vasp_write_incar_minimal_elec(incar,'HSE06',encut=encut,npar=npar,spin=ispin)
+        vasp_write_incar_minimal_elec(incar,opts.tag_xc,encut=encut,npar=npar,spin=ispin)
 
     copy2('INCAR_2','INCAR_3')
 
     vasp_io_change_tag('INCAR_2', 'PRECFOCK', new_val='FAST', backup=False)
     vasp_io_change_tag('INCAR_2', 'ISTART', new_val='1', backup=False)
     vasp_io_change_tag('INCAR_3', 'ISTART', new_val='1', backup=False)
+
     if opts.nkred != 1:
         vasp_io_change_tag('INCAR_2', 'NKRED', new_val=opts.nkred, backup=False)
-
     if opts.nkredxyz:
         try:
             string = opts.nkredxyz + 'str'
@@ -113,12 +114,11 @@ def pv_prepare_hf_calculation(ArgList):
             nkredxyz = [ int(x) for x in ' '.join(nkredxyz).split()]
 
             nkred_opt = ['NKREDX','NKREDY','NKREDZ']
-
             for i in range(3):
                 if nkredxyz[i] !=1 :
                     vasp_io_change_tag('INCAR_2', nkred_opt[i], new_val=nkredxyz[i], backup=False)
         except:
-            print(" Unsupported input of NKREDX/Y/Z")
+            print(" WARNING: Unsupported input of NKREDX/Y/Z. Pass")
 
     pv_write_hf_sequence(nproc=opts.nproc, vasp_path=opts.vasp_path)
 
