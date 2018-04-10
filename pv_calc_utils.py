@@ -109,7 +109,8 @@ def vasp_io_change_tag(name_ifile,tag,name_ofile='temp',new_val=None,n_val=1,rep
 
 # if replace is set or name_ofile is unset or names of ifile and ofile are the same, then save the ifile as ifile_bak and rename the ofile as ifile
     if replace or name_ofile == 'temp' or name_ifile == name_ofile:
-        if backup: os.rename(name_ifile,name_ifile+'_bak')
+        if backup:
+            os.rename(name_ifile,name_ifile+'_bak')
         os.rename(name_ofile,name_ifile)
 
 # ====================================================

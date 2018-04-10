@@ -86,10 +86,10 @@ def pw_init_optimize_job(ArgList):
         elif words[0].startswith('#'):
             continue
         else:
-    # write the calculation command from opts.f_calccmd
+            # write the calculation command from opts.f_calccmd
             if words[0] == "run_lapw":
                 lines_optjob[i] = ''.join(calccmd)
-    # change the directory of savelapw
+            # change the directory of savelapw
             elif words[0] == "save_lapw":
                 if opts.savelapwdname is not None:
                     lines_optjob[i] = "save_lapw -d ${i}_%s\n" % opts.savelapwdname
@@ -101,7 +101,8 @@ def pw_init_optimize_job(ArgList):
     with open('optimize.job','w') as h_optimize_new:
         for line in lines_optjob:
             h_optimize_new.write(line)
-    
+
+    # run the optimization
     if opts.f_run:
         fout = 'opt_type_%s.out' % opts.stype
         ferr = 'opt_type_%s.error' % opts.stype

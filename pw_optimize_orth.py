@@ -24,10 +24,12 @@ from pw_para import pw_gen_machine_files
 
 def get_optimized_latt_const(casename, optdir, reference_struct, target_scale=1.0):
     '''
-    use equation of state to get the optimized boa/coa/vol
-    casename: the casename
-    optdir: boa, coa or vol
-    reference_struct: the struct file to get the reference lattice constants
+    Use equation of state to get the optimized boa/coa/vol. Currently Birch-Murnaghan EOS
+
+    Parameters:
+        casename: the casename
+        optdir: boa, coa or vol
+        reference_struct: the struct file to get the reference lattice constants
     '''
     # get the reference lattice constants
     h_ref = open(reference_struct,'r')
@@ -147,12 +149,13 @@ def rewrite_latt_const(a, b, c, struct_old, struct_new):
 
 def perform_optimization(casename, optdir, init_lapw_cmd, init_opt_ArgList, starting_struct, optimized_struct, nproc=1, target_scale=1.0):
     '''
-    casename
-    optdir: boa, coa or vol, corresponding to optimization of b/a, c/a and volume
-    init_lapw_cmd: the batch command of init_lapw
-    options: options for performing the function pw_init_optimize_job
-    starting_struct: the path of the struct file to start
-    optimized_struct: the path to save the optimized structure
+    Parameters:
+        casename
+        optdir: boa, coa or vol, corresponding to optimization of b/a, c/a and volume
+        init_lapw_cmd: the batch command of init_lapw
+        init_opt_ArgList: options for performing the function pw_init_optimize_job
+        starting_struct: the path of the struct file to start
+        optimized_struct: the path to save the optimized structure
     '''
     os.chdir(optdir)
     common_io_cleandir(casename)
@@ -174,6 +177,7 @@ def perform_optimization(casename, optdir, init_lapw_cmd, init_opt_ArgList, star
 
     os.chdir('../..')
 
+
 def perform_test_diff(casename, final_round_name, init_lapw_cmd, starting_struct, optimized_struct, nproc=1):
 
     testdir = "testdiff"
@@ -181,15 +185,10 @@ def perform_test_diff(casename, final_round_name, init_lapw_cmd, starting_struct
     optddir = "optd"
     
     os.mkdir(testdir)
-
     dict_dir_struct = {initdir: starting_struct, optddir: optimized_struct}
 
 
-
 def Main(ArgList):
-    '''
-    TODO: restart the optimization from a particular round, default is the last round
-    '''
     
     description='''
     Optimize an orthnormbic lattice with MSR1a method for minimization of inner coordinates.
@@ -225,7 +224,7 @@ def Main(ArgList):
     # and 1.0 will be set for target_scale
     target_volume_shres = 1.0
 
-    if abs(opts.target_volume)<target_volume_shres:
+    if abs(opts.target_volume) < target_volume_shres:
         target_scale=1.0
     else:
         target_scale= 1.0 + opts.target_volume/100

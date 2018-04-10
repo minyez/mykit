@@ -2,6 +2,7 @@
 #
 # This script provide basic analysis tools for vasp output
 #
+from __future__ import print_function
 import sys, os, shutil, copy
 import subprocess as sp
 import numpy as np
@@ -18,7 +19,7 @@ def vasp_anal_get_outcar(key,index=-1,outcar='OUTCAR'):
 # maximum number of plane wave, i.e. the maximum size of representation matrix
     if key=='mnpw':
         mnpw = sp.check_output("awk '/maximum number of/ {print $5}' %s | tail -1" % outcar,shell=True)
-        return mnpw
+        return int(mnpw)
 # NBANDS
     if key=='nb' or key=='nbands' or key=='NBANDS':
         nb = sp.check_output("awk '/NBANDS/ {print $15}' %s | head -1" % outcar,shell=True)
@@ -50,8 +51,8 @@ def vasp_anal_get_enmax(potcar='POTCAR'):
     Get the largest ENMAX in the potcar file (default POTCAR)
     '''
     if not os.path.exists(potcar):
-        print " Error: POTCAR file not found: %s" % potcar
-        print " Exit."
+        print(" Error: POTCAR file not found: %s" % potcar)
+        print(" Exit.")
         sys.exit(1)
 
     # sort in the increasing order, get the last value
@@ -116,7 +117,7 @@ def vasp_anal_fit_EOS(name_ifile='Ener_Vol',nfu=1,eostype='BM',fixBp=False):
         B0 = 1.5
         if isinstance(fixBp,bool):
             if fixBp is True:
-                print 'fixBp not specified. Will not fix Bp'
+                print('fixBp not specified. Will not fix Bp')
             Bp = 4.0
             popt, pcov = curve_fit(BMEOS, data[0],data[1], p0 = [E0,V0,B0,Bp])
             Bp = popt[3]
@@ -186,9 +187,9 @@ def vasp_anal_get_BM_info(debug=False):
         with open("EIGENVAL",'r') as f:
             lines = f.readlines()
     except:
-        print "EIGENVAL file does not exist. Use IBZKPT and OUTCAR instead."
+        print("EIGENVAL file does not exist. Use IBZKPT and OUTCAR instead.")
     else:
-        print "Read from EIGENVAL file."
+        print("Read from EIGENVAL file.")
         band_info = [int(x) for x in lines[5].split()]
         nelec, kpts_tot, nbands = band_info[0],band_info[1],band_info[2]
 
@@ -219,7 +220,7 @@ def vasp_anal_get_BM_info(debug=False):
 
 # find the last electronic iteration
     n_last_elec = int(sp.check_output("grep -n Iteration OUTCAR | tail -1",shell=True).split(":")[0]) - 2
-    if debug: print n_last_elec
+    if debug: print(n_last_elec)
 
     n = 0
     while n < len(outlines):
@@ -230,7 +231,7 @@ def vasp_anal_get_BM_info(debug=False):
                  nband = nelec/2
                  # search the number of electron, then jump to the last iteration
                  n = n_last_elec - 1
-                 if debug: print "Number of electrons: %i" % nelec
+                 if debug: print("Number of electrons: %i" % nelec)
             if x[0] == "k-point" and len(x) == 6:
             # occ is occupation, check for debug
                 HOMO,hocc = float(outlines[n+nband+1].split()[1]), outlines[n+nband+1].split()[2]
@@ -238,7 +239,7 @@ def vasp_anal_get_BM_info(debug=False):
                 VB.append(HOMO)
                 CB.append(LUMO)
                 if debug:
-                    print n,x[1],HOMO,hocc,LUMO,locc,x[3:6]
+                    print(n,x[1],HOMO,hocc,LUMO,locc,x[3:6])
         n += 1
 # return band extreme info
     return [ klist, VB, CB ]
@@ -261,12 +262,12 @@ def vasp_anal_get_fund_gap(band_extreme_info,debug=False):   # deprecated
     CBM_k = [ float(x) for x in klist[CBM_k_index][0:3]]
     kpts_tot = 0
     flag_metal = False
-    if debug: print len(klist)
+    if debug: print(len(klist))
 
     E_fd_gap = CBM - VBM
-    print " CBM = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (CBM,CBM_k[0],CBM_k[1],CBM_k[2])
-    print " VBM = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (VBM,VBM_k[0],VBM_k[1],VBM_k[2])
-    print " Fundamental gap Eg = %8.4f" % E_fd_gap
+    print(" CBM = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (CBM,CBM_k[0],CBM_k[1],CBM_k[2]))
+    print(" VBM = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (VBM,VBM_k[0],VBM_k[1],VBM_k[2]))
+    print(" Fundamental gap Eg = %8.4f" % E_fd_gap)
     if E_fd_gap <= 0.0:
         flag_metal = True
     return E_fd_gap,flag_metal
@@ -282,24 +283,29 @@ def vasp_anal_get_gap(band_struct,vb,cb,debug=False):
     nkp      = band_struct[0][1]
     band_max = band_struct[0][2]
     if debug:
-        print band_struct[0]
+        print(band_struct[0])
 
     VBM = max([band_struct[1+ikp][vb] for ikp in xrange(nkp)])
     VBM_k_index = [band_struct[1+ikp][vb] for ikp in xrange(nkp)].index(VBM)
     VBM_k = [ float(x) for x in band_struct[1+VBM_k_index][0][0:3]]
+    E_gap_at_VBM = band_struct[1+VBM_k_index][cb] - band_struct[1+VBM_k_index][vb]
     if debug:
-        print VBM,VBM_k_index,VBM_k
+        print(VBM,VBM_k_index,VBM_k)
 
     CBM = min([band_struct[1+ikp][cb] for ikp in xrange(nkp)])
     CBM_k_index = [band_struct[1+ikp][cb] for ikp in xrange(nkp)].index(CBM)
     CBM_k = [ float(x) for x in band_struct[1+CBM_k_index][0][0:3]]
+    E_gap_at_CBM = band_struct[1+CBM_k_index][cb] - band_struct[1+CBM_k_index][vb]
     if debug:
-        print CBM,CBM_k_index,CBM_k
+        print(CBM,CBM_k_index,CBM_k)
 
     E_gap = CBM - VBM
-    print " Band %3i:  BandMin = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (cb, CBM, CBM_k[0], CBM_k[1], CBM_k[2])
-    print " Band %3i:  BandMax = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (vb, VBM, VBM_k[0], VBM_k[1], VBM_k[2])
-    print " Eg = %8.4f" % E_gap
+    print(" Band %3i:  BandMin = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (cb, CBM, CBM_k[0], CBM_k[1], CBM_k[2]))
+    print(" Band %3i:  BandMax = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (vb, VBM, VBM_k[0], VBM_k[1], VBM_k[2]))
+    print(" Eg(min) = %8.4f" % E_gap)
+    if CBM_k_index != VBM_k_index:
+        print(" Eg(VBM) = %8.4f" % E_gap_at_VBM)
+        print(" Eg(CBM) = %8.4f" % E_gap_at_CBM)
 
 # ====================================================
 
@@ -344,19 +350,19 @@ def vasp_anal_get_kavgap(band_struct,vb,cb,fix_k=-1,inv=False,debug=False):
     kavgap = kavgap / np.sum(kpts_weigh)
     inv_kavgap = inv_kavgap / np.sum(kpts_weigh)
     if fix_k == -1:
-        print "Mode -1: average direct band"
+        print("Mode -1: average direct band")
     elif fix_k == 0:
-        print "Mode 0: average indirect band with transition to fixed VBM@(%7.4f,%7.4f,%7.4f)" % (VBM_k[0], VBM_k[1], VBM_k[2])
+        print("Mode 0: average indirect band with transition to fixed VBM@(%7.4f,%7.4f,%7.4f)" % (VBM_k[0], VBM_k[1], VBM_k[2]))
     elif fix_k == 1:
-        print "Mode 1: average indirect band with transition to fixed CBM@(%7.4f,%7.4f,%7.4f)" % (CBM_k[0], CBM_k[1], CBM_k[2])
+        print("Mode 1: average indirect band with transition to fixed CBM@(%7.4f,%7.4f,%7.4f)" % (CBM_k[0], CBM_k[1], CBM_k[2]))
     else:
         pass
     if not inv:
-        print " E_{kav,g} (between band %3i and band %3i) = %8.4f eV" % (vb,cb,kavgap)
+        print(" E_{kav,g} (between band %3i and band %3i) = %8.4f eV" % (vb,cb,kavgap))
         return kavgap
     else:
-        print " E^{-1}_{kav,g} (between band %3i and band %3i) = %8.4f eV^{-1}" % (vb,cb,inv_kavgap)
-        print " Inverse of average inverse is %8.4f eV" % np.reciprocal(inv_kavgap)
+        print(" E^{-1}_{kav,g} (between band %3i and band %3i) = %8.4f eV^{-1}" % (vb,cb,inv_kavgap))
+        print(" Inverse of average inverse is %8.4f eV" % np.reciprocal(inv_kavgap))
         return inv_kavgap
 
 # ====================================================
