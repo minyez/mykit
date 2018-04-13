@@ -53,8 +53,6 @@ class abinit_input_files():
         self.atom_type, self.natom = common_read_chemical_formula(formula)
         self.natoms = sum(self.natom)
 
- 
-
 
     def __write_pp_info(self, xc_type, pp_type):
         '''
@@ -90,12 +88,15 @@ class abinit_input_files():
         self.atom_pp_list = []
         for at in self.atom_type:
             for pp in os.listdir(current_pp_path):
-                if fnmatch(pp,at+'.*'):
+                if fnmatch(pp, at+'.*'):
                     self.atom_pp_list.append(current_pp_path+'/'+pp)
                     break
 
 
     def __set_files(self):
+        '''
+        Generate input control file by the casename i.e. casename.files
+            '''
         casename = self.casename
         with open(casename+'.files','w') as h_files:
             h_files.write(casename+'.in\n')
