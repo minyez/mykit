@@ -11,6 +11,7 @@ INCAR*
 *.sh
 optimize.job
 test.py
+*.dat
 
 # ignore private files
 scsites
