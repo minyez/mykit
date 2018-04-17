@@ -23,8 +23,9 @@ class abinit_input_files():
     '''
 
     pp_type_avail = {
-                     'paw' : 'xml',
-                     'ncpp': 'psp8'
+                     'paw'  : 'xml'  ,
+                     'ncpp' : 'psp8' ,
+                     'usp'  : 'usp'  ,
                     }
 
     # get the environment variable for directores which stores the psp8 NCPP
