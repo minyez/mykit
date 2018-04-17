@@ -8,6 +8,7 @@
 #       Contact : stevezhang@pku.edu.cn
 # ====================================================
 
+from __future__ import print_function
 import sys
 from argparse import ArgumentParser
 from pv_classes import vasp_read_poscar
@@ -23,15 +24,15 @@ def Main(ArgList):
     parser.add_argument("-c",dest='centering',help="flag for putting the geometric center to the center of lattice",action="store_true")
 
     opts = parser.parse_args()
-    print " ============ pv_addvac.py ============"
+    print(" ============ pv_addvac.py ============")
     poscar = vasp_read_poscar(opts.input)
     iz = opts.zdirt - 1
     if opts.centering:
-        print " --- Centering switched on ---"
+        print(" --- Centering switched on ---")
         poscar.action_centering(opts.zdirt)
-    print "   Original z: %17.8f" % poscar.lattice[iz][iz]
+    print("   Original z: %17.8f" % poscar.lattice[iz][iz])
     poscar.action_add_vacuum(opts.vac,opts.zdirt)
-    print "   Changed z: %18.8f" % poscar.lattice[iz][iz]
+    print("   Changed z: %18.8f" % poscar.lattice[iz][iz])
     poscar.write_poscar(opts.output)
 
 

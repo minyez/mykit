@@ -12,6 +12,7 @@
 #
 # ====================================================
 
+from __future__ import print_function
 import sys, os
 from shutil import copy2
 from datetime import datetime
@@ -20,7 +21,7 @@ from argparse import ArgumentParser
 from pv_classes import vasp_read_poscar
 from pv_anal_utils import vasp_anal_get_enmax, vasp_anal_get_outcar
 from pv_calc_utils import vasp_vaspcmd_zmy, vasp_vasprun_zmy, vasp_write_incar_minimal_elec, \
-                          vasp_io_get_NPAR, vasp_write_kpoints_basic, common_io_checkdir, \
+                          vasp_io_get_NPAR, vasp_write_kpoints_basic, common_io_cleandir, \
                           vasp_io_change_tag
 
 def run_calculation(poscar, \
@@ -29,8 +30,8 @@ def run_calculation(poscar, \
                     f_slab=0, vasp_cmd='vasp', viewmode=True):
     # loop over encut in the ENCUT list
     for encut in encut_list:
-        print " ---------- ENCUT = %s ----------" % encut
-        encut_dir = common_io_checkdir(encut_dir_prefix+str(int(encut)))
+        print(" ---------- ENCUT = %s ----------" % encut)
+        encut_dir = common_io_cleandir(encut_dir_prefix+str(int(encut)))
         # copy POSCAR POTCAR INCAR
         copy2('POSCAR', encut_dir+'/POSCAR')
         copy2('POTCAR', encut_dir+'/POTCAR')
@@ -43,9 +44,9 @@ def run_calculation(poscar, \
             # check if this setting is calculated
             kleng_dir = kleng_dir_prefix+str(kleng)
             if os.path.exists(kleng_dir):
-                print " - Warning: encut_%s_kleng_%i already calculated. Pass" % (encut,kleng)
+                print(" - Warning: encut_%s_kleng_%i already calculated. Pass" % (encut,kleng))
                 continue
-            common_io_checkdir(kleng_dir)
+            common_io_cleandir(kleng_dir)
             # copy POSCAR POTCAR INCAR
             copy2('POSCAR', kleng_dir+'/POSCAR')
             copy2('POTCAR', kleng_dir+'/POTCAR')
@@ -56,7 +57,7 @@ def run_calculation(poscar, \
             nks = [int(kleng/x) for x in poscar.lenlat]
             if f_slab in [1,2,3]:
                 nks[f_slab-1] = 1
-            print " calculating with kmesh: %i %i %i" % (nks[0],nks[1],nks[2])
+            print(" calculating with kmesh: %i %i %i" % (nks[0],nks[1],nks[2]))
             vasp_write_kpoints_basic(nks,'G',f_slab=f_slab)
 
             # perform calculation
@@ -70,7 +71,7 @@ def run_calculation(poscar, \
 
 def mode_obtain_data(encut_dir_prefix, kleng_dir_prefix, datakey_list):
 
-    print " ------------  check data  ------------"
+    print(" ------------  check data  ------------")
     nkey = len(datakey_list)
     #print nkey
     encut_dir_list = []
@@ -155,7 +156,7 @@ def Main(ArgList):
     encut_dir_prefix = "encut_"
     kleng_dir_prefix = "kleng_"
 
-    print " ============ pv_ekconv.py ============"
+    print(" ============ pv_ekconv.py ============")
 
     # if data check mode is selected
     if opts.checkdata:
@@ -166,7 +167,7 @@ def Main(ArgList):
 
     # check if POTCAR exists and get the enmax from POTCAR
     if not os.path.exists('POTCAR'):
-        print " Error: POTCAR not found. Use pv_addpot.py to generate one. Exit."
+        print(" Error: POTCAR not found. Use pv_addpot.py to generate one. Exit.")
         sys.exit(1)
     enmax = vasp_anal_get_enmax()
 
@@ -175,8 +176,8 @@ def Main(ArgList):
     if opts.encut == 0:
         encut_s = enmax
     elif opts.encut < enmax:
-        print " Warning: Too small starting ENCUT is set. Use ENMAX instead."
-        encut_s = enmax
+        print(" Warning: Too small starting ENCUT is set.")
+        encut_s = opts.encut
     else:
         encut_s = opts.encut
 
@@ -194,7 +195,7 @@ def Main(ArgList):
     # check if custom INCAR exists. 
     # If not, generate the minimal electronic INCAR according to the options
     if not os.path.exists('INCAR'):
-        print " Error: INCAR not found. Generate minimal from options."
+        print(" Warning: INCAR not found. Generate minimal from options.")
         if opts.f_metal:
             mode_smear = 2
         else:
@@ -203,7 +204,7 @@ def Main(ArgList):
             vasp_write_incar_minimal_elec(incar,opts.tag_xc,encut=encut_s,\
                                           mode_smear=mode_smear, npar=npar,spin=opts.ispin)
     if not os.path.exists('POSCAR'):
-        print " Error: POSCAR not found. Exit."
+        print(" Error: POSCAR not found. Exit.")
         sys.exit(1)
 
     # generate the ENCUT list and KMESH list

@@ -21,13 +21,20 @@ from shutil import copy2
 
 def pv_write_hf_sequence(nproc, vasp_path, incar_pre='INCAR_1', incar_coarse='INCAR_2', incar_stdhf='INCAR_3',seq_out='hf_calc.py'):
 
-    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(np=nproc,vasp_path=vasp_path)
+    '''
+    Write the python control file for a fast-SCF-converging HF calculation.
+    '''
+
     # check if the three INCARs exists
     incar_list = [incar_pre, incar_coarse, incar_stdhf]
     for i in incar_list:
         if not os.path.exists(i):
             raise ValueError("Error: specified INCAR not found, %s " % i)
 
+    # generate the VASP command with path to VASP executive
+    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(np=nproc,vasp_path=vasp_path)
+
+    # write the python control file
     with open(seq_out, 'w') as h_out:
         h_out.write('#!/usr/bin/env python\n')
         h_out.write('# coding=utf-8\n\n')
@@ -105,6 +112,7 @@ def pv_prepare_hf_calculation(ArgList):
     vasp_io_change_tag('INCAR_2', 'ISTART', new_val='1', backup=False)
     vasp_io_change_tag('INCAR_3', 'ISTART', new_val='1', backup=False)
 
+    # deal with INCAR_2 for coarse HF calculation with NKRED or NKREDX/Y/Z
     if opts.nkred != 1:
         vasp_io_change_tag('INCAR_2', 'NKRED', new_val=opts.nkred, backup=False)
     if opts.nkredxyz:
