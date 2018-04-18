@@ -116,27 +116,46 @@ def __init_fig_axs(n_columns, para_names, x_name, y_name):
 
 # ====================================================
 
-def __init_fig_3d_axs(n_columns, para_names, x_name, y_name):
-    pass
+def __init_fig_3d_axs(n_columns, para_names, x_name, y_name, z_name):
+
+    from mpl_toolkits.mplot3d import Axes3D
+
+    fig = plt.figure(figsize=(12,9))
+
+    if n_columns == 3:
+        axs = fig.add_subplot(111, projection='3d')
+        axs.set_xlabel(x_name, size=12)
+        axs.set_ylabel(y_name, size=12)
+        axs.set_zlabel(z_name, size=12)
+
+    return fig, axs
 
 # ====================================================
 
-def pc_nd_conv_plot(datafile, xtarget_column, ytarget_column, f_plot3d, figname, imgres=2):
-
-    df_all = pd.read_table(datafile, delim_whitespace=True)
+def pc_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=False, \
+                    figname='', preview=False, imgres=2):
 
     n_columns, x_name, y_name, para_names, para_max = \
             __check_column_and_target(df_all, xtarget_column, ytarget_column)
 
-    # Group the DataFrame by groupby method
-    df_all_gpb = df_all.groupby(para_names)
-
     # TODO:
     #   if 3D plot is required, import necessary 3D plotting modules first
     if f_plot3d:
-        fig, axs = __init_fig_3d_axs(n_columns, para_names, x_name, y_name)
+        from matplotlib import cm
+
+        fig, axs = __init_fig_3d_axs(n_columns, para_names, para_names[0], x_name, y_name)
+
+        if n_columns == 3:
+            axs.scatter(xs=df_all[para_names[0]], ys=df_all[x_name], zs=df_all[y_name], \
+                        s=100, c=df_all[y_name], cmap=cm.coolwarm, marker='o', \
+                        depthshade=False)
+        else:
+            raise ValueError("--plot3d has not been implemented for n_columns !=3. Sorry :(")
 
     else:
+        # Group the DataFrame by groupby method
+        df_all_gpb = df_all.groupby(para_names)
+
         fig, axs = __init_fig_axs(n_columns, para_names, x_name, y_name)
 
         if n_columns == 3:
@@ -176,7 +195,10 @@ def pc_nd_conv_plot(datafile, xtarget_column, ytarget_column, f_plot3d, figname,
             for ax in axs.flatten():
                 ax.legend(loc="upper left", shadow=True, fancybox=True)
 
-    plt.show()
+    if preview:
+        #if f_plot3d:
+        #    plt.colorbar()
+        plt.show()
 
     if figname is not '':
         print("- Saving to %s" % figname)
@@ -193,15 +215,18 @@ def Main(ArgList):
     parser.add_argument(dest="datafile", metavar='file', type=str, nargs=1, help="The name of file storing the data. Better in CSV/Excel format and index is not necessary.")
     parser.add_argument("--yt", dest="ytarget_column", type=int, default=0, help="the index of column (>0) which contains the quantity to converge (y). Default is the last column.")
     parser.add_argument("--xt", dest="xtarget_column", type=int, default=0, help="the index of column (>0) which contains the direct test parameter (x). Default is the second to last column.")
-    parser.add_argument("--plot3d", dest="f_plot3d", action="store_true", help="Flag to use 3D plots. NOT implemented YET.")
+    parser.add_argument("--plot3d", dest="f_plot3d", action="store_true", help="Flag to use 3D plots. Support 2-parameter test only.")
     parser.add_argument("--save", dest="figname", type=str, default='', help="File name (e.g. conv.png) to save the figure. The figure will not be saved unless this option is set other than ''.")
-    parser.add_argument("--res", dest="resolution", metavar='RES', type=int, default=2, help="Resolution of image, dpi = 150*RES")
+    parser.add_argument("--res", dest="resolution", metavar='RES', type=int, default=2, help="Resolution of image, dpi = 150*RES. Default 2 (300 dpi).")
 
     # initialize options as 'opts'
     opts = parser.parse_args()
     datafile = opts.datafile[0]
 
-    pc_nd_conv_plot(datafile, opts.xtarget_column, opts.ytarget_column, opts.f_plot3d, opts.figname, opts.resolution)
+    df_all = pd.read_table(datafile, delim_whitespace=True)
+
+    pc_nd_conv_plot(df_all, opts.xtarget_column, opts.ytarget_column, opts.f_plot3d, opts.figname, \
+                    True, opts.resolution)
 
 # ==============================
 
