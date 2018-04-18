@@ -116,7 +116,7 @@ def __init_fig_axs(n_columns, para_names, x_name, y_name):
 
 # ====================================================
 
-def __init_fig_3d_axs(n_columns, para_names, x_name, y_name, z_name):
+def __init_fig_3d_axs(n_columns, para_names, x_name, y_name):
 
     from mpl_toolkits.mplot3d import Axes3D
 
@@ -124,9 +124,9 @@ def __init_fig_3d_axs(n_columns, para_names, x_name, y_name, z_name):
 
     if n_columns == 3:
         axs = fig.add_subplot(111, projection='3d')
-        axs.set_xlabel(x_name, size=12)
-        axs.set_ylabel(y_name, size=12)
-        axs.set_zlabel(z_name, size=12)
+        axs.set_xlabel(para_names[0], size=12)
+        axs.set_ylabel(x_name, size=12)
+        axs.set_zlabel(y_name, size=12)
 
     return fig, axs
 
@@ -143,10 +143,10 @@ def pc_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=False, 
     if f_plot3d:
         from matplotlib import cm
 
-        fig, axs = __init_fig_3d_axs(n_columns, para_names, para_names[0], x_name, y_name)
+        fig, axs = __init_fig_3d_axs(n_columns, para_names, x_name, y_name)
 
         if n_columns == 3:
-            axs.scatter(xs=df_all[para_names[0]], ys=df_all[x_name], zs=df_all[y_name], \
+            p3d = axs.scatter(xs=df_all[para_names[0]], ys=df_all[x_name], zs=df_all[y_name], \
                         s=100, c=df_all[y_name], cmap=cm.coolwarm, marker='o', \
                         depthshade=False)
         else:
@@ -196,8 +196,8 @@ def pc_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=False, 
                 ax.legend(loc="upper left", shadow=True, fancybox=True)
 
     if preview:
-        #if f_plot3d:
-        #    plt.colorbar()
+        if f_plot3d:
+            fig.colorbar(p3d)
         plt.show()
 
     if figname is not '':
@@ -210,11 +210,11 @@ def pc_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=False, 
 
 def Main(ArgList):
 
-    description = '''Visualize the data for an N-parameter convergence test. In general N is equal to 2 or 3.''' 
+    description = '''Visualize the data for an N-parameter convergence test. In general N is equal to 2 or 3. Support up to 5.''' 
     parser = ArgumentParser(description=description)
     parser.add_argument(dest="datafile", metavar='file', type=str, nargs=1, help="The name of file storing the data. Better in CSV/Excel format and index is not necessary.")
-    parser.add_argument("--yt", dest="ytarget_column", type=int, default=0, help="the index of column (>0) which contains the quantity to converge (y). Default is the last column.")
-    parser.add_argument("--xt", dest="xtarget_column", type=int, default=0, help="the index of column (>0) which contains the direct test parameter (x). Default is the second to last column.")
+    parser.add_argument("--xt", dest="xtarget_column", metavar="X", type=int, default=0, help="the index of column (>0) which contains the direct test parameter (x). Default is the second to last column.")
+    parser.add_argument("--yt", dest="ytarget_column", metavar="Y", type=int, default=0, help="the index of column (>0) which contains the quantity to converge (y). Default is the last column.")
     parser.add_argument("--plot3d", dest="f_plot3d", action="store_true", help="Flag to use 3D plots. Support 2-parameter test only.")
     parser.add_argument("--save", dest="figname", type=str, default='', help="File name (e.g. conv.png) to save the figure. The figure will not be saved unless this option is set other than ''.")
     parser.add_argument("--res", dest="resolution", metavar='RES', type=int, default=2, help="Resolution of image, dpi = 150*RES. Default 2 (300 dpi).")
