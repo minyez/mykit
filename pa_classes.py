@@ -34,10 +34,10 @@ class abinit_input_files():
     abinit_pp_path_list = os.environ['ABINIT_PP_PATH'].split(':')
 
 
-    def __init__(self, casename, formula, xc_type='pbe', pp_type='paw'):
+    def __init__(self, casename, formula, xc_type='pbe', pp_type='paw', **kwargs):
         '''
-        initialize the master input file i.e. casename.in file, along with 
-        the input files control casename.files
+        Initialize the master input file i.e. casename.in file, along with 
+        the input control casename.files
         '''
         self.casename = casename
         self.__write_atom_info(formula)
@@ -48,7 +48,7 @@ class abinit_input_files():
     def __write_atom_info(self, formula):
         '''
         Parameters:
-            formula: string
+            formula: (str)
                 the non-reduced chemical formula for the system to calculate. 
         '''
         self.atom_type, self.natom = common_read_chemical_formula(formula)
@@ -83,7 +83,7 @@ class abinit_input_files():
         elif pp_type.lower() == 'ncpp' and self.abinit_ncpp_path is not '':
             current_pp_path = self.abinit_ncpp_path
         else:
-            raise TypeError("Corresponding directory of PP type is not found in environment")
+            raise ValueError("Corresponding directory of PP type is not found in environment")
 
         # find the PP for the atoms. For NCPP and JTH-PAW, the naming convention are both "Si.xxxxx"
         self.atom_pp_list = []
@@ -97,7 +97,7 @@ class abinit_input_files():
     def __set_files(self):
         '''
         Generate input control file by the casename i.e. casename.files
-            '''
+        '''
         casename = self.casename
         with open(casename+'.files','w') as h_files:
             h_files.write(casename+'.in\n')

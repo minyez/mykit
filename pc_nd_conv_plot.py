@@ -127,12 +127,14 @@ def __init_fig_3d_axs(n_columns, para_names, x_name, y_name):
         axs.set_xlabel(para_names[0], size=12)
         axs.set_ylabel(x_name, size=12)
         axs.set_zlabel(y_name, size=12)
+    else:
+        raise ValueError("plot3d has not been implemented yet for n_columns >3. Delete some columns")
 
     return fig, axs
 
 # ====================================================
 
-def pc_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=False, \
+def common_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=False, \
                     figname='', preview=False, imgres=2):
 
     n_columns, x_name, y_name, para_names, para_max = \
@@ -225,7 +227,7 @@ def Main(ArgList):
 
     df_all = pd.read_table(datafile, delim_whitespace=True)
 
-    pc_nd_conv_plot(df_all, opts.xtarget_column, opts.ytarget_column, opts.f_plot3d, opts.figname, \
+    common_nd_conv_plot(df_all, opts.xtarget_column, opts.ytarget_column, opts.f_plot3d, opts.figname, \
                     True, opts.resolution)
 
 # ==============================
