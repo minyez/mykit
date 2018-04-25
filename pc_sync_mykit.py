@@ -15,7 +15,7 @@ import sys, os, re
 import subprocess as sp
 from argparse import ArgumentParser
 
-def pc_read_scsites(f_scsites=None):
+def common_read_scsites(f_scsites=None):
     '''
     Read the path from scsites file.
     Each line in f_scsites should be in the form:
@@ -31,23 +31,25 @@ def pc_read_scsites(f_scsites=None):
 
     for i in range(len(scsites)):
         scsites[i] = scsites[i].strip()
+        # remove slash at the end of the site according to the feature of rsync
         while(scsites[i].endswith('/')):
             scsites[i] = scsites[i][:-1]
 
     return scsites
 
 
-def pc_test_connection(scsite):
+def common_test_connection(scsite):
     '''
-    Test if the site is available by pinging it.
-    It is not effecitve, since ping is diabled in my local network environment
+    TODO:
+        Test if the site is available by pinging it.
+        It is not effecitve if ping is diabled in the local network environment
     '''
     # get the ip address
     site_ip = re.split(r'[@:]', scsite)[1]
     print("Syncing: " + site_ip)
 
 
-def pc_sync_mykit(ArgList):
+def common_sync_mykit(ArgList):
 
     description = '''
     Sync MYKIT to the supercomputer sites, currently by using rsync.
@@ -60,7 +62,7 @@ def pc_sync_mykit(ArgList):
     parser.add_argument('-f',dest='f_scsites',default=None,help="The file storing the supercomputer sites")
     opts = parser.parse_args()
 
-    supercomputer_sites = pc_read_scsites(opts.f_scsites)
+    supercomputer_sites = common_read_scsites(opts.f_scsites)
 
     rsync_cmd = "rsync -qazru --inplace "
     local_mykit_path = os.path.dirname(os.path.abspath(__file__))
@@ -69,13 +71,16 @@ def pc_sync_mykit(ArgList):
     #print(local_mykit_path)
 
     for site in supercomputer_sites:
-        pc_test_connection(site)
-        sp.check_output(rsync_cmd + " " + local_mykit_path + "/ " + site, shell=True)
+        common_test_connection(site)
+        try:
+            sp.check_output(rsync_cmd + " " + local_mykit_path + "/ " + site, shell=True)
+        except sp.CalledProcessError:
+            print("Error happens in rsync to %s. Pass" % site.split(':')[0])
 
 
 
 # ==============================
 
 if __name__ == "__main__":
-    pc_sync_mykit(sys.argv)
+    common_sync_mykit(sys.argv)
 

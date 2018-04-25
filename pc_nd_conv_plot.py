@@ -161,15 +161,18 @@ def common_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=Fal
         fig, axs = __init_fig_axs(n_columns, para_names, x_name, y_name)
 
         if n_columns == 3:
-            for group in df_all_gpb.groups:
+            for group in sorted(df_all_gpb.groups.iterkeys()):
                 gp_data = df_all_gpb.get_group(group)
-                axs.plot(gp_data[x_name], gp_data[y_name], 'o-', linewidth=2, \
+                x = gp_data.sort_values(by=x_name)[x_name]
+                y = gp_data.sort_values(by=x_name)[y_name]
+                axs.plot(x, y, 'o-', linewidth=2, \
                          label="%s=%s" % (para_names[0], group))
             axs.legend(loc="upper left", shadow=True, fancybox=True)
 
         if n_columns >= 4:
-            for group in df_all_gpb.groups:
-                for i in range(len(para_names)):
+            #print(df_all_gpb.groups)
+            for i in range(len(para_names)):
+                for group in sorted(df_all_gpb.groups.keys(), key=lambda x: x[i]):
                 # check the convergence of parameter para_names[i]
                 # with the other parameters at the best, i.e. max
                     flag_best_other = True
@@ -181,7 +184,9 @@ def common_nd_conv_plot(df_all, xtarget_column=0, ytarget_column=0, f_plot3d=Fal
                         continue
 
                     gp_data = df_all_gpb.get_group(group)
-                    axs.flatten()[i].plot(gp_data[x_name], gp_data[y_name], 'o-', linewidth=2, \
+                    x = gp_data.sort_values(by=x_name)[x_name]
+                    y = gp_data.sort_values(by=x_name)[y_name]
+                    axs.flatten()[i].plot(x, y, 'o-', linewidth=2, \
                                 label="%s=%s" % (para_names[i], group[i]))
 
             # Generate the title string as the fixed parameters

@@ -5,7 +5,7 @@
 # 2017.05.09
 
 import os
-from pv_calc_utils import common_io_cleandir
+from pc_utils import common_io_cleandir
 
 struct_dir = 'inter_structs'
 

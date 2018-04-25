@@ -21,8 +21,8 @@ from argparse import ArgumentParser
 from pv_classes import vasp_read_poscar
 from pv_anal_utils import vasp_anal_get_enmax, vasp_anal_get_outcar
 from pv_calc_utils import vasp_vaspcmd_zmy, vasp_vasprun_zmy, vasp_write_incar_minimal_elec, \
-                          vasp_io_get_NPAR, vasp_write_kpoints_basic, common_io_cleandir, \
-                          vasp_io_change_tag
+                          vasp_io_get_NPAR, vasp_write_kpoints_basic, vasp_io_change_tag
+from pc_utils import common_io_cleandir
 
 def run_calculation(poscar, \
                     encut_dir_prefix, encut_list, \
@@ -69,67 +69,56 @@ def run_calculation(poscar, \
     return
 
 
-def mode_obtain_data(encut_dir_prefix, kleng_dir_prefix, datakey_list):
+def mode_write_data(encut_dir_prefix, kleng_dir_prefix, datakey_list):
 
     print(" ------------  check data  ------------")
     nkey = len(datakey_list)
+    opened_summary_list = []
+    for key in datakey_list:
+        opened_summary_list.append(open('summary_ekconv_'+key,'w'))
+        opened_summary_list[-1].write('ENCUT\tNKP\t'+key+'\n')
+
     #print nkey
     encut_dir_list = []
     for idir in os.listdir('.'):
         if fnmatch(idir,encut_dir_prefix+'*'):
             encut_dir_list.append(idir)
-    encut_list = [int(x.split('_')[-1]) for x in encut_dir_list]
-    encut_list.sort()
-    nkp_list_whole = []
-    data_list_whole = [] 
-    for i in xrange(nkey):
-        data_list_whole.append([])
+    #encut_list = [int(x.split('_')[-1]) for x in encut_dir_list]
+    ##encut_list.sort()
+    #nkp_list_whole = []
+    #data_list_whole = [] 
+    #for i in range(nkey):
+    #    data_list_whole.append([])
 
     #return encut_list, nkp_list_whole, data_list_whole
 
     for encut_dir in encut_dir_list:
+        encut = int(encut_dir.split('_')[-1])
         os.chdir(encut_dir)
         kleng_dir_list = []
-        nkp_list_i = []
-        data_list_i = []
-        for i in xrange(nkey):
-            data_list_i.append([])
 
         for idir in os.listdir('.'):
             if fnmatch(idir,kleng_dir_prefix+'*'):
                 kleng_dir_list.append(idir)
         
         # sort kleng_dir_list
-        kleng_dir_list.sort(key=lambda x: int(x.split('_')[-1]))
+        #kleng_dir_list.sort(key=lambda x: int(x.split('_')[-1]))
 
         for kleng_dir in kleng_dir_list:
             os.chdir(kleng_dir)
             if os.path.exists('OUTCAR'):
-                nkp_list_i.append(vasp_anal_get_outcar('nkp'))
+                nkp = vasp_anal_get_outcar('nkp')
                 for i in xrange(nkey):
-                    data_list_i[i].append(vasp_anal_get_outcar(datakey_list[i]))
+                    value = vasp_anal_get_outcar(datakey_list[i])
+                    opened_summary_list[i].write("%d  %d  %f\n" % (encut, nkp, value))
             os.chdir('..')
 
-        nkp_list_whole.append(nkp_list_i)
-        for i in xrange(nkey):
-            data_list_whole[i].append(data_list_i[i])
         os.chdir('..')
+       
+    for h_summary in opened_summary_list:
+        h_summary.close()
 
-    return encut_list, nkp_list_whole, data_list_whole
-
-
-def plot_data(legend_list, xdata_list, ydata_list, ykey):
-    # encut as legend
-    # nkp as x, the calculated value as y
-    import matplotlib.pyplot as plt
-
-    fig, ax = plt.subplots()
-    for i in xrange(len(legend_list)):
-        ax.plot(xdata_list[i],ydata_list[i],label="ENCUT = %i"%legend_list[i])
-    ax.set_xlabel("NKP") 
-    ax.set_ylabel(ykey) 
-    ax.legend()
-    plt.show()
+    return
 
 
 def Main(ArgList):
@@ -161,8 +150,7 @@ def Main(ArgList):
     # if data check mode is selected
     if opts.checkdata:
         datakey_list = ['ene']
-        encut_list, nkp_list, data_list = mode_obtain_data(encut_dir_prefix, kleng_dir_prefix, datakey_list)
-        plot_data(encut_list, nkp_list, data_list[0], datakey_list[0])
+        mode_write_data(encut_dir_prefix, kleng_dir_prefix, datakey_list)
         return
 
     # check if POTCAR exists and get the enmax from POTCAR

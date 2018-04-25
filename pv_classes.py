@@ -9,13 +9,39 @@
 #       Purpose : provide vasp classes for analysis
 # ====================================================
 
+from __future__ import print_function
 import sys,os
 import numpy as np
 from xml.etree import ElementTree as etree
 
+# ====================================================
+
+class vasp_read_outcar:
+    
+    def __init__(self, OutFile='OUTCAR', verbose=True):
+        
+        self.filename = OutFile
+        print(" Reading OUTCAR: %s" % OutFile)
+        with open(PosFile,'r') as f:
+            self.outlines = f.readlines()
+        self.__check_finished()
+
+
+    def __check_finished():
+        '''
+        Check if the calculation has finished by checking whether the last line of outlines
+        tells about the time summary
+        '''
+        if self.outlines[-1].strip().startswith('Voluntary context switches'):
+            self.flag_finish = True
+        else:
+            self.flag_finish = False
+
+# ====================================================
+
 class vasp_read_poscar:
-    def __init__(self,PosFile='POSCAR'):
-        print " Reading POSCAR: %s" % PosFile
+    def __init__(self,PosFile='POSCAR', verbose=True):
+        print(" Reading POSCAR: %s" % PosFile)
         with open(PosFile,'r') as f:
             self.poslines = f.readlines()
         self.filename = PosFile
@@ -23,7 +49,7 @@ class vasp_read_poscar:
         self.__latt_info()
         self.__atom_info()
         self.__coor_info()
-        print " POSCAR read."
+        print(" POSCAR read.")
 
 
     def __save_to_lines(self):
@@ -44,7 +70,7 @@ class vasp_read_poscar:
     def __latt_info(self):
         # unscaled lattice vectors
         # scaled lattice volume
-        print " Loading lattice info..."
+        print(" Loading lattice info...")
         posls = self.poslines
         self.scale = float(posls[1].split()[0])
         self.lattice = []
@@ -57,7 +83,7 @@ class vasp_read_poscar:
 
 
     def __atom_info(self):
-        print " Loading atomic info..."
+        print(" Loading atomic info...")
         posls = self.poslines
         self.atom_type = posls[5].split()
         self.ntypes = len(self.atom_type)
@@ -69,7 +95,7 @@ class vasp_read_poscar:
 
 
     def __coor_info(self):
-        print " Loading inner coordinates..."
+        print(" Loading inner coordinates...")
         posls = self.poslines
         coor_type = ''
         # delete the 'selevtive dynamics' line
@@ -83,11 +109,11 @@ class vasp_read_poscar:
             self.coor_type = 'dirt'
             coor_type = 'Direct\n'
         else:
-            print " Unknown coordinate system tag. Exit"
+            print(" Unknown coordinate system tag. Exit")
             sys.exit(1)
         self.poslines[7] = 'Selective dynamics\n'+coor_type
         self.write_innerpos_from_lines()
-        print " Checking periodic boundary condition..."
+        print(" Checking periodic boundary condition...")
         for i in xrange(self.natoms):
             self.check_pbc(i+1)
 
@@ -101,22 +127,22 @@ class vasp_read_poscar:
         # ia is the index of [iatom]th atom in self.innerpos[:]
         ia = iatom - 1
         if self.coor_type == 'cart':
-            print " In check_pbc:"
-            print "  - Cartisian system detected. PBC check not supported yet. Pass"
+            print(" In check_pbc:")
+            print("  - Cartisian system detected. PBC check not supported yet. Pass")
             return
         else:
             for iz in xrange(3):
                 while (self.innerpos[ia][iz] >= 1.0):
-                    print "  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1)
+                    print("  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1))
                     self.innerpos[ia][iz] = self.innerpos[ia][iz] - 1.0
                 while (self.innerpos[ia][iz] < 0.0):
-                    print "  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1)
+                    print("  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1))
                     self.innerpos[ia][iz] = self.innerpos[ia][iz] + 1.0
 
 
     def check_atomtype(self,iatom):
         if iatom <= 0 or iatom > self.natoms:
-            print "Invalid atom index (should be positive and <= natoms)"
+            print("Invalid atom index (should be positive and <= natoms)")
             return None
         ia = iatom
         for itype in xrange(self.ntypes):
@@ -134,20 +160,20 @@ class vasp_read_poscar:
 
 
     def action_centering(self,zdirt1=3,zdirt2=None,zdirt3=None):
-        print " In action_centering:"
+        print(" In action_centering:")
         dirt_list = [zdirt1]
         if (zdirt2 is not None) and (zdirt2 not in dirt_list):
             dirt_list.append(zdirt2)
         if (zdirt3 is not None) and (zdirt3 not in dirt_list):
             dirt_list.append(zdirt2)
         if self.coor_type == 'cart':
-            print " Cartisian coordinate system detected. Centering is not supported yet. Pass"
+            print(" Cartisian coordinate system detected. Centering is not supported yet. Pass")
             return
 
         for zdirt in dirt_list:
             iz = zdirt - 1
             if self.check_vacuum_pos(zdirt):
-                print "  - Vacuum in the middle detected. Not supported currently. Pass."
+                print("  - Vacuum in the middle detected. Not supported currently. Pass.")
                 continue
             else:
                 surf_atom = [self.check_extreme_atom(0.0,zdirt,False,1.0),self.check_extreme_atom(0.0,zdirt,True,1.0)]
@@ -155,13 +181,13 @@ class vasp_read_poscar:
                 # print surf_atom
                 shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
                 self.action_shift(shift,zdirt)
-        print " Complete centering."
+        print(" Complete centering.")
         #self.write_innerpos_to_lines()
 
 
     def action_dirt2cart(self,l_write=True):
         if self.coor_type == 'cart':
-            print " Cartisian coordinate system detected. Nothing to do."
+            print(" Cartisian coordinate system detected. Nothing to do.")
             return
         for ia in xrange(self.natoms):
             self.innerpos[ia] = np.dot(self.lattice,self.innerpos[ia])
@@ -173,7 +199,7 @@ class vasp_read_poscar:
 
     def action_cart2dirt(self,l_write=True):
         if self.coor_type == 'dirt':
-            print " Direct coordinate system detected. Nothing to do."
+            print(" Direct coordinate system detected. Nothing to do.")
             return
         # use coordinate transformation x_cart = Ax_dirt, x_dirt = A^{-1}x_cart
         for ia in xrange(self.natoms):
@@ -218,37 +244,35 @@ class vasp_read_poscar:
 
 
     def write_poscar(self,OutFile='POSCAR_new',f_reload=True):
-        print " Write POSCAR: %s" % OutFile
+        print(" Write POSCAR: %s" % OutFile)
         if f_reload:
-            print " - Load modified atomic information to poslines"
+            print(" - Load modified atomic information to poslines")
             self.__save_to_lines()
         if OutFile is not None:
             if OutFile==self.filename:
-                print " - Warning: OutFile same as input. Change input to %s.old" % self.filename
+                print(" - Warning: OutFile same as input. Change input to %s.old" % self.filename)
                 os.rename(self.filename,self.filename+'.old') 
                 self.filename = self.filename + '.old'
             with open(OutFile,'w+') as f:
                 for i in xrange(len(self.poslines)):
                     f.write(self.poslines[i])
-            print " - Done output: %s" % OutFile
+            print(" - Done output: %s" % OutFile)
         else:
-            print " - Invalid output filename: None. Pass"
-
-
+            print(" - Invalid output filename: None. Pass")
 
 # ===========================================================
-# slab utilities
+# slab-related utilities
 # ===========================================================
 
     def check_extreme_atom(self,target=0.0,zdirt=3,l_far=True,terminal=1.0):
         if self.coor_type == 'cart':
-            print " In check_extreme_atom:"
-            print "  - Cartisian coordinate system detected. Currently not supported. Pass"
+            print(" In check_extreme_atom:")
+            print("  - Cartisian coordinate system detected. Currently not supported. Pass")
             return None
         for x in [target,terminal]:
             if x < 0.0 or x > 1.0:
-                print " In check_extreme_atom:"
-                print "  - Invalid target or terminal in extreme check. Pass."
+                print(" In check_extreme_atom:")
+                print("  - Invalid target or terminal in extreme check. Pass.")
                 return None
         iz = zdirt - 1
         ia_far = 0
@@ -288,7 +312,7 @@ class vasp_read_poscar:
 
     def action_shift(self,shift,zdirt,verbose=True):
         if verbose:
-            print "  - overall shift %6.4f in direction %d" % (shift,zdirt)
+            print("  - overall shift %6.4f in direction %d" % (shift,zdirt))
         for ia in xrange(self.natoms):
             self.action_single_atom_shift(ia+1,shift,zdirt)
 
@@ -306,7 +330,7 @@ class vasp_read_poscar:
         add length to the vacuum region of slab model. In Angstrom unit.
         1D case and middle vacuum case to be implemented
         '''
-        print " In action_add_vacuum:"
+        print(" In action_add_vacuum:")
         #if abs(vacadd) < 0.1:
         #    print "  - too small change in vacuum (abs <= 1.0 A). Pass."
         #    return
@@ -314,13 +338,12 @@ class vasp_read_poscar:
         iz = zdirt - 1
         for ix in xrange(3):
             if (iz is not ix) and self.lattice[iz][ix] > 1.0E-2:
-#                print
                 return
             if (iz is not ix) and self.lattice[ix][iz] > 1.0E-2:
                 return
 
         if self.check_vacuum_pos(zdirt):
-            print "  - Vacuum in the middle detected. Not supported currently. Pass."
+            print("  - Vacuum in the middle detected. Not supported currently. Pass.")
             return
 
         if self.coor_type == 'cart':
@@ -328,7 +351,7 @@ class vasp_read_poscar:
         zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
         zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
         vac_ori =  self.lattice[iz][iz] * (1.0 - (zmax-zmin))
-        print "  - Original vacuum thickness: %8.5f" % vac_ori
+        print("  - Original vacuum thickness: %8.5f" % vac_ori)
 
         self.action_dirt2cart(False)     # switch to cartisian
 
@@ -372,10 +395,13 @@ class vasp_read_poscar:
         self.write_innerpos_to_lines()
         return self.check_sort_index(zdirt)
 
-
-# ===========================================================
+# ====================================================
 
 class vasp_read_xml():
+
+    '''
+    Class to read and analyse the data from the vasprun.xml
+    '''
 
     def __init__(self,agrv=[]):
         tree = etree.parse('vasprun.xml')
@@ -389,7 +415,8 @@ class vasp_read_xml():
             if 'pw' in agrv:
                 self.read_pwdata()
         except AttributeError:
-            print "Warning: no PDOS data found"
+            print("Warning: no PDOS data found")
+
 
     def init_section(self):
         self.para = self.root.find('parameters')
@@ -397,6 +424,7 @@ class vasp_read_xml():
         self.calc = self.root.findall('calculation')[-1]
         self.atominfo = self.root.find('atominfo')
         self.kps = self.root.find('kpoints')
+
 
     def read_para(self):
         # ISPIN: root->parameter->separator name='electronic'->separator name='elecronic spin'->[0]
@@ -425,6 +453,7 @@ class vasp_read_xml():
                     for atom in xrange(self.natom):
                         data = np.array([float(x) for x in pwav_dataset[spin][kp][band][atom].text.split()])
 
+
     def read_atominfo(self):
         self.natom = int(self.atominfo[0].text)
         self.ntype = int(self.atominfo[1].text)
@@ -440,12 +469,14 @@ class vasp_read_xml():
                 self.type.append(type_name)
             self.atoms[int(atom[1].text)-1] += 1
 
+
     def read_eigen(self):
         self.eigen = np.zeros([self.ispin,self.nkp,self.nbands])
         eigen_data = self.calc.find('eigenvalues').find('array').find('set')
         for spin in xrange(self.ispin):
             for kp in xrange(self.nkp):
                 self.eigen[spin,kp] = np.array([float(x.text.split()[0]) for x in eigen_data[spin][kp]])
+
 
     def get_gap(self):
         # return the gap from eigenvalue information
@@ -463,6 +494,7 @@ class vasp_read_xml():
         gap = ecbm - evbm
         return gap
 
+
     def read_klist(self):
 #       klist_index is 1 if auto generator is used
 #       or 0 if mannually included
@@ -473,6 +505,7 @@ class vasp_read_xml():
         self.kplist = [[ float(kvec) for kvec in kp.text.split()] for kp in self.kps[ki]]
         self.kpweigh = np.array([float(kp.text) for kp in self.kps[ki+1]])
         self.nkp = len(self.kplist)
+
 
     def atoms_index(self,atom_type):
         try:
@@ -489,6 +522,7 @@ class vasp_read_xml():
             list2 = list(xrange(sum(self.atoms[:itype])))
             return [x for x in list2 if x not in list1]
 
+
     def pwave_index(self,lcomponent):
         index_l = []
         # total wave
@@ -499,6 +533,7 @@ class vasp_read_xml():
                 index_l.append(self.str_pwaves.index(x))
         return index_l
 
+
 # sum the component of the atoms in at_index and partial waves in pw_index
 # can be more pythonic
     def sum_atom_l_comp(self,spin,band,kp,at_index,pw_index):
@@ -508,6 +543,5 @@ class vasp_read_xml():
 #                weigh += self.pwdata[spin][band][kp][at][pw]
                 weigh += self.pwdata[spin][band][kp][at][pw]
         return weigh
-
 
 

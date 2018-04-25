@@ -4,11 +4,12 @@ from __future__ import print_function
 import sys, os
 from shutil import copy2
 from argparse import ArgumentParser
-from pv_calc_utils import common_io_checkdir, common_io_cleandir, vasp_write_incar_minimal_elec, \
-                          vasp_io_change_tag, vasp_write_kpoints_basic, vasp_write_incar_exact, \
+from pv_calc_utils import vasp_write_incar_minimal_elec, vasp_io_change_tag, \
+                          vasp_write_kpoints_basic, vasp_write_incar_exact, \
                           vasp_vasprun_zmy, vasp_vaspcmd_zmy, vasp_io_get_NPAR
 from pv_anal_utils import vasp_anal_get_outcar
 from pv_classes import vasp_read_poscar
+from pc_utils import common_io_checkdir, common_io_cleandir
 
 # =====================================================
 
@@ -239,7 +240,7 @@ def Main(ArgList):
         mnpw = int(vasp_anal_get_outcar('mnpw', outcar=chg_dir+'/OUTCAR'))
         nbands_scf = int(vasp_anal_get_outcar('nb', outcar=chg_dir+'/OUTCAR'))
         encut = int(vasp_anal_get_outcar('encut', outcar=chg_dir+'/OUTCAR'))
-        nb = 5*nbands_scf
+        nbands = mnpw/2
         copy2('POSCAR',conv_egw_dir)
         copy2('POTCAR',conv_egw_dir)
         os.chdir(conv_egw_dir)

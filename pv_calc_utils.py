@@ -2,7 +2,6 @@
 # coding=utf-8
 
 # ====================================================
-#
 #     File Name :
 # Creation Date : 2017-05-01
 # Last Modified : Thu 30 Nov 2017 09:15:02 AM CST
@@ -12,14 +11,12 @@
 #                 tasks including standard DFT, LDA/GGA+U, hybrid functional
 #                 , GW and RPA calculations as well as some basic io utilities
 #                 Special thanks to Prof. Hong Jiang and Dr. Feng Wu
-#
 # ====================================================
 
-import sys, re, os, shutil, copy
+import sys, re, os, shutil, copy, commands, string
 import subprocess as sp
-import commands, string
-from argparse import ArgumentParser
 from math import sqrt
+from pc_utils import common_run_calc_cmd
 #from io_utils import *
 
 # ====================================================
@@ -142,37 +139,6 @@ def vasp_io_set_XC_type(incar,tag_xc):
             incar.write("\n# XC tag: %s\n" % tag_xc)
             incar.write(tag)
     # if tag is none, XC will be set according to POTCAR
-
-# ====================================================
-
-def common_io_checkdir(dirname=None,create=True):
-    '''
-    check if dirname exists, or create it
-    return: the full path of target directory
-    '''
-    dirname = dirname.strip()
-
-    if (dirname is None or dirname.strip() == ""):
-        dirname = os.getcwd()
-    elif (not os.path.exists(dirname)) and create:
-        os.mkdir(dirname.strip())
-    return dirname
-
-# ====================================================
-
-def common_io_cleandir(dirname=None):
-    '''
-    check if dirname exists and is empty, or create it
-    and make it contain no files
-    return: the full path of target directory
-    '''
-    if (dirname is None or dirname.strip() == ""):
-        dirname = os.getcwd()
-    elif (not os.path.exists(dirname)):
-        os.mkdir(dirname)
-    elif (os.path.exists(dirname)):
-        sp.call("rm -rf %s" % (dirname+"/*"),shell=True)
-    return dirname
 
 # ====================================================
 
@@ -378,26 +344,11 @@ def vasp_vaspcmd_zmy(np=1,mpitype="mpirun",vasp_path="vasp"):
 
 # ====================================================
 
-def vasp_vasprun_zmy(vasp_cmd,fout=None,ferr=None):
+def vasp_vasprun_zmy(vasp_cmd,fout=None,ferr=None):   # will be deprecated
     """
     Run vasp. mpi_cmd and vasp_path are both strings
     """
 
-    if fout is None:
-        ofile = sp.PIPE
-    else:
-        ofile = open(fout,'w')
-
-    if ferr is None:
-        efile = sp.PIPE
-    else:
-        efile = open(ferr,'w')
-
-    p=sp.Popen(vasp_cmd,stdout=ofile,stderr=efile,shell=True)
-    p.wait()
-
-    if not fout is None: ofile.close()
-    if not ferr is None: efile.close()
-
+    common_run_calc_cmd(vasp_cmd, fout, ferr)
 # ====================================================
 

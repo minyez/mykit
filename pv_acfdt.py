@@ -58,8 +58,8 @@ def acfdt_write_running_script(vasp_cmd,nproc):
             "import os, commands\n"  +             \
             "import subprocess as sp\n"  +         \
             "from shutil import copy2,rmtree\n" +  \
-            "from pv_calc_utils import " +         \
-            "vasp_vasprun_zmy,vasp_io_change_tag,common_io_cleandir\n" +   \
+            "from pc_utils import common_io_cleandir\n" +  \
+            "from pv_calc_utils import vasp_vasprun_zmy,vasp_io_change_tag\n" + \
             "from pv_anal_utils import vasp_anal_get_fund_gap,vasp_anal_get_BM_info\n\n"
     print "Wrinting executing script ..."
     vasp_cmd_list = vasp_cmd.split()

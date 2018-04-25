@@ -43,8 +43,8 @@ Periodic_Table = (
 # Data from NIST database 144, last update January 2015
 # https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl
 # The data is double-checked with Wolfram Language ElementData (WLE)
-# In case that an atomic-weight interval is met in NIST, the data in WLE is used instead.
-# Accurate to 6 decimals, if available
+# In case that an atomic-weight interval is met in NIST, the data in WLE is used instead and noted below.
+# All data are accurate to 6 decimals, if available
 # WLE data used: H, Li, B, C, N, O, Mg, Si, S, Cl, Br, Tl
 Atom_Weight = (
 1.008     , 4.002602 ,

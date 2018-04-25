@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+# ====================================================
+#     File Name : pc_utils.py
+# Creation Date : 25-04-2018
+#    Created By : Min-Ye Zhang
+#       Contact : stevezhang@pku.edu.cn
+# ====================================================
+
+from __future__ import print_function
+import os
+import subprocess as sp
+
+# ====================== PERFORM CALCULATION ======================
+def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
+    '''
+    Run the calculation command by threading a subprocess calling calc_cmd
+    '''
+
+    if fout is None:
+        ofile = sp.PIPE
+    else:
+        ofile = open(fout,'w')
+
+    if ferr is None:
+        efile = sp.PIPE
+    else:
+        efile = open(ferr,'w')
+
+    p=sp.Popen(calc_cmd,stdout=ofile,stderr=efile,shell=True)
+    p.wait()
+
+    if not fout is None: ofile.close()
+    if not ferr is None: efile.close()
+
+# ====================== PRINT WARNING ======================
+def common_print_warn(warn_str, func_level=0):
+    '''
+    Print warning with a specific level for the calling function
+    '''
+    print("  "*(func_level+1) + '- WARNING: ' + warn_str)
+
+
+# ====================== CREATE DIRECTORY ======================
+
+def common_io_checkdir(dirname=None,create=True):
+    '''
+    check if dirname exists, or create it
+    return: the full path of target directory
+    '''
+    dirname = dirname.strip()
+
+    if (dirname is None or dirname.strip() == ""):
+        dirname = os.getcwd()
+    elif (not os.path.exists(dirname)) and create:
+        os.mkdir(dirname.strip())
+    return dirname
+
+
+def common_io_cleandir(dirname=None):
+    '''
+    check if dirname exists and is empty, or create it
+    and make it contain no files
+    return: the full path of target directory
+    '''
+    if (dirname is None or dirname.strip() == ""):
+        dirname = os.getcwd()
+    elif (not os.path.exists(dirname)):
+        os.mkdir(dirname)
+    elif (os.path.exists(dirname)):
+        sp.call("rm -rf %s" % (dirname+"/*"),shell=True)
+    return dirname
+

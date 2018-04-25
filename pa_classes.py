@@ -3,7 +3,7 @@
 
 # ====================================================
 #
-#     File Name : pa_input.py
+#     File Name : pa_classes.py
 # Creation Date : 09-04-2018
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
@@ -12,8 +12,9 @@
 
 from __future__ import print_function, absolute_import
 from pc_elements import common_read_chemical_formula
-from pc_elements import Periodic_Table as PT
+from pc_utils import common_run_calc_cmd
 import sys, os
+import subprocess as sp
 from fnmatch import fnmatch
 
 class abinit_input_files():
@@ -22,27 +23,71 @@ class abinit_input_files():
     Class for manipulating the abinit input file.
     '''
 
-    pp_type_avail = {
-                     'paw'  : 'xml'  ,
-                     'ncpp' : 'psp8' ,
-                     'usp'  : 'usp'  ,
-                    }
-
-    # get the environment variable for directores which stores the psp8 NCPP
-    # and the PAW dataset
-    # PAW should be a version of JTH PAW dataset, while NCPP is the nc-sr_pbe_standard_psp8
-    abinit_pp_path_list = os.environ['ABINIT_PP_PATH'].split(':')
-
 
     def __init__(self, casename, formula, xc_type='pbe', pp_type='paw', **kwargs):
         '''
         Initialize the master input file i.e. casename.in file, along with 
         the input control casename.files
         '''
+
+        self.pp_type_avail = {
+                         'paw'  : 'xml'  ,
+                         'ncpp' : 'psp8' ,
+                         'usp'  : 'usp'  ,
+                        }
+
         self.casename = casename
+        self.abinit_cmd = None
+        self.abinit_path = None
+
         self.__write_atom_info(formula)
         self.__write_pp_info(xc_type, pp_type)
         self.__set_files()
+
+
+
+    def set_abinit_run(self, abinit_address_in=None, nproc=1, mpitype='mpiexec'):
+        '''
+        Initialize the running script of abinit calculation
+        '''
+        try:
+            assert type(nproc)==int
+            assert nproc > 0
+        except AssertionError:
+            raise TypeError("nproc should be a positive integer.")
+
+        if abinit_address_in is None or not os.path.exists(abinit_address_in):
+            if not os.path.exists(abinit_address_in):
+                print("WARNING: Specified executive not found: %s\nSearching from PATH..." % abinit_address_in)
+            try:
+                abinit_address = sp.check_output(['which','abinit']).strip()
+            except sp.CalledProcessError:
+                raise ValueError("ABINIT executive not found. Please figure it")
+            else:
+                print("Found ABINIT executive at %s" % abinit_address)
+                self.abinit_path = abinit_address
+        elif os.path.exists(abinit_address_in):
+            self.abinit_path = os.path.abspath(abinit_address_in)
+
+        self.nproc = nproc
+
+        if nproc==1:
+            self.abinit_cmd = self.abinit_path + ' < ' + self.controlfiles
+        else:
+            self.abinit_cmd = mpitype + ' -np ' + str(nproc) + ' ' + self.abinit_path + \
+                              ' < ' + self.controlfiles
+
+
+    def run_abinit(self, fout=None, ferr=None):
+        '''
+        Perform calculation after setting up abinit_cmd
+        '''
+        try:
+            assert self.abinit_cmd is not None
+        except AssertionError:
+            raise ValueError('The abinit_cmd attribute has not been initialized yet.')
+        else:
+            common_run_calc_cmd(self.abinit_cmd, fout, ferr)
 
 
     def __write_atom_info(self, formula):
@@ -57,7 +102,7 @@ class abinit_input_files():
 
     def __write_pp_info(self, xc_type, pp_type):
         '''
-        TODO: only support PBE.
+        TODO: support more functionals.
         '''
 
         if xc_type.lower() == 'pbe':
@@ -66,8 +111,18 @@ class abinit_input_files():
             # Functionals other than PBE is not supported currently
             raise ValueError("Functional other than PBE not supported yet.")
 
-        # set pseudopotential path, both ncpp and paw
+        # get the environment variable for directores which stores the psp8 NCPP
+        # and the PAW dataset
+        # PAW should be a version of JTH PAW dataset, while NCPP is the nc-sr_pbe_standard_psp8
+        try:
+            self.abinit_pp_path_list = os.environ['ABINIT_PP_PATH'].split(':')
+        except KeyError:
+            raise KeyError('ABINIT_PP_PATH should be set in the environment variable.')
+        else:
+            if len(self.abinit_pp_path_list) == 1 and len(self.abinit_pp_path_list[0]) == 0:
+                raise ValueError('ABINIT_PP_PATH is probably not correctly defined. Please check.')
 
+        # set pseudopotential path, both ncpp and paw
         for pp_path in self.abinit_pp_path_list[::-1]:
             if fnmatch(pp_path, '*JTH*'):
                 self.abinit_paw_path = pp_path
@@ -96,14 +151,21 @@ class abinit_input_files():
 
     def __set_files(self):
         '''
-        Generate input control file by the casename i.e. casename.files
+        Set input file attributes and Generate input control file by the casename i.e. casename.files
         '''
         casename = self.casename
-        with open(casename+'.files','w') as h_files:
-            h_files.write(casename+'.in\n')
-            h_files.write(casename+'.out\n')
+        self.infile = casename+'.in'
+        self.outfile = casename+'.out'
+        self.logfile = casename+'.log'
+        self.controlfiles = casename + '.files'
+        with open(self.controlfiles,'w') as h_files:
+            h_files.write(self.infile+'\n')
+            h_files.write(self.outfile+'\n')
             h_files.write(casename+'i\n')
             h_files.write(casename+'o\n')
             h_files.write(casename+'\n')
             for pp in self.atom_pp_list:
                 h_files.write(pp+'\n')
+
+
+
