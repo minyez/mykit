@@ -72,3 +72,21 @@ def common_io_cleandir(dirname=None):
         sp.call("rm -rf %s" % (dirname+"/*"),shell=True)
     return dirname
 
+# ====================== CHECK LOCATION INFO ======================
+
+def common_get_dirname(path='.'):
+    '''
+    return the directory location of path.
+    Return: path,                         if path is a directory itself
+            the parent directory of path, if path is a file
+    '''
+    abspath = os.path.abspath(path)
+    if os.path.isdir(path):
+        parentdir = abspath
+    elif os.path.isfile(path):
+        parentdir = abspath[:-len(os.path.basename(path))-1]
+    else:
+        parentdir = None
+    return parentdir
+
+# ====================================================

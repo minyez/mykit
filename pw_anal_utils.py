@@ -15,44 +15,24 @@
 
 import os,sys
 import subprocess as sp
+from pc_utils import common_get_dirname
+from fnmatch import fnmatch
 
 # ====================================================
 
-def Get_ParentDir(path='PWD'):
+def w2k_get_casename(w2kdir='.'):
     '''
-    return the parent directory of path.
-    Return: path,                         if path is a directory itself
-            the parent directory of path, if path is a file
+    return the name of the case from case.struct, if there exists a struct file
+    or the casename will be set to the name of the directory.
     '''
-    if os.path.isdir(path):
-        parentdir = os.path.abspath(path)
-    elif os.path.isfile(path):
-        parentdir = os.path.abspath(path)[:-len(os.path.basename(path))]
-    else:
-        parentdir = None
-    return parentdir
+    w2kdir_abspath = os.path.abspath(w2kdir)
+    if os.path.isdir(w2kdir_abspath):
+        for filename in os.listdir(w2kdir_abspath):
+            if fnmatch(filename, w2kdir_abspath + '/*.struct'):
+                case = filename.split('/')[-1][:-8]
+                return case
 
-# ====================================================
-
-def Get_Basename():
-    '''
-    return the name of current directory
-    '''
-    path = os.environ['PWD']
-    dirname = os.path.basename(path)
-
-    return dirname
-
-# ====================================================
-
-def Get_Casename():
-    '''
-    return the name of the case from case.struct
-    '''
-    path = sp.check_output('ls *.struct',shell=True)
-    case = path[:-8]
-
-    return case
+    return os.path.basename(common_get_dirname(w2kdir))
 
 # ====================================================
 
@@ -65,7 +45,7 @@ def Read_BandStructure(casename,hybrid=False):
     '''
 #   get case from case.struct
     if casename==None:
-        casename = Get_Casename()
+        casename = w2k_get_casename()
     print "casename: %s" % casename
     ifile = casename+'.energy'
     Band_Struct = []

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pw_anal_utils import Read_BandStructure, Get_Casename
+from pw_anal_utils import Read_BandStructure, w2k_get_casename
 from argparse import ArgumentParser
 import sys,os
 import subprocess as sp
@@ -25,7 +25,7 @@ def Main(ArgList):
 
 # =====================================================
     if not opts.casename:
-        casename = Get_Casename()
+        casename = w2k_get_casename()
     else:
         casename = opts.casename
 

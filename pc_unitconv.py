@@ -57,7 +57,7 @@ def comm_conv_length(conv_str, value=1, use_gnu=False, std_unit_name=False, prin
     Length unit conversion. Use std_unit_name to avoid dictionary converting
     '''
     # define the possible alias of units
-    atomiclength_alias_list = ['atomiclength','bohr','au', 'al']
+    atomiclength_alias_list = ['atomiclength','bohr','au', 'a0']
     angstrom_alias_list = ['a', 'ang', 'angstrom']
     m_alias_list = ['m','meter']
 

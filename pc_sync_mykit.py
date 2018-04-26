@@ -11,9 +11,10 @@
 # ====================================================
 
 from __future__ import print_function
+from argparse import ArgumentParser
+from pc_utils import common_print_warn
 import sys, os, re
 import subprocess as sp
-from argparse import ArgumentParser
 
 def common_read_scsites(f_scsites=None):
     '''
@@ -49,6 +50,16 @@ def common_test_connection(scsite):
     print("Syncing: " + site_ip)
 
 
+def common_sync_once(site, local_mykit_path):
+
+    rsync_cmd = "rsync -qazru --inplace "
+    try:
+        sp.check_output(rsync_cmd + " " + local_mykit_path + "/p?_*.py " + site, shell=True)
+        sp.check_output(rsync_cmd + " " + local_mykit_path + "/README.md " + site, shell=True)
+    except sp.CalledProcessError:
+        comm_print_warn("Error happens in rsync to %s. Pass" % site.split(':')[0], 0)
+
+
 def common_sync_mykit(ArgList):
 
     description = '''
@@ -63,8 +74,6 @@ def common_sync_mykit(ArgList):
     opts = parser.parse_args()
 
     supercomputer_sites = common_read_scsites(opts.f_scsites)
-
-    rsync_cmd = "rsync -qazru --inplace "
     local_mykit_path = os.path.dirname(os.path.abspath(__file__))
 
     #print(supercomputer_sites)
@@ -72,10 +81,7 @@ def common_sync_mykit(ArgList):
 
     for site in supercomputer_sites:
         common_test_connection(site)
-        try:
-            sp.check_output(rsync_cmd + " " + local_mykit_path + "/ " + site, shell=True)
-        except sp.CalledProcessError:
-            print("Error happens in rsync to %s. Pass" % site.split(':')[0])
+        common_sync_once(site, local_mykit_path)
 
 
 

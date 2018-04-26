@@ -4,7 +4,6 @@ from __future__ import print_function
 from argparse import ArgumentParser
 import subprocess as sp
 import sys
-from pw_anal_utils import Get_Basename
 from shutil import copy2
 
 
@@ -36,7 +35,7 @@ def pw_init_optimize_job(ArgList):
         print(ArgList)
 
     if opts.casename == None:
-        casename = Get_Basename() 
+        casename = w2k_get_casename() 
     else:
         casename = opts.casename
     
@@ -68,10 +67,10 @@ def pw_init_optimize_job(ArgList):
     sp.check_output('x optimize < %s' % ofile,stderr=sp.STDOUT,shell=True)
     
     # change MSR1 keyword to MSR1a in case.inm, in case of minimization of inner coordinates
-    try:
-        sp.check_output("sed -i 's/MSR1 /MSR1a /g' %s.inm" % casename, stderr=sp.STDOUT, shell=True)
-    except sp.CalledProcessError:
-        print("WARNING: %s.inm is not found." % casename)
+    #try:
+    #    sp.check_output("sed -i 's/MSR1 /MSR1a /g' %s.inm" % casename, stderr=sp.STDOUT, shell=True)
+    #except sp.CalledProcessError:
+    #    print("WARNING: %s.inm is not found." % casename)
     
     # read the optimize.job
     with open('optimize.job','r') as h_optimize:
