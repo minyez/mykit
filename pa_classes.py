@@ -12,6 +12,7 @@
 
 from __future__ import print_function, absolute_import
 from pc_elements import common_read_chemical_formula
+from pc_elements import Periodic_Table as PT
 from pc_utils import common_run_calc_cmd
 import sys, os
 import subprocess as sp
@@ -40,10 +41,15 @@ class abinit_input_files():
         self.abinit_cmd = None
         self.abinit_path = None
 
-        self.__write_atom_info(formula)
+        # if formula is not empty, generate formula from it
+        # otherwise get the from the formatted input file named as casename.in
+        if formula != '':
+            self.__write_atom_info(formula)
+        else:
+            self.__read_format_input()
+
         self.__write_pp_info(xc_type, pp_type)
         self.__set_files()
-
 
 
     def set_abinit_run(self, abinit_address_in=None, nproc=1, mpitype='mpiexec'):
@@ -72,10 +78,10 @@ class abinit_input_files():
         self.nproc = nproc
 
         if nproc==1:
-            self.abinit_cmd = self.abinit_path + ' < ' + self.controlfiles
+            self.abinit_cmd = self.abinit_path + ' -i ' + self.controlfiles
         else:
             self.abinit_cmd = mpitype + ' -np ' + str(nproc) + ' ' + self.abinit_path + \
-                              ' < ' + self.controlfiles
+                              ' -i ' + self.controlfiles
 
 
     def run_abinit(self, fout=None, ferr=None):
@@ -96,9 +102,32 @@ class abinit_input_files():
             formula: (str)
                 the non-reduced chemical formula for the system to calculate. 
         '''
-        self.atom_type, self.natom = common_read_chemical_formula(formula)
+        self.atom_type, self.natom, self.compositions = common_read_chemical_formula(formula)
         self.natoms = sum(self.natom)
 
+
+    def __read_format_input(self):
+
+        with open(self.casename+'.in','r') as h_in:
+            self.inlines = h_in.readlines()
+
+        for line in self.inlines:
+            tag_value_words = line.split()
+            if len(tag_value_words) > 0:
+                if tag_value_words[0] == 'znucl':
+                    self.atom_type = []
+                    for atomic_num in tag_value_words[1:]:
+                        self.atom_type.append(PT[int(atomic_num)-1])
+                    self.compositions = len(self.atom_type)
+                if tag_value_words[0] == 'typat':
+                    atom_type_index = tag_value_words[1:]
+                     
+        self.natom = []
+        for i in range(self.compositions):
+            self.natom.append(atom_type_index.count(str(i+1)))
+
+        self.natoms = sum(self.natom)
+            
 
     def __write_pp_info(self, xc_type, pp_type):
         '''
@@ -139,6 +168,8 @@ class abinit_input_files():
             current_pp_path = self.abinit_ncpp_path
         else:
             raise ValueError("Corresponding directory of PP type is not found in environment")
+
+        current_pp_path = current_pp_path.replace("'","")
 
         # find the PP for the atoms. For NCPP and JTH-PAW, the naming convention are both "Si.xxxxx"
         self.atom_pp_list = []

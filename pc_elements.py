@@ -83,6 +83,26 @@ def common_molar_mass_calculator(chem_formula):
 # ====================================================
 
 def common_read_chemical_formula(chem_formula, debug=False):
+
+    '''
+    Read the chemical formula
+
+    Parameters:
+    chem_formula: str
+        the chemical formula of the system which reflects the total numbers of each element
+        in the molecule or the unit cell of crystal.
+    debug: bool
+        the flag to switch on debug mode.
+        
+    Return:
+    atom_type: list of str
+        the types of elements in the system.
+    natom_list: list of int
+        the numbers of atoms for each type of element correspondent to the atom_type.
+    compositions: int
+        the number of compositions in the system.
+
+    '''
     
     atom_type = []
     natom_list = []
@@ -126,7 +146,9 @@ def common_read_chemical_formula(chem_formula, debug=False):
             atom_type.append(symbol_tmp)
             natom_list.append(int(str_natom_tmp))
 
+    compositions = len(atom_type) 
+        
     if debug:
         print(atom_type, natom_list)
 
-    return atom_type, natom_list
+    return atom_type, natom_list, compositions

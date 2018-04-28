@@ -50,6 +50,7 @@ def __gen_std_conv_str(conv_str, alias_unit_dict, std_unit_name):
         std_to_unit   = to_unit
     return flag_from_to_units, std_conv_str, std_from_unit, std_to_unit
 
+# ====================================================
 
 def comm_conv_length(conv_str, value=1, use_gnu=False, std_unit_name=False, print_result=False, debug=False):
 
@@ -58,28 +59,27 @@ def comm_conv_length(conv_str, value=1, use_gnu=False, std_unit_name=False, prin
     '''
     # define the possible alias of units
     atomiclength_alias_list = ['atomiclength','bohr','au', 'a0']
-    angstrom_alias_list = ['a', 'ang', 'angstrom']
-    m_alias_list = ['m','meter']
+    angstrom_alias_list     = ['angstrom', 'ang', 'a']
+    m_alias_list            = ['m','meter']
 
-    length_unit_alias_dict = {
-                'atomiclength': atomiclength_alias_list, \
-                'angstrom': angstrom_alias_list, \
-                'm': m_alias_list
-                }
-    # define the conversion coefficient with help of scipy
+    alias_lists = [atomiclength_alias_list, angstrom_alias_list, m_alias_list]
+
+    length_unit_alias_dict = {}
+    for alias_list in alias_lists:
+        length_unit_alias_dict.update({alias_list[0]: alias_list})
+
+    # define the conversion coefficient
     # if GNU-units is not used
     if not use_gnu:
-        import scipy.constants as scc
-        bohr = scc.physical_constants['atomic unit of length'][0]
+        from pc_constants import abohr
         conv_coeffs_list = {
-                        'angstrom2atomiclength': scc.angstrom/bohr, \
-                        'atomiclength2angstrom': bohr/scc.angstrom, \
-                        'm2angstrom': 1.0/scc.angstrom, \
-                        'angstrom2m': scc.angstrom, \
-                        'atomiclength2m': bohr, \
-                        'm2atomiclength': 1.0/bohr, \
+                        'angstrom2atomiclength' : 1.0E-10/abohr , \
+                        'atomiclength2angstrom' : abohr*1.0E10  , \
+                        'm2angstrom'            : 1.0E10        , \
+                        'angstrom2m'            : 1.0E-10       , \
+                        'atomiclength2m'        : abohr         , \
+                        'm2atomiclength'        : 1.0/abohr     , \
                            }
-
     if debug:
         print(length_alias_unit_dict)
 
@@ -88,6 +88,61 @@ def comm_conv_length(conv_str, value=1, use_gnu=False, std_unit_name=False, prin
     flag_from_to_units, std_conv_str, std_from_unit, std_to_unit \
               = __gen_std_conv_str(conv_str, length_alias_unit_dict, std_unit_name)
   
+    return __return_converted_value(value, std_conv_str, conv_coeffs_list, \
+                                    std_from_unit, std_to_unit, use_gnu, print_result, debug)
+
+# ====================================================
+
+def comm_conv_energy(conv_str, value=1, use_gnu=False, std_unit_name=False, print_result=False, debug=False):
+
+    '''
+    Energy unit conversion. Use std_unit_name to avoid dictionary converting
+    '''
+    # define the possible alias of units
+    ev_alias_list   = ['ev']
+    ha_alias_list   = ['hatree', 'ha', 'au']
+    ry_alias_list   = ['rydberg', 'ry', 'ryd']
+    kcal_alias_list = ['kcal']
+    j_alias_list    = ['j']
+    kj_alias_list   = ['kj']
+
+    alias_lists = [ev_alias_list, ha_alias_list, ry_alias_list, kcal_alias_list, \
+                   j_alias_list, kj_alias_list]
+
+    energy_unit_alias_dict = {}
+    for alias_list in alias_lists:
+        energy_unit_alias_dict.update({alias_list[0]: alias_list})
+
+    # define the conversion coefficient
+    # if GNU-units is not used
+    if not use_gnu:
+        from pc_constants import eV2Ha, Ha2eV, eV2Ry, Ry2eV, eV2J, eV2kJ
+        conv_coeffs_list = {
+                        'ev2hatree'      : eV2Ha     , \
+                        'hatree2ev'      : Ha2eV     , \
+                        'ev2rydberg'     : eV2Ry     , \
+                        'rydberg2ev'     : Ry2eV     , \
+                        'hatree2rydberg' : 2.0       , \
+                        'rydberg2hatree' : 0.5       , \
+                        'ev2j'           : eV2J      , \
+                        'j2ev'           : 1.0/eV2J  , \
+                        'ev2kj'          : eV2kJ     , \
+                        'kj2ev'          : 1.0/eV2kJ , \
+                           }
+
+    # Generate alias-to-std-unit dictionary
+    energy_alias_unit_dict = __gen_unit_alias_dictionary(energy_unit_alias_dict, std_unit_name)
+    flag_from_to_units, std_conv_str, std_from_unit, std_to_unit \
+              = __gen_std_conv_str(conv_str, energy_alias_unit_dict, std_unit_name)
+  
+    return __return_converted_value(value, std_conv_str, conv_coeffs_list, \
+                                    std_from_unit, std_to_unit, use_gnu, print_result, debug)
+
+# ====================================================
+
+def __return_converted_value(value, std_conv_str, conv_coeffs_list, \
+                             std_from_unit, std_to_unit, use_gnu=False, print_result=False, debug=False):
+
     value_converted = 1.0
     if not use_gnu:
         value_converted = value * conv_coeffs_list[std_conv_str]
@@ -105,6 +160,7 @@ def comm_conv_length(conv_str, value=1, use_gnu=False, std_unit_name=False, prin
     return value_converted
 
 # ====================================================
+
 def Main(ArgList):
     description='''Convert units by using scipy.constants as default'''
     
@@ -140,7 +196,7 @@ def Main(ArgList):
     if task == 'l':
         comm_conv_length(conv_str, opts.value, use_gnu, print_result=True, std_unit_name=opts.std_unit_name, debug=opts.debug)
     elif task == 'e':
-        pass
+        comm_conv_energy(conv_str, opts.value, use_gnu, print_result=True, std_unit_name=opts.std_unit_name, debug=opts.debug)
 
     return
 # ==============================

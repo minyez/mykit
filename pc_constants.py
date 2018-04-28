@@ -45,7 +45,9 @@ abohr = scc.physical_constants['Bohr radius'][0]
 # Energy conversion
 eV2kcal      = 23.06
 Ha2eV        = scc.physical_constants['Hartree energy in eV'][0]
+eV2Ha        = 1.0/Ha2eV
 Ry2eV        = Ha2eV/2.0
+eV2Ry        = 1.0/Ry2eV
 eV2J         = e
 eV2kJ        = eV2J / 1000
 eV2K         = e/kb

@@ -27,8 +27,8 @@ def Main(ArgList):
     
     parser = ArgumentParser(description=description)
     
-    parser.add_argument("casename", metavar="CASE", type=str, help="Casename for the calculation")
-    parser.add_argument("formula", metavar="FORMULA", type=str, help="Formula of the chemical system, e.g. Si1O2")
+    parser.add_argument(dest="casename", metavar="CASE", type=str, help="Casename for the calculation")
+    parser.add_argument("-f", dest="formula", type=str, default='', help="Formula of the chemical system, e.g. Si1O2")
     parser.add_argument('--xc', dest='xc_type', type=str, default='PBE', help="type of XC functional. Default PBE")
     parser.add_argument('-n', dest='nproc', type=int, default=1, help="The number of processors used to run ABINIT. Default 1, i.e. serial calculation")
     parser.add_argument('--pp', dest='pp_type', type=str, default='paw', help="type of pseudopotential. Default PAW.")
