@@ -13,6 +13,7 @@ from __future__ import print_function
 import sys,os
 import numpy as np
 from xml.etree import ElementTree as etree
+from pc_utils import common_print_warn
 
 # ====================================================
 
@@ -22,20 +23,178 @@ class vasp_read_outcar:
         
         self.filename = OutFile
         print(" Reading OUTCAR: %s" % OutFile)
-        with open(PosFile,'r') as f:
+        with open(OutFile,'r') as f:
             self.outlines = f.readlines()
+        self.__init_calc_params()
         self.__check_finished()
+        if not self.flag_finish:
+            common_print_warn("Task has not finished.", func_level=0)
+        self.__divide_ion_iteration()
 
 
-    def __check_finished():
+    def __init_calc_params(self):
+        '''
+        Initialize the parameters of calculations
+        TODO:
+            initialization of dimension parameters
+        '''
+        for i in range(len(self.outlines)):
+            line = self.outlines[i].strip()
+
+        # irreducible k-points
+            if line.startswith('Subroutine IBZKPT returns following result'):
+                self.nirkp = int(self.outlines[i+3].split()[1])
+                self.irkp = []
+                self.wirkp = []
+                sum_weight = 0.0
+                for k_str in self.outlines[i+7:i+7+self.nirkp]:
+                    k_str_list = k_str.split()
+                    self.irkp.append([float(x) for x in k_str_list[:3]])
+                    self.wirkp.append(float(k_str_list[3]))
+                    sum_weight += self.wirkp[-1]
+                self.irkp = np.array(self.irkp)
+                self.wirkp = np.divide(np.array(self.wirkp), sum_weight)
+                continue
+
+        # Dimension of arrays, e.g. NBANDS, NGX/Y/Z
+            if line.startswith('Dimension of arrays'):
+                pass
+
+
+    def __check_finished(self):
         '''
         Check if the calculation has finished by checking whether the last line of outlines
         tells about the time summary
         '''
         if self.outlines[-1].strip().startswith('Voluntary context switches'):
             self.flag_finish = True
+            return True
         else:
             self.flag_finish = False
+            return False
+
+
+    def __divide_ion_iteration(self):
+        '''
+        Check the line number of each ionic step
+        '''
+        ln_iteration = []
+        i_ionstep = []
+        self.flag_static = True
+
+        for i in range(len(self.outlines)):
+            words = self.outlines[i].split()
+            if len(words) == 5:
+                if words[1] == 'Iteration':
+                    ln_iteration.append(i)
+                    i_ionstep.append(int(words[2][:-1]))
+
+        self.nisteps = i_ionstep[-1]
+        if self.nisteps == 1:
+            self.iterations = ln_iteration 
+        else:
+            self.flag_static = False
+            self.iterations = [[] for i in range(self.nisteps)]
+            for i in range(len(ln_iteration)):
+                self.iterations[i_ionstep[i]-1].append(ln_iteration[i])
+
+
+    def __get_ionic_data_region(self, ionstep, all_elesteps):
+        '''
+        Return the region of data in self.outlines for a particular ionic step.
+
+        Parameters:
+            ionstep: int
+                The index of ionic step. Default -1 to return the information regarding the final results.
+                0 for the initial data.
+            all_elesteps: bool
+                flag for controlling whether the whole range of electronic step or only the last step is included.
+        '''
+        
+        if all_elesteps:
+            end_ele = 0
+        else:
+            end_ele = -1
+
+        if ionstep == 0:
+            st_line = 0
+            ed_line = self.iterations[0][0]
+        elif ionstep == -1 or ionstep == self.nisteps:
+            st_line = self.iterations[-1][end_ele]
+            ed_line = len(self.outlines)-1
+        elif ionstep < -1 or ionstep > self.nisteps:
+            raise ValueError("The requested ionic step is too large. Maximum %d" % self.nisteps)
+        else:
+            st_line = self.iterations[ionstep-1][end_ele]
+            ed_line = self.iterations[ionstep][0]
+
+        return st_line, ed_line
+
+
+    def get_pos(self, ionstep=-1):
+        '''
+        Get the initial lattice structure for a particular ionic step. Default return the last structure.
+
+        Parameters:
+            ionstep: int
+                The index of ionic step. Default -1 to return the final structure.
+                0 for the initial structure, i.e. POSCAR
+        '''
+        
+        st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
+        inner_coor = []
+        flag_start_inner_coor = False
+        flag_start_POS_block  = False
+
+        for i in range(st_line, ed_line):
+            #print(self.outlines[i])
+            if self.outlines[i].strip().startswith('direct'):
+                lattice = np.array([
+                                [float(x) for x in self.outlines[i+1].split()[:3]],
+                                [float(x) for x in self.outlines[i+2].split()[:3]],
+                                [float(x) for x in self.outlines[i+3].split()[:3]],
+                                   ])
+            if ionstep == 0:
+                if self.outlines[i].strip().startswith('position of ions in'):
+                    flag_start_inner_coor = not flag_start_inner_coor
+                    continue
+                if flag_start_inner_coor:
+                    item_coor = [float(x) for x in self.outlines[i].split()]
+                    if item_coor != []:
+                        inner_coor.append(item_coor)
+            else:
+                if self.outlines[i].strip().startswith('POSITION'):
+                    flag_start_inner_coor = True
+                    continue
+
+                item = self.outlines[i].replace('-','').split()
+                if flag_start_inner_coor:
+                    if item != [] and flag_start_POS_block:
+                        inner_coor.append([float(x) for x in item[:3]])
+                    elif item == []:
+                        flag_start_POS_block = not flag_start_POS_block
+                        if not flag_start_POS_block:
+                            flag_start_inner_coor = False
+                        continue
+        inner_coor = np.array(inner_coor)
+        # convert cartisian to direct coordinates
+        if ionstep != 0:
+             inner_coor = np.dot(inner_coor, np.linalg.inv(lattice))
+             inner_coor = np.round(inner_coor,5)
+        return lattice, inner_coor
+
+
+    def get_band_structure(self, ionstep=-1):
+        '''
+        Get the band structure for a particular ionic step.
+
+        Parameters:
+            ionstep: int
+                The index of ionic step. -1 to return the band structure of final structure
+                0 for that of the initial structure
+        '''
+        st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
+
 
 # ====================================================
 
@@ -250,7 +409,7 @@ class vasp_read_poscar:
             self.__save_to_lines()
         if OutFile is not None:
             if OutFile==self.filename:
-                print(" - Warning: OutFile same as input. Change input to %s.old" % self.filename)
+                common_print_warn("OutFile same as input. Change input to %s.old" % self.filename, func_level=0)
                 os.rename(self.filename,self.filename+'.old') 
                 self.filename = self.filename + '.old'
             with open(OutFile,'w+') as f:
@@ -258,7 +417,7 @@ class vasp_read_poscar:
                     f.write(self.poslines[i])
             print(" - Done output: %s" % OutFile)
         else:
-            print(" - Invalid output filename: None. Pass")
+            common_print_warn("Invalid output filename: None. Pass", func_level=0)
 
 # ===========================================================
 # slab-related utilities
