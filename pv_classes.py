@@ -13,7 +13,18 @@ from __future__ import print_function
 import sys,os
 import numpy as np
 from xml.etree import ElementTree as etree
-from pc_utils import common_print_warn
+from pc_utils import common_print_warn, common_ss_conv
+
+# ====================================================
+
+class vasp_read_wavecar:
+
+    def __init__(self, WavFile='WAVECAR', verbose=True):
+        
+        self.filename = WavFile
+        self.verbose = verbose
+        with open(WavFile,'rb') as h_WavFile:
+            self.wavlines = h_WavFile.readlines()
 
 # ====================================================
 
@@ -22,14 +33,18 @@ class vasp_read_outcar:
     def __init__(self, OutFile='OUTCAR', verbose=True):
         
         self.filename = OutFile
+        self.eigenene = None
+        self.occ = None
+        self.verbose = verbose
+
         print(" Reading OUTCAR: %s" % OutFile)
         with open(OutFile,'r') as f:
             self.outlines = f.readlines()
+        self.__divide_ion_iteration()
         self.__init_calc_params()
         self.__check_finished()
         if not self.flag_finish:
             common_print_warn("Task has not finished.", func_level=0)
-        self.__divide_ion_iteration()
 
 
     def __init_calc_params(self):
@@ -38,7 +53,12 @@ class vasp_read_outcar:
         TODO:
             initialization of dimension parameters
         '''
-        for i in range(len(self.outlines)):
+        # lattice constants and inner coordinates 
+        self.lattice, self.innerpos = self.get_pos(ionstep=0)
+
+        # the parameters are saved in the part before the iterations start
+        for i in range(len(self.outlines[:self.iterations[0][0]])):
+        #for i in range(len(self.outlines)):
             line = self.outlines[i].strip()
 
         # irreducible k-points
@@ -56,9 +76,22 @@ class vasp_read_outcar:
                 self.wirkp = np.divide(np.array(self.wirkp), sum_weight)
                 continue
 
-        # Dimension of arrays, e.g. NBANDS, NGX/Y/Z
+        # NBANDS, NGX/Y/Z
             if line.startswith('Dimension of arrays'):
-                pass
+                self.nbands = int(self.outlines[i+1].split()[-1])
+                self.ngxyz  = [int(x) for x in self.outlines[i+6].split()[4:10:3]]
+                self.ngfxyz  = [int(x) for x in self.outlines[i+7].split()[3:7:2]] 
+        # Maximum number of planewaves
+            if line.startswith('maximum number of plane-waves'):
+                self.mplw = common_ss_conv(line, -1, int)
+        # ISPIN
+            if line.startswith('ISPIN'):
+                self.ispin = common_ss_conv(line, 2, int)
+            if line.startswith('NELECT'):
+                self.nelect = common_ss_conv(line, 2, int)
+            if line.startswith('ISMEAR'):
+                self.ismear = common_ss_conv(line.replace(';',''), 2, int)
+                self.sigma  = common_ss_conv(line.replace(';',''), 5, float)
 
 
     def __check_finished(self):
@@ -142,8 +175,8 @@ class vasp_read_outcar:
         '''
         
         st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
-        inner_coor = []
-        flag_start_inner_coor = False
+        innerpos = []
+        flag_start_innerpos = False
         flag_start_POS_block  = False
 
         for i in range(st_line, ed_line):
@@ -156,32 +189,33 @@ class vasp_read_outcar:
                                    ])
             if ionstep == 0:
                 if self.outlines[i].strip().startswith('position of ions in'):
-                    flag_start_inner_coor = not flag_start_inner_coor
+                    flag_start_innerpos = not flag_start_innerpos
                     continue
-                if flag_start_inner_coor:
-                    item_coor = [float(x) for x in self.outlines[i].split()]
-                    if item_coor != []:
-                        inner_coor.append(item_coor)
+                if flag_start_innerpos:
+                    item_innerpos = [float(x) for x in self.outlines[i].split()]
+                    if item_innerpos != []:
+                        innerpos.append(item_innerpos)
             else:
                 if self.outlines[i].strip().startswith('POSITION'):
-                    flag_start_inner_coor = True
+                    flag_start_innerpos = True
                     continue
 
-                item = self.outlines[i].replace('-','').split()
-                if flag_start_inner_coor:
-                    if item != [] and flag_start_POS_block:
-                        inner_coor.append([float(x) for x in item[:3]])
-                    elif item == []:
+                item_innerpos = self.outlines[i].replace('-','').split()
+                if flag_start_innerpos:
+                    if item_innerpos != [] and flag_start_POS_block:
+                        innerpos.append([float(x) for x in item_innerpos[:3]])
+                    elif item_innerpos == []:
                         flag_start_POS_block = not flag_start_POS_block
                         if not flag_start_POS_block:
-                            flag_start_inner_coor = False
+                            flag_start_innerpos = False
                         continue
-        inner_coor = np.array(inner_coor)
+        innerpos = np.array(innerpos)
         # convert cartisian to direct coordinates
         if ionstep != 0:
-             inner_coor = np.dot(inner_coor, np.linalg.inv(lattice))
-             inner_coor = np.round(inner_coor,5)
-        return lattice, inner_coor
+            innerpos = np.dot(innerpos, np.linalg.inv(lattice))
+            # the inner coordinates are rounded, which may cause nuemrical error
+            innerpos = np.round(innerpos,5)
+        return lattice, innerpos
 
 
     def get_band_structure(self, ionstep=-1):
@@ -194,7 +228,101 @@ class vasp_read_outcar:
                 0 for that of the initial structure
         '''
         st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
+        # find the starting line for the band structure
+        for i in range(st_line,ed_line):
+            line = self.outlines[i].strip()
+            if line.startswith('E-fermi'):
+                ln_e_fermi = i
+                break
 
+        nbands = self.nbands
+        ispin = self.ispin
+        nirkp = self.nirkp
+
+        kpt_block = nbands + 3
+        spin_block = kpt_block * nirkp + 2
+
+        self.efermi = common_ss_conv(self.outlines[ln_e_fermi], 2, float)
+        self.eigenene = []
+        self.occ = []
+        vb = self.nelect / 2 - 1
+        cb = self.nelect / 2 
+        self.vbm = -10000.0
+        self.cbm =  10000.0
+        self.vbm_loc =  [0, 0]
+        self.cbm_loc =  [0, 0]
+        self.Eg_dir = 10000.0
+        self.dir_loc =  [0, 0]
+
+        if ispin == 2:
+            ln_spin_1_k_1 = ln_e_fermi + 5
+        else:
+            ln_spin_1_k_1 = ln_e_fermi + 3
+
+        for spin in range(ispin):
+            e_spin = []
+            occ_spin = []
+            for kpt in range(nirkp):
+                e_kpt = []
+                occ_kpt = []
+                band_st_line = ln_spin_1_k_1 + spin*spin_block + kpt*kpt_block + 2
+                for line in self.outlines[band_st_line:band_st_line+nbands]:
+                    words = line.split()
+                    e_kpt.append(float(words[1]))
+                    occ_kpt.append(float(words[2]))
+
+                Eg_dir = e_kpt[cb] - e_kpt[vb]
+                if Eg_dir < self.Eg_dir:
+                    self.Eg_dir  = Eg_dir
+                    self.dir_loc = [spin, kpt]
+
+                if e_kpt[vb] > self.vbm:
+                    self.vbm     = e_kpt[vb]
+                    self.vbm_loc = [spin, kpt]
+                if e_kpt[cb] < self.cbm:
+                    self.cbm     = e_kpt[cb]
+                    self.cbm_loc = [spin, kpt]
+
+                e_spin.append(e_kpt)
+                occ_spin.append(e_kpt)
+            self.eigenene.append(e_spin)
+            self.occ.append(occ_spin)
+
+        # the fundamental band gap
+        self.Eg = self.cbm - self.vbm
+        self.Eg_vbm = self.eigenene[self.vbm_loc[0]][self.vbm_loc[1]][cb] - self.eigenene[self.vbm_loc[0]][self.vbm_loc[1]][vb]
+        self.Eg_cbm = self.eigenene[self.cbm_loc[0]][self.cbm_loc[1]][cb] - self.eigenene[self.cbm_loc[0]][self.cbm_loc[1]][vb]
+        self.eigenene = np.array(self.eigenene)
+        self.occ = np.array(self.occ)
+
+        return self.eigenene, self.occ
+
+
+    def get_gap(self, vb=None, cb=None):
+        '''
+        Print the band gap information. Also return the fundamental band gap.
+
+        Parameters:
+            vb: int
+                the index of valence band (>=1)
+            cb: int
+                the index of conduction band (>=1)
+        '''
+
+        if vb is None and cb is None:
+            return self.Eg
+        elif vb is None:
+            vb = self.nelect / 2
+        elif cb is None:
+            cb = self.nelect / 2 + 1
+
+        # set the valence and 
+        # if the band structure has not been extracted, use get_band_structure to obtain that of the final structure
+
+        if self.eigenene is None:
+            self.get_band_structure()
+
+        
 
 # ====================================================
 

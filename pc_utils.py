@@ -9,7 +9,7 @@
 # ====================================================
 
 from __future__ import print_function
-import os
+import os,re
 import subprocess as sp
 
 # ====================== PERFORM CALCULATION ======================
@@ -89,4 +89,34 @@ def common_get_dirname(path='.'):
         parentdir = None
     return parentdir
 
-# ====================================================
+# ====================== STRING CONVERSION ======================
+
+def common_ss_conv(string, i, conv2, sep=None):
+    '''
+    Split the string and convert a single substring to a specified type.
+
+    Parameters:
+        string: str
+            the string from which to convert value
+        i: int
+            the substring index in the list to be converted after splitting by sep
+        conv2: type
+            the type to which the substring will be converted
+        sep: str
+            the separators used to split the string.
+    '''
+
+    str_tmp = string.strip()
+    if sep is not None:
+        str_list = re.split(r'[%s]'%sep, str_tmp)
+        print(str_list)
+    else:
+        str_list = str_tmp.split()
+
+    try:
+        return conv2(str_list[i])
+    except ValueError:
+        return conv2(float(str_list[i]))
+
+
+
