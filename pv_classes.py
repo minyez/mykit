@@ -17,6 +17,34 @@ from pc_utils import common_print_warn, common_ss_conv
 
 # ====================================================
 
+class vasp_incar:
+
+    def __init__(self, InFile='INCAR', verbose=True):
+        
+        self.filename = InFile
+        self.verbose = verbose
+        
+        self.incar_tags_dict = {}
+        if os.path.exists(InFile):
+            self.__read_existing_tags(InFile)
+            self.__check_conflict_tags()
+
+
+    def __read_existing_tags(self, InFile):
+        with open(InFile, 'rw') as h_InFile:
+            self.inlines = h_InFile.readlines()
+
+
+    def __check_conflict_tags(self, check_tag=None):
+        pass
+
+
+    def add_tag(self, tag, value):
+        pass
+
+    
+# ====================================================
+
 class vasp_read_wavecar:
 
     def __init__(self, WavFile='WAVECAR', verbose=True):
@@ -24,7 +52,8 @@ class vasp_read_wavecar:
         self.filename = WavFile
         self.verbose = verbose
         with open(WavFile,'rb') as h_WavFile:
-            self.wavlines = h_WavFile.readlines()
+            #self.wavlines = h_WavFile.readlines()
+            pass
 
 # ====================================================
 
@@ -50,12 +79,7 @@ class vasp_read_outcar:
     def __init_calc_params(self):
         '''
         Initialize the parameters of calculations
-        TODO:
-            initialization of dimension parameters
         '''
-        # lattice constants and inner coordinates 
-        self.lattice, self.innerpos = self.get_pos(ionstep=0)
-
         # the parameters are saved in the part before the iterations start
         for i in range(len(self.outlines[:self.iterations[0][0]])):
         #for i in range(len(self.outlines)):
@@ -81,17 +105,23 @@ class vasp_read_outcar:
                 self.nbands = int(self.outlines[i+1].split()[-1])
                 self.ngxyz  = [int(x) for x in self.outlines[i+6].split()[4:10:3]]
                 self.ngfxyz  = [int(x) for x in self.outlines[i+7].split()[3:7:2]] 
+                self.natoms = int(self.outlines[i+2].split()[-1])
         # Maximum number of planewaves
             if line.startswith('maximum number of plane-waves'):
                 self.mplw = common_ss_conv(line, -1, int)
         # ISPIN
             if line.startswith('ISPIN'):
                 self.ispin = common_ss_conv(line, 2, int)
+        # NELECT: number of electrons
             if line.startswith('NELECT'):
                 self.nelect = common_ss_conv(line, 2, int)
+        # ISMEAR and SIGMA: broadening information
             if line.startswith('ISMEAR'):
                 self.ismear = common_ss_conv(line.replace(';',''), 2, int)
                 self.sigma  = common_ss_conv(line.replace(';',''), 5, float)
+
+        # lattice constants and inner coordinates 
+        self.lattice, self.innerpos = self.get_pos(ionstep=0)
 
 
     def __check_finished(self):
@@ -132,7 +162,7 @@ class vasp_read_outcar:
                 self.iterations[i_ionstep[i]-1].append(ln_iteration[i])
 
 
-    def __get_ionic_data_region(self, ionstep, all_elesteps):
+    def __get_ionic_data_region(self, ionstep, all_elesteps=False):
         '''
         Return the region of data in self.outlines for a particular ionic step.
 
@@ -176,8 +206,6 @@ class vasp_read_outcar:
         
         st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
         innerpos = []
-        flag_start_innerpos = False
-        flag_start_POS_block  = False
 
         for i in range(st_line, ed_line):
             #print(self.outlines[i])
@@ -189,33 +217,68 @@ class vasp_read_outcar:
                                    ])
             if ionstep == 0:
                 if self.outlines[i].strip().startswith('position of ions in'):
-                    flag_start_innerpos = not flag_start_innerpos
-                    continue
-                if flag_start_innerpos:
-                    item_innerpos = [float(x) for x in self.outlines[i].split()]
-                    if item_innerpos != []:
-                        innerpos.append(item_innerpos)
+                    for atom in range(self.natoms):
+                        innerpos.append([float(x) for x in self.outlines[i+1+atom].split()])
+                    break
             else:
                 if self.outlines[i].strip().startswith('POSITION'):
-                    flag_start_innerpos = True
-                    continue
+                    for atom in range(self.natoms):
+                        innerpos.append([float(x) for x in self.outlines[i+2+atom].split()[:3]])
+                    break
 
-                item_innerpos = self.outlines[i].replace('-','').split()
-                if flag_start_innerpos:
-                    if item_innerpos != [] and flag_start_POS_block:
-                        innerpos.append([float(x) for x in item_innerpos[:3]])
-                    elif item_innerpos == []:
-                        flag_start_POS_block = not flag_start_POS_block
-                        if not flag_start_POS_block:
-                            flag_start_innerpos = False
-                        continue
         innerpos = np.array(innerpos)
         # convert cartisian to direct coordinates
         if ionstep != 0:
             innerpos = np.dot(innerpos, np.linalg.inv(lattice))
-            # the inner coordinates are rounded, which may cause nuemrical error
+            # the inner coordinates are rounded, which may cause numerical error
             innerpos = np.round(innerpos,5)
         return lattice, innerpos
+
+
+    def get_total_force(self, iatom=None, ionstep=-1):
+        '''
+        Get the total-force information for a particular ionic step.
+
+        Parameters:
+            iatom: int
+                The index of atom to output the total force
+            ionstep: int
+                The index of ionic step. Default -1 to return the final step.
+                ionstep=0 will give the same result as ionstep=1.
+
+        Returns:
+            total_force: numpy array
+                The total force on all or one atom. 
+                If iatom is set as a non-negative value, shape(3). Otherwise shape(natoms, 3)
+        '''
+       
+        if ionstep==0:
+            st_line, ed_line = self.__get_ionic_data_region(1, False)
+        else:
+            st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
+
+        self.total_force = []
+
+        for i in range(st_line, ed_line):
+            #print(self.outlines[i])
+            if self.outlines[i].strip().startswith('POSITION'):
+                for atom in range(self.natoms):
+                    self.total_force.append([float(x) for x in self.outlines[i+2+atom].split()[3:]])
+                break
+
+        self.total_force = np.array(self.total_force)
+
+        if iatom is None:
+            return self.total_force
+        else:
+            try:
+                assert int(iatom) < self.natoms
+            except ValueError:
+                raise ValueError('invalid index of atom')
+            except AssertionError:
+                raise ValueError('iatom out of range (%d)' % self.natoms)
+            else:
+                return self.total_force[iatom]
 
 
     def get_band_structure(self, ionstep=-1):
@@ -254,10 +317,10 @@ class vasp_read_outcar:
         self.Eg_dir = 10000.0
         self.dir_loc =  [0, 0]
 
-        if ispin == 2:
-            ln_spin_1_k_1 = ln_e_fermi + 5
-        else:
+        if ispin == 1:
             ln_spin_1_k_1 = ln_e_fermi + 3
+        else:
+            ln_spin_1_k_1 = ln_e_fermi + 5 # extra "spin component" and empty lines
 
         for spin in range(ispin):
             e_spin = []
