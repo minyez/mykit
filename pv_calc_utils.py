@@ -159,6 +159,7 @@ def vasp_io_get_NPAR(np):
 def vasp_write_wannier90():
     '''
     '''
+    pass
 
 # ====================================================
 

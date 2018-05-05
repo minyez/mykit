@@ -19,30 +19,161 @@ from pc_utils import common_print_warn, common_ss_conv
 
 class vasp_incar:
 
-    def __init__(self, InFile='INCAR', verbose=True):
-        
-        self.filename = InFile
+    def __init__(self, InFile=None, \
+                 encut=None, xc=None, lreal='.FALSE.', \
+                 ispin=1, istart=0, ediff=1E-7, \
+                 verbose=True):
+
+        self.__init_tags_dict() 
+        self.readinfile = InFile
         self.verbose = verbose
-        
+        self.header = None
+        self.xc = xc
+
         self.incar_tags_dict = {}
-        if os.path.exists(InFile):
+        if InFile is not None and os.path.exists(InFile):
             self.__read_existing_tags(InFile)
-            self.__check_conflict_tags()
+        self.mod_xc_tags(xc)
+        self.add_single_tag('ISTART', istart)
+        self.add_single_tag('ISPIN', ispin)
+        self.add_single_tag('LREAL', lreal)
+        self.add_single_tag('ENCUT', encut)
+
+
+    def __getitem__(self, key):
+        return self.incar_tags_dict[key]
+
+
+    def __init_tags_dict(self):
+        self.bool_tags  = ['LCHARG','LWAVE','LDIPOL','LVHAR','LVTOT','LHFCALC','LASPH','LMIXTAU']
+        self.int_tags   = ['NGX','NGY','NGZ','NGXF','NGYF','NGZF','NBANDS','ISTART',\
+                           'ICHARG','ISPIN','NWRITE','NELM','NSW','IBRION','ISIF','ISYM',\
+                           'IALGO','ISMEAR','NKRED','NKREDX','NKREDY','NKREDZ','ODDONLY',\
+                           'EVENONLY','LMAXTAU','IDIPOL','NELMIN','NPAR']
+        self.float_tags = ['AEXX','AGGAX','AGGAC','ALDAC','ENCUT','ENCUTGW','EDIFF',\
+                           'EDIFFG','POTIM','NELECT','SMASS','AMIX','BMIX','SIGMA',\
+                           'HFSCREEN','TIME']
+        self.str_tags   = ['PREC','PRECFOCK','ALGO','LREAL','GGA','METAGGA']
+        self.long_tags  = ['MAGMOM','DIPOL']
+
+        self.all_tags = self.bool_tags + self.int_tags + \
+                        self.float_tags + self.str_tags + self.long_tags
+
+        self.tags_conv_dict = {}
+        for tag in self.bool_tags: 
+            self.tags_conv_dict.update({tag: bool})
+        for tag in self.int_tags: 
+            self.tags_conv_dict.update({tag: int})
+        for tag in self.float_tags: 
+            self.tags_conv_dict.update({tag: float})
+        for tag in self.long_tags:
+            self.tags_conv_dict.update({tag: str})
+        for tag in self.str_tags:
+            self.tags_conv_dict.update({tag: str})
+
+        self.tag_PBE0 = {'GGA':'PE', 'ALGO':'ALL', 'LHFCALC':'.TRUE.', \
+                    'TIME':0.4, 'PRECFOCK':'NORMAL'}
+        self.tag_HSE06 = self.tag_PBE0.copy()
+        self.tag_HSE06.update({'HFSCREEN':0.2})
+        self.tag_HF = self.tag_PBE0.copy() 
+        self.tag_HF.update({'AEXX':1.0})
+
+        self.xc_dict = {
+                    'LDA'    : {'GGA'     : 'CA'} ,
+                    'PBE'    : {'GGA'     : 'PE'} ,
+                    'PBESOL' : {'GGA'     : 'PS'} ,
+                    'RPBE'   : {'GGA'     : 'RP'} ,
+                    'SCAN'   : {'METAGGA' : 'SCAN', 'LASPH' : '.TRUE.'} ,
+                    'PBE0'   : self.tag_PBE0  ,
+                    'HSE06'  : self.tag_HSE06 ,
+                    'HF'     : self.tag_HF
+                  }
 
 
     def __read_existing_tags(self, InFile):
+
         with open(InFile, 'rw') as h_InFile:
             self.inlines = h_InFile.readlines()
 
+        # check if the INCAR file is empty
+        if len(self.inlines) == 0:
+            return
+        else:
+            if self.verbose:
+                print(" Read input tags from %s" % InFile)
 
-    def __check_conflict_tags(self, check_tag=None):
-        pass
+        # if = is not found in the first line, set it as the INCAR header
+        # or it is just a tag string
+        if '=' not in self.inlines[0]:
+            self.header = self.inlines[0].strip()
+            self.inlines = self.inlines[1:]
+        
+        for iline in self.inlines:
+            line_striped = iline.strip()
+            # skip for comment and empty line
+            if line_striped.startswith("#") or len(line_striped) == 0:
+                continue
+
+            # first separate with colon for multiple tags
+            tag_sep_list = line_striped.split(';')
+            
+            for tag in tag_sep_list:
+                tag_words = [x.strip() for x in tag.split('=')]
+                # check if comment is found in the value part.
+                # if so, delete the comment
+                if '#' in tag_words[1]:
+                    tag_words[1] = tag_words[1].split('#')[0].strip()
+                if tag_words[0] in self.tags_conv_dict:
+                    tag_words[1] = self.tags_conv_dict[tag_words[0]](tag_words[1])
+                self.incar_tags_dict.update({tag_words[0]:tag_words[1]})
 
 
-    def add_tag(self, tag, value):
-        pass
+    def add_single_tag(self, tag, value):
+        if value in [None,'']:
+            return
+        self.incar_tags_dict.update({tag.upper(): value})
 
-    
+
+    def write_incar_file(self, InCARout='INCAR', replace=True):
+        if os.path.exists(InCARout):
+            # backup the old INCAR
+            if replace:
+                os.rename(InCARout, InCARout+'.old')
+        with open(InCARout,'w') as h_incaro:
+            if self.header is not None:
+                h_incaro.write(self.header+'\n')
+            # print the key in a sorted order
+            for tag in sorted(self.incar_tags_dict.keys()):
+                h_incaro.write(' %-8s = %s\n' % (tag, str(self.incar_tags_dict[tag])))
+
+
+    def mod_xc_tags(self, xc):
+        '''
+        Modify XC related tags to the tag dictionary.
+        '''
+        if xc is None:
+            pass
+        else:
+            if xc.upper() == self.xc:
+                if self.verbose:
+                    print(" XC is already %s " % self.xc)
+            else:
+                if self.xc is not None:
+                    for tag in self.xc_dict[self.xc].keys():
+                        self.incar_tags_dict.pop(tag)
+                
+                xc_origin = self.xc
+                self.xc = xc.upper()
+
+                if self.verbose:
+                    print(" XC set to %6s, from %6s" % (self.xc, xc_origin))
+
+                for tag in self.xc_dict[self.xc].keys():
+                    self.incar_tags_dict.update({tag: self.xc_dict[self.xc][tag]})
+
+
+        return
+
 # ====================================================
 
 class vasp_read_wavecar:
@@ -66,7 +197,8 @@ class vasp_read_outcar:
         self.occ = None
         self.verbose = verbose
 
-        print(" Reading OUTCAR: %s" % OutFile)
+        if self.verbose:
+            print(" Reading OUTCAR: %s" % OutFile)
         with open(OutFile,'r') as f:
             self.outlines = f.readlines()
         self.__divide_ion_iteration()
