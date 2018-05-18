@@ -204,9 +204,9 @@ def Main(ArgList):
         copy2('POTCAR',conv_nbs_dir)
         os.chdir(conv_nbs_dir)
         nbands_list = []
-        for x in xrange(14):
-            nbands_ori = nbands_scf + x*int((mnpw-nbands_scf)/20.0)
-            nbands_ori = int(nbands/opts.nproc+1)*opts.nproc
+        for x in xrange(2, 8):
+            nbands_ori = nbands_scf + x*int((mnpw-nbands_scf)/10.0)
+            nbands_ori = int(nbands_ori/opts.nproc+1)*opts.nproc
             if nbands_ori not in nbands_list and (nbands_ori<mnpw):
                 nbands_list.append(nbands_ori)
 
@@ -240,14 +240,19 @@ def Main(ArgList):
         mnpw = int(vasp_anal_get_outcar('mnpw', outcar=chg_dir+'/OUTCAR'))
         nbands_scf = int(vasp_anal_get_outcar('nb', outcar=chg_dir+'/OUTCAR'))
         encut = int(vasp_anal_get_outcar('encut', outcar=chg_dir+'/OUTCAR'))
-        nbands = mnpw/2
+
+        if opts.nbands is not None:
+            nbands = opts.nbands
+        else:
+            nbands = int(mnpw/2/opts.nproc+1)*opts.nproc
+
         copy2('POSCAR',conv_egw_dir)
         copy2('POTCAR',conv_egw_dir)
         os.chdir(conv_egw_dir)
         print("== Step 2: Non-SCF for unc. bands ==")
         step_2_exact('../'+chg_dir,exact_dir,opts.tag_xc,opts.encut,nks,nks_gw,nbands=nbands,nedos=nedos,lwannier=opts.lwannier,\
                  npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
-        egw_list = [encut/10.0*x for x in xrange(1,7)] # up to half of the ENCUT
+        egw_list = [encut/10.0*x for x in xrange(2,7)] # up to half of the ENCUT
         for egw in egw_list:
             print("== Step 3:    GW ENCUTGW:%7.1f  ==" % egw)
             step_3_gw(exact_dir,gw_dir+'_egw_'+str(int(egw)),opts.tag_xc,opts.encut,nbands=nbands,nedos=nedos,encutgw=egw,nomega=opts.nomega,\

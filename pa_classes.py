@@ -13,7 +13,7 @@
 from __future__ import print_function, absolute_import
 from pc_elements import common_read_chemical_formula
 from pc_elements import Periodic_Table as PT
-from pc_utils import common_run_calc_cmd
+from pc_utils import common_run_calc_cmd, common_split_rm_comment 
 import sys, os
 import subprocess as sp
 from fnmatch import fnmatch
@@ -112,7 +112,7 @@ class abinit_input_files():
             self.inlines = h_in.readlines()
 
         for line in self.inlines:
-            tag_value_words = line.split()
+            tag_value_words = common_split_rm_comment(line)
             if len(tag_value_words) > 0:
                 if tag_value_words[0] == 'znucl':
                     self.atom_type = []

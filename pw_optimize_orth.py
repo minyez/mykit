@@ -15,7 +15,7 @@ import sys, os, fnmatch
 import subprocess as sp
 from shutil import copy2
 from argparse import ArgumentParser
-from pw_anal_utils import Get_Casename
+from pw_anal_utils import w2k_get_casename
 from pw_init_opt import pw_init_optimize_job
 from pc_utils import common_io_cleandir
 from pv_anal_utils import vasp_anal_fit_EOS
@@ -230,7 +230,7 @@ def Main(ArgList):
         target_scale= 1.0 + opts.target_volume/100
 
     if opts.casename is None:
-        casename = Get_Casename()
+        casename = w2k_get_casename()
     else:
         casename = opts.casename
 

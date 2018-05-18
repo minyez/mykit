@@ -109,7 +109,7 @@ def common_ss_conv(string, i, conv2, sep=None):
     str_tmp = string.strip()
     if sep is not None:
         str_list = re.split(r'[%s]'%sep, str_tmp)
-        print(str_list)
+    #    print(str_list)
     else:
         str_list = str_tmp.split()
 
@@ -118,5 +118,18 @@ def common_ss_conv(string, i, conv2, sep=None):
     except ValueError:
         return conv2(float(str_list[i]))
 
+def common_split_rm_comment(string, sep=None):
 
+    str_tmp = string.strip()
+    if sep is not None:
+        str_list = re.split(r'[%s]'%sep, str_tmp)
+    else:
+        str_list = str_tmp.split()
+
+    if len(str_list) != 0:
+        for i in range(len(str_list)):
+            if str_list[i].strip().startswith('#'):
+                str_list = str_list[:i]
+                break
+    return str_list
 

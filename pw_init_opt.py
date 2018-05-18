@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 import subprocess as sp
 import sys
 from shutil import copy2
+from pw_anal_utils import w2k_get_casename
 
 
 def pw_init_optimize_job(ArgList):

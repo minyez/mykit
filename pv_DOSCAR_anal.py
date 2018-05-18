@@ -4,6 +4,7 @@ from __future__ import print_function
 import sys, os
 import subprocess as sp
 import numpy as np
+from argparse import ArgumentParser
 
 # ===============================
 
@@ -12,8 +13,11 @@ def read_fermi(outcar='OUTCAR'):
     fermi_level = 0.0
 
     if os.path.exists(outcar):
-        fermi_level = float(sp.check_output("awk '/E-fermi/ {print $3}' %s" % outcar, shell=True))
-        print("Fermi level found: %6.4f" % fermi_level)
+        try:
+            fermi_level = float(sp.check_output("awk '/E-fermi/ {print $3}' %s" % outcar, shell=True))
+            print("Fermi level found: %6.4f" % fermi_level)
+        except ValueError:
+            print("WARNING: error in reading E-fermi from %s. Fermi level is set to 0." % outcar)
     else:
         print("WARNING: %s is not found. Fermi level is set to 0." % outcar)
 
@@ -85,7 +89,8 @@ def read_doscar(dosfile='DOSCAR'):
 
 # ===============================
 
-def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fermi_level=0.0):
+def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, \
+            fermi_level=0.0, tot_only=False):
 
     l_dict = {0:'s',1:'p',2:'d',3:'f',4:'g',5:'h',6:'i'}
 
@@ -144,26 +149,41 @@ def add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fe
             # write header
             h_dos.write("#energy    ")
             h_dos.write("        tot")
-            for itype in range(ntype):
-                for l in range(lmax+1):
-                    h_dos.write("       %2s-%1s" % (atom_type_list[itype], l_dict[l]))
+            if not tot_only:
+                for itype in range(ntype):
+                    for l in range(lmax+1):
+                        h_dos.write("       %2s-%1s" % (atom_type_list[itype], l_dict[l]))
             h_dos.write("\n")
 
             for i in range(nedos):
                 h_dos.write("%11.6f" % energy_grid[i])
                 h_dos.write("%11.6f" % total_dos[i])
-                for itype in range(ntype):
-                    for l in range(lmax+1):
-                        h_dos.write("%11.6f" % list_dos_sum_in_atom_and_m[itype][i][l])
+                if not tot_only:
+                    for itype in range(ntype):
+                        for l in range(lmax+1):
+                            h_dos.write("%11.6f" % list_dos_sum_in_atom_and_m[itype][i][l])
                 h_dos.write("\n")
 
 # ===============================
 
 def dos_anal_main(ArgList):
+
+    description='''read DOSCAR to get total and atom-angular decomposed density of states (DOS).'''
+    
+    parser = ArgumentParser(description=description)
+    parser.add_argument('--tot',dest='tot_only',action='store_true',help="flag to output total DOS only")
+    # initialize options as 'opts'
+    opts = parser.parse_args()
+    
+
     fermi_level = read_fermi()
+
     atom_type_list, natoms_list = read_atom_info()
+
     ispin, energy_grid, total_dos, pdos = read_doscar()
-    add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, fermi_level)
+
+    add_dos(atom_type_list, natoms_list, ispin, energy_grid, total_dos, pdos, \
+            fermi_level, tot_only=opts.tot_only)
 
 # ===============================
 
