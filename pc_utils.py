@@ -35,11 +35,26 @@ def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
     if not ferr is None: efile.close()
 
 # ====================== PRINT WARNING ======================
-def common_print_warn(warn_str, func_level=0):
+
+def common_print_warn(warn_str, func_level=0, verbose=True):
     '''
     Print warning with a specific level for the calling function
     '''
-    print("  "*(func_level+1) + '- WARNING: ' + warn_str)
+    if isinstance(verbose, bool):
+        common_print_verbose_bool("  "*(func_level+1) + '- WARNING: ' + warn_str, verbose)
+
+# ====================== PRINT BASED ON VERBOSE ======================
+
+def common_print_verbose_bool(verb_str, verbose_level):
+
+    '''
+    Print the string according to verbose_level (True/False)
+    '''
+    assert isinstance(verbose_level, bool)
+    if not verbose_level:
+        pass
+    else:
+        print(verb_str)
 
 
 # ====================== CREATE DIRECTORY ======================

@@ -13,7 +13,8 @@ from __future__ import print_function
 import sys,os
 import numpy as np
 from xml.etree import ElementTree as etree
-from pc_utils import common_print_warn, common_ss_conv
+from pc_utils import common_print_warn, common_ss_conv, \
+                     common_print_verbose_bool
 
 # ====================================================
 
@@ -39,6 +40,8 @@ class vasp_incar:
         self.add_single_tag('LREAL', lreal)
         self.add_single_tag('ENCUT', encut)
 
+    def __print(self, pstr):
+        common_print_verbose_bool(pstr, self.verbose)
 
     def __getitem__(self, key):
         return self.incar_tags_dict[key]
@@ -99,8 +102,7 @@ class vasp_incar:
         if len(self.inlines) == 0:
             return
         else:
-            if self.verbose:
-                print(" Read input tags from %s" % InFile)
+            self.__print(" Read input tags from %s" % InFile)
 
         # if = is not found in the first line, set it as the INCAR header
         # or it is just a tag string
@@ -155,8 +157,7 @@ class vasp_incar:
             pass
         else:
             if xc.upper() == self.xc:
-                if self.verbose:
-                    print(" XC is already %s " % self.xc)
+                self.__print(" XC is already %s " % self.xc)
             else:
                 if self.xc is not None:
                     for tag in self.xc_dict[self.xc].keys():
@@ -165,8 +166,7 @@ class vasp_incar:
                 xc_origin = self.xc
                 self.xc = xc.upper()
 
-                if self.verbose:
-                    print(" XC set to %6s, from %6s" % (self.xc, xc_origin))
+                self.__print(" XC set to %6s, from %6s" % (self.xc, xc_origin))
 
                 for tag in self.xc_dict[self.xc].keys():
                     self.incar_tags_dict.update({tag: self.xc_dict[self.xc][tag]})
@@ -197,16 +197,17 @@ class vasp_read_outcar:
         self.occ = None
         self.verbose = verbose
 
-        if self.verbose:
-            print(" Reading OUTCAR: %s" % OutFile)
+        self.__print(" Reading OUTCAR: %s" % OutFile)
         with open(OutFile,'r') as f:
             self.outlines = f.readlines()
         self.__divide_ion_iteration()
         self.__init_calc_params()
         self.__check_finished()
         if not self.flag_finish:
-            common_print_warn("Task has not finished.", func_level=0)
+            common_print_warn("Task has not finished.", func_level=0, verbose=self.verbose)
 
+    def __print(self, pstr):
+        common_print_verbose_bool(pstr, self.verbose)
 
     def __init_calc_params(self):
         '''
@@ -523,16 +524,20 @@ class vasp_read_outcar:
 
 class vasp_read_poscar:
     def __init__(self,PosFile='POSCAR', verbose=True):
+
         print(" Reading POSCAR: %s" % PosFile)
         with open(PosFile,'r') as f:
             self.poslines = f.readlines()
         self.filename = PosFile
+        self.verbose = verbose
         self.__comment_info()
         self.__latt_info()
         self.__atom_info()
         self.__coor_info()
         print(" POSCAR read.")
 
+    def __print(self, pstr):
+        common_print_verbose_bool(pstr, self.verbose)
 
     def __save_to_lines(self):
         '''
@@ -552,7 +557,7 @@ class vasp_read_poscar:
     def __latt_info(self):
         # unscaled lattice vectors
         # scaled lattice volume
-        print(" Loading lattice info...")
+        self.__print(" Loading lattice info...")
         posls = self.poslines
         self.scale = float(posls[1].split()[0])
         self.lattice = []
@@ -565,7 +570,7 @@ class vasp_read_poscar:
 
 
     def __atom_info(self):
-        print(" Loading atomic info...")
+        self.__print(" Loading atomic info...")
         posls = self.poslines
         self.atom_type = posls[5].split()
         self.ntypes = len(self.atom_type)
@@ -577,7 +582,7 @@ class vasp_read_poscar:
 
 
     def __coor_info(self):
-        print(" Loading inner coordinates...")
+        self.__print(" Loading inner coordinates...")
         posls = self.poslines
         coor_type = ''
         # delete the 'selevtive dynamics' line
@@ -591,11 +596,11 @@ class vasp_read_poscar:
             self.coor_type = 'dirt'
             coor_type = 'Direct\n'
         else:
-            print(" Unknown coordinate system tag. Exit")
+            self.__print(" Unknown coordinate system tag. Exit")
             sys.exit(1)
         self.poslines[7] = 'Selective dynamics\n'+coor_type
         self.write_innerpos_from_lines()
-        print(" Checking periodic boundary condition...")
+        self.__print(" Checking periodic boundary condition...")
         for i in xrange(self.natoms):
             self.check_pbc(i+1)
 
@@ -609,22 +614,22 @@ class vasp_read_poscar:
         # ia is the index of [iatom]th atom in self.innerpos[:]
         ia = iatom - 1
         if self.coor_type == 'cart':
-            print(" In check_pbc:")
-            print("  - Cartisian system detected. PBC check not supported yet. Pass")
+            self.__print(" In check_pbc:")
+            self.__print("  - Cartisian system detected. PBC check not supported yet. Pass")
             return
         else:
             for iz in xrange(3):
                 while (self.innerpos[ia][iz] >= 1.0):
-                    print("  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1))
+                    self.__print("  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1))
                     self.innerpos[ia][iz] = self.innerpos[ia][iz] - 1.0
                 while (self.innerpos[ia][iz] < 0.0):
-                    print("  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1))
+                    self.__print("  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1))
                     self.innerpos[ia][iz] = self.innerpos[ia][iz] + 1.0
 
 
     def check_atomtype(self,iatom):
         if iatom <= 0 or iatom > self.natoms:
-            print("Invalid atom index (should be positive and <= natoms)")
+            self.__print("Invalid atom index (should be positive and <= natoms)")
             return None
         ia = iatom
         for itype in xrange(self.ntypes):
@@ -642,20 +647,20 @@ class vasp_read_poscar:
 
 
     def action_centering(self,zdirt1=3,zdirt2=None,zdirt3=None):
-        print(" In action_centering:")
+        self.__print(" In action_centering:")
         dirt_list = [zdirt1]
         if (zdirt2 is not None) and (zdirt2 not in dirt_list):
             dirt_list.append(zdirt2)
         if (zdirt3 is not None) and (zdirt3 not in dirt_list):
             dirt_list.append(zdirt2)
         if self.coor_type == 'cart':
-            print(" Cartisian coordinate system detected. Centering is not supported yet. Pass")
+            self.__print(" Cartisian coordinate system detected. Centering is not supported yet. Pass")
             return
 
         for zdirt in dirt_list:
             iz = zdirt - 1
             if self.check_vacuum_pos(zdirt):
-                print("  - Vacuum in the middle detected. Not supported currently. Pass.")
+                self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
                 continue
             else:
                 surf_atom = [self.check_extreme_atom(0.0,zdirt,False,1.0),self.check_extreme_atom(0.0,zdirt,True,1.0)]
@@ -663,13 +668,13 @@ class vasp_read_poscar:
                 # print surf_atom
                 shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
                 self.action_shift(shift,zdirt)
-        print(" Complete centering.")
+        self.__print(" Complete centering.")
         #self.write_innerpos_to_lines()
 
 
     def action_dirt2cart(self,l_write=True):
         if self.coor_type == 'cart':
-            print(" Cartisian coordinate system detected. Nothing to do.")
+            self.__print(" Cartisian coordinate system detected. Nothing to do.")
             return
         for ia in xrange(self.natoms):
             self.innerpos[ia] = np.dot(self.lattice,self.innerpos[ia])
@@ -681,7 +686,7 @@ class vasp_read_poscar:
 
     def action_cart2dirt(self,l_write=True):
         if self.coor_type == 'dirt':
-            print(" Direct coordinate system detected. Nothing to do.")
+            self.__print(" Direct coordinate system detected. Nothing to do.")
             return
         # use coordinate transformation x_cart = Ax_dirt, x_dirt = A^{-1}x_cart
         for ia in xrange(self.natoms):
@@ -726,21 +731,21 @@ class vasp_read_poscar:
 
 
     def write_poscar(self,OutFile='POSCAR_new',f_reload=True):
-        print(" Write POSCAR: %s" % OutFile)
+        self.__print(" Write POSCAR: %s" % OutFile)
         if f_reload:
-            print(" - Load modified atomic information to poslines")
+            self.__print(" - Load modified atomic information to poslines")
             self.__save_to_lines()
         if OutFile is not None:
             if OutFile==self.filename:
-                common_print_warn("OutFile same as input. Change input to %s.old" % self.filename, func_level=0)
+                common_print_warn("OutFile same as input. Change input to %s.old" % self.filename, func_level=0, verbose=self.verbose)
                 os.rename(self.filename,self.filename+'.old') 
                 self.filename = self.filename + '.old'
             with open(OutFile,'w+') as f:
                 for i in xrange(len(self.poslines)):
                     f.write(self.poslines[i])
-            print(" - Done output: %s" % OutFile)
+            self.__print(" - Done output: %s" % OutFile)
         else:
-            common_print_warn("Invalid output filename: None. Pass", func_level=0)
+            common_print_warn("Invalid output filename: None. Pass", func_level=0, verbose=self.verbose)
 
 # ===========================================================
 # slab-related utilities
@@ -748,13 +753,13 @@ class vasp_read_poscar:
 
     def check_extreme_atom(self,target=0.0,zdirt=3,l_far=True,terminal=1.0):
         if self.coor_type == 'cart':
-            print(" In check_extreme_atom:")
-            print("  - Cartisian coordinate system detected. Currently not supported. Pass")
+            self.__print(" In check_extreme_atom:")
+            self.__print("  - Cartisian coordinate system detected. Currently not supported. Pass")
             return None
         for x in [target,terminal]:
             if x < 0.0 or x > 1.0:
-                print(" In check_extreme_atom:")
-                print("  - Invalid target or terminal in extreme check. Pass.")
+                self.__print(" In check_extreme_atom:")
+                self.__print("  - Invalid target or terminal in extreme check. Pass.")
                 return None
         iz = zdirt - 1
         ia_far = 0
@@ -792,9 +797,8 @@ class vasp_read_poscar:
             return False
 
 
-    def action_shift(self,shift,zdirt,verbose=True):
-        if verbose:
-            print("  - overall shift %6.4f in direction %d" % (shift,zdirt))
+    def action_shift(self,shift,zdirt):
+        self.__print("  - overall shift %6.4f in direction %d" % (shift,zdirt))
         for ia in xrange(self.natoms):
             self.action_single_atom_shift(ia+1,shift,zdirt)
 
@@ -812,7 +816,7 @@ class vasp_read_poscar:
         add length to the vacuum region of slab model. In Angstrom unit.
         1D case and middle vacuum case to be implemented
         '''
-        print(" In action_add_vacuum:")
+        self.__print(" In action_add_vacuum:")
         #if abs(vacadd) < 0.1:
         #    print "  - too small change in vacuum (abs <= 1.0 A). Pass."
         #    return
@@ -825,7 +829,7 @@ class vasp_read_poscar:
                 return
 
         if self.check_vacuum_pos(zdirt):
-            print("  - Vacuum in the middle detected. Not supported currently. Pass.")
+            self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
             return
 
         if self.coor_type == 'cart':
@@ -833,7 +837,7 @@ class vasp_read_poscar:
         zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
         zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
         vac_ori =  self.lattice[iz][iz] * (1.0 - (zmax-zmin))
-        print("  - Original vacuum thickness: %8.5f" % vac_ori)
+        self.__print("  - Original vacuum thickness: %8.5f" % vac_ori)
 
         self.action_dirt2cart(False)     # switch to cartisian
 
@@ -885,7 +889,8 @@ class vasp_read_xml():
     Class to read and analyse the data from the vasprun.xml
     '''
 
-    def __init__(self,agrv=[]):
+    def __init__(self,agrv=[], verbose=True):
+        self.verbose = verbose
         tree = etree.parse('vasprun.xml')
         self.root = tree.getroot()
         self.init_section()
@@ -897,7 +902,10 @@ class vasp_read_xml():
             if 'pw' in agrv:
                 self.read_pwdata()
         except AttributeError:
-            print("Warning: no PDOS data found")
+            self.__print("Warning: no PDOS data found")
+
+    def __print(self, pstr):
+        common_print_verbose_bool(pstr, self.verbose)
 
 
     def init_section(self):
