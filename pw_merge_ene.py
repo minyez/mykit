@@ -53,7 +53,7 @@ def Main(ArgList):
             sp.check_output('x joinvec',shell=True)
             return
         except:
-            print("Failed to use joinvec... Merge energy files only...")
+            print("Failed to use joinvec... Mannually merge energy files only...")
 
         nat=w2k_get(casename,'nat') #number of atoms
         sp.check_call('cat %s.%s_1 > %s.%s' %(casename,filename,casename,filename),shell=True)

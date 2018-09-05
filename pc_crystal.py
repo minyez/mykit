@@ -64,7 +64,7 @@ def __cell_from_intype(intype, filename):
 
     return cell 
 
-def __print_sym_info(cell, print_std):
+def __print_sym_info(cell, print_std, print_symop):
     '''
     Return symmtery information of the cell tuple
     '''
@@ -79,37 +79,44 @@ def __print_sym_info(cell, print_std):
     rot = ds['rotations']
     tau = ds['translations']
     # symmtry operations
-    sym_in_line = 6
     print("# Sym. Ops.: %8d" % len(rot))
-    print("  Sym. Ops.: (%d in a line)" % sym_in_line)
-    
-    left = len(rot) % sym_in_line
-    line = (len(rot)-left) / sym_in_line
-    for i in range(line):
-        for j in range(3):
-            for k in range(sym_in_line):
-                print("%3d%3d%3d" % (rot[i*sym_in_line+k][j][0], rot[i*sym_in_line+k][j][1], rot[i*sym_in_line+k][j][2]) ,end='')
-                print(" %4.2f " % tau[i*sym_in_line+k][j] ,end='')
-                if j == 1:
-                    print(",", end='')
-            print("")
+    if print_symop:
+        sym_in_line = 6
+        print("  Sym. Ops.: (%d in a line)" % sym_in_line)
+        
+        left = len(rot) % sym_in_line
+        line = (len(rot)-left) / sym_in_line
+        for i in range(line):
+            print("="*(9+6+1)*sym_in_line)
+            for j in range(3):
+                for k in range(sym_in_line):
+                    print("%3d%3d%3d" % (rot[i*sym_in_line+k][j][0], rot[i*sym_in_line+k][j][1], rot[i*sym_in_line+k][j][2]) ,end='')
+                    print("|%4.2f " % tau[i*sym_in_line+k][j] ,end='')
+                    if j == 1:
+                        print(",", end='')
+                    else:
+                        print(" ", end='')
+                print("")
+        print("="*(9+6+1)*sym_in_line)
 
-    for j in range(3):
-        for i in range(left):
-            sym_index = i - left
-            print("%3d%3d%3d" % (rot[sym_index][j][0], rot[sym_index][j][1], rot[sym_index][j][2]) ,end='')
-            print(" %4.2f " % tau[sym_index][j], end='')
-            if j == 1 and i != left - 1:
-                print(",", end='')
-            else:
-                print(" ", end='')
-        print("")
+        if left != 0:
+            for j in range(3):
+                for i in range(left):
+                    sym_index = i - left
+                    print("%3d%3d%3d" % (rot[sym_index][j][0], rot[sym_index][j][1], rot[sym_index][j][2]) ,end='')
+                    print("|%4.2f " % tau[sym_index][j], end='')
+                    if j == 1 and i != left - 1:
+                        print(",", end='')
+                    else:
+                        print(" ", end='')
+                print("")
 
     if print_std:
         print(ds['std_lattice'])
         print(ds['std_positions'])
         print(ds['std_types'])
-    print("=============================")
+    if not print_symop:
+        print("=============================")
 
 
 def __Main(ArgList):
@@ -121,10 +128,9 @@ def __Main(ArgList):
     
     parser.add_argument("filename", nargs=1, help="input file containing crystal structure")
     parser.add_argument("-i", dest="intype", default=None, help="type of crystal input. default automatic detect")
-    #group1.add_argument("-x", dest="exclu", type=int, default=0, help="template exclusive argument")
-    #parser.add_argument('-p',dest='paras',default=None,nargs='+',help="optional argument with undetermined number of paras")
     parser.add_argument("-D", dest="debug", action="store_true", help="debug mode")
     parser.add_argument("--std", dest="std", action="store_true", help="flag to return standardized cell info")
+    parser.add_argument("--sym", dest="sym", action="store_true", help="flag to show the symmtry operations")
     
     # initialize options as 'opts'
     opts = parser.parse_args()
@@ -142,7 +148,7 @@ def __Main(ArgList):
     if opts.debug:
         print(cell)
     # space group
-    __print_sym_info(cell, opts.std)
+    __print_sym_info(cell, opts.std, opts.sym)
 
 
 # ==============================

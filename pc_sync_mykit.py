@@ -56,8 +56,9 @@ def common_sync_once(site, local_mykit_path):
     try:
         sp.check_output(rsync_cmd + " " + local_mykit_path + "/p?_*.py " + site, shell=True)
         sp.check_output(rsync_cmd + " " + local_mykit_path + "/README.md " + site, shell=True)
+        print("Done")
     except sp.CalledProcessError:
-        comm_print_warn("Error happens in rsync to %s. Pass" % site.split(':')[0], 0)
+        common_print_warn("Error happens in rsync to %s. Pass" % site.split(':')[0], 0)
 
 
 def common_sync_mykit(ArgList):

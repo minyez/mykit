@@ -122,7 +122,7 @@ def mode_write_data(encut_dir_prefix, kleng_dir_prefix, datakey_list):
 
 
 def Main(ArgList):
-    # Parser part
+
     description = " Check the convergence w.r.t k-point mesh and ENCUT. "
     parser = ArgumentParser(description=description)
     parser.add_argument("-e",dest='encut',type=int,default=0,help="Starting ENCUT. Default 0 will use the largest ENMAX")

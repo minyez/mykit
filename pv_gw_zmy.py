@@ -71,8 +71,8 @@ def step_2_exact(chg_dir, exact_dir, tag_xc, encut, nks, nks_gw, nbands, nedos, 
 # ==================================================
 
 # Step 3: GW calculation
-def step_3_gw(exact_dir,gw_dir,tag_xc,encut,nbands,nedos,nomega,lwannier,\
-              vasp_cmd,encutgw=0,gw_mode="G0W0",f_metal=False,smear=[0,0.05]):
+def step_3_gw(exact_dir,gw_dir,tag_xc,encut, encutgw, nbands,nedos,nomega,lwannier,\
+              vasp_cmd,gw_mode="G0W0",f_metal=False,smear=[0,0.05]):
 # need to add more rules
     common_io_cleandir(gw_dir)
     copy2('POSCAR',gw_dir)
@@ -116,7 +116,8 @@ def Main(ArgList):
 # =================== Parser ==========================
 
     parser = ArgumentParser(description=description)
-    parser.add_argument("-e",dest='encut',type=int,default=0,help="Planewave cutoff. 0 will set largest ENMAX")
+    parser.add_argument("-e",dest='encut',type=float,default=0,help="Planewave cutoff. 0 will set largest ENMAX")
+    parser.add_argument("--egw",dest='encutgw',type=float,default=0,help="dielectric cutoff for GW calculation, i.e. ENCUTGW")
     parser.add_argument("-n",dest='nproc',type=int,default=1,help="Number of processors ")
     parser.add_argument("-b",dest='nbands',default=None,help="Number of bands")
     parser.add_argument("-x",dest='tag_xc',default=None,help="type of XC functional for input orbitals, \
@@ -192,7 +193,7 @@ def Main(ArgList):
                  npar=npar,lmm=lmm,vasp_cmd=vasp_cmd,f_metal=opts.f_metal,smear=[0,0.05])
 
         print("== Step 3: GW                     ==")
-        step_3_gw(exact_dir,gw_dir,opts.tag_xc,opts.encut,nbands=nbands,nedos=nedos,nomega=opts.nomega,\
+        step_3_gw(exact_dir,gw_dir,opts.tag_xc,opts.encut, opts.encutgw, nbands=nbands,nedos=nedos,nomega=opts.nomega,\
                   lwannier=opts.lwannier,vasp_cmd=vasp_cmd,gw_mode=opts.gw_mode,f_metal=opts.f_metal,smear=[0,0.05])
 
 # IF testmode is set to ENCUTGW

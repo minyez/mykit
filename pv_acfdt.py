@@ -76,7 +76,8 @@ def acfdt_write_running_script(vasp_cmd,nproc):
         ofile.write('''for i in xrange(6):
     i = str(i)
     common_io_cleandir(i)
-    copy2('INCAR_'+i,i)
+    if os.path.isfile('INCAR_'+i):
+        copy2('INCAR_'+i,i)
     for x in ["KPOINTS","POTCAR","POSCAR"]:
         copy2(x,i)\n''')
 #        ofile.write("\n# ==================\n\nif \nos.rename('INCAR_1','INCAR')\n")

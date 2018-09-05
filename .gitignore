@@ -1,5 +1,6 @@
 # ignore all complied files
 *.pyc
+*/*.pyc
 *.swp
 *.o
 # ignore the test files

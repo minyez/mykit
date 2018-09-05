@@ -97,7 +97,9 @@ def Main(ArgList):
     '''
 
     scontrol_cmd = ['scontrol','show','node']
-    avail_tag = ['mix','idle']
+    # need to check mix only, since idle is easy to view
+    #avail_tag = ['mix','idle']
+    avail_tag = ['mix']
 
     # the partitions you do not want to check
     ignore_part = ['GPU','KNL','TH_SHORT']

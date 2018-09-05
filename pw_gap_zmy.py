@@ -5,6 +5,7 @@ from pw_anal_utils import Read_BandStructure, w2k_get_casename
 from argparse import ArgumentParser
 import sys,os
 import subprocess as sp
+import numpy as np
 
 def Main(ArgList):
 
@@ -63,11 +64,16 @@ def Main(ArgList):
     CBM = min([Band_Struct[i][nelec+1] for i in xrange(nkp)])
     CBM_nk = [Band_Struct[i][nelec+1] for i in xrange(nkp)].index(CBM)
 
+#  minimal direct band gap
+    direct_gap_array = np.array([ Band_Struct[i][nelec+1] - Band_Struct[i][nelec] for i in xrange(nkp) ])
+    min_direct_kind = np.argwhere(direct_gap_array == direct_gap_array.min())[0][0]
+
 #   Fundamental gap, direct gap at VBM and CBM
 #   Original in Ry, converted to eV
     Eg = (CBM -VBM) * Ry2eV
     direct_gap_VBM = (Band_Struct[VBM_nk][nelec+1] - Band_Struct[VBM_nk][nelec]) * Ry2eV
     direct_gap_CBM = (Band_Struct[CBM_nk][nelec+1] - Band_Struct[CBM_nk][nelec]) * Ry2eV
+    min_direct_gap = direct_gap_array.min() * Ry2eV
 
     print(":Band Gap  %6.3f eV " % Eg)
     if VBM_nk == CBM_nk:
@@ -80,6 +86,9 @@ def Main(ArgList):
         % (Band_Struct[VBM_nk][0][0], Band_Struct[VBM_nk][0][1], Band_Struct[VBM_nk][0][2], direct_gap_VBM, VBM_nk+1))
         print(":CBM = (%6.3f, %6.3f, %6.3f) Eg(direct) = %6.3f eV  nk=%i" \
         % (Band_Struct[CBM_nk][0][0], Band_Struct[CBM_nk][0][1], Band_Struct[CBM_nk][0][2], direct_gap_CBM, CBM_nk+1))
+        print("Minimal direct gap at (%6.3f, %6.3f, %6.3f)" % tuple(Band_Struct[min_direct_kind][0]), end='')
+        print(": %6.3f eV" % min_direct_gap)
+
 
 if __name__ == "__main__":
     Main(sys.argv)
