@@ -15,7 +15,7 @@
 
 import os,sys
 import subprocess as sp
-from pc_utils import common_get_dirname
+from pc_utils import common_get_dirpath
 from fnmatch import fnmatch
 
 # ====================================================
@@ -32,7 +32,7 @@ def w2k_get_casename(w2kdir='.'):
                 case = filename.split('/')[-1][:-8]
                 return case
 
-    return os.path.basename(common_get_dirname(w2kdir))
+    return os.path.basename(common_get_dirpath(w2kdir))
 
 # ====================================================
 

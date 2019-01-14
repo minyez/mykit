@@ -46,7 +46,7 @@ def __datafile_name(mainname, fnpre=None, fnsuf=None):
 
 # ==============================
 
-def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
+def read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     '''
     Read eqpeV_file to get quasi-particle correction
 
@@ -74,6 +74,7 @@ def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
 
     degw_data = []
     x_data = []
+    k_points = []
     vb = 0
 
     with open(eqpeV_file, 'r') as h_eqp:
@@ -86,11 +87,15 @@ def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     nspin = int(eqp_lines[2].split()[-1])
 
     bandgw = bandh - bandl + 1
-
+    
     for ik in range(nk):
         degw_data.append([])
         x_data.append([])
-        datalines = eqp_lines[12+ik*(bandgw + 2):12+ik*(bandgw+2)+bandgw]
+        kline = eqp_lines[10 + ik * (bandgw + 2)]
+        kint = [int(kline[25 + i * 4:29 + i * 4]) for i in range(3)]
+        kdiv = int(kline[44:48])
+        k_points.append([float(x)/kdiv for x in kint])
+        datalines = eqp_lines[12 + ik * (bandgw + 2):12 + ik * (bandgw + 2) + bandgw]
         for line in datalines:
             degw_data[-1].append(float(line.split()[col]))
             EKS = line.split()[2]
@@ -110,7 +115,7 @@ def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     x_data = np.transpose(np.array(x_data))
     nvb = vb - bandl + 1
 
-    return nvb, x_data, degw_data
+    return nvb, x_data, degw_data, k_points
 
 # ==============================
 
@@ -228,9 +233,9 @@ def __plot_degw(axs, use_EKS_x, f_compare, fnpre, fnsuf):
 
     # plot zero
     ngrid = 200
-    axs.set_xlim([min(xmins)-2, max(xmaxs)+2])
-    axs.set_ylim([min(ymins)-0.5, max(ymaxs)+0.5])
-    zero_x = np.linspace(min(xmins)-2, max(xmaxs)+2, ngrid)
+    axs.set_xlim([min(xmins) - 2,  max(xmaxs) + 2])
+    axs.set_ylim([min(ymins) - 0.5, max(ymaxs) + 0.5])
+    zero_x = np.linspace(min(xmins ) -2, max(xmaxs) + 2, ngrid)
     zero_y = np.zeros(ngrid)
     axs.plot(zero_x, zero_y, linestyle="dashed", color="black")
     axs.legend()
@@ -263,8 +268,15 @@ def __Main(ArgList):
 
     for i in range(len(opts.filenames)):
         filename = opts.filenames[i]
-        nvb, x_data, degw_data = __read_eqpeV(filename, opts.f_EKS_x)
+        nvb, x_data, degw_data, k_points = read_eqpeV(filename, opts.f_EKS_x)
         __export_data(x_data, degw_data, nvb, i+1, filename, opts.fnpre, opts.fnsuf)
+    # print VB and CD correction
+        print(opts.filenames[i])
+        print("%3s%-18s%12s%12s" % ("ik", " kvec  ", "DEGW_CB", "DEGWVB_VB"))
+        for ik in range(len(k_points)):
+            print("%3d%6.3f%6.3f%6.3f%12.6f%12.6f" % (ik+1, \
+                    k_points[ik][0], k_points[ik][1], k_points[ik][2], \
+                    degw_data[nvb][ik] , degw_data[nvb-1][ik]))
 
     if len(opts.filenames) > 1:
         f_compare = True
@@ -273,6 +285,9 @@ def __Main(ArgList):
     if opts.f_plot:
         __plot_degw(axs, opts.f_EKS_x, f_compare, opts.fnpre, opts.fnsuf)
         plt.show()
+
+
+
 
 # ==============================
 

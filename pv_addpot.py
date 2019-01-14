@@ -11,22 +11,22 @@
 from __future__ import print_function
 import sys
 import os
-import subprocess as sp
-from pv_classes import vasp_read_poscar
-from argparse import ArgumentParser
 import fnmatch
+import subprocess as sp
+from argparse import ArgumentParser
+from pv_classes import vasp_read_poscar
 
 
 def vasp_getpotdir_xc(xc='PBE', verbose=False):
 
-    potdir = sp.check_output('echo $VASPPOT',shell=True).split()
+    potdir = sp.check_output('echo $VASPPOT', shell=True).split()
 
-    if len(potdir)==0:
+    if len(potdir) == 0:
         if verbose:
             print("The environment variable $VASPPOT is not set. Exit.")
         sys.exit(1)
-    elif len(potdir)==1:
-        potdir = potdir[0]
+    
+    potdir = potdir[0]
 
     if not os.path.exists(potdir):
         if verbose:
@@ -42,7 +42,7 @@ def vasp_getpotdir_xc(xc='PBE', verbose=False):
     elif potdir.endswith('5.4'):
     # nomenclature suits for vasp-5.4
         if xc == 'LDA':
-            potdir_xc = potdir + '/potpaw_LDA/'
+            potdir_xc = potdir + '/potpaw'
         else: 
             potdir_xc = potdir + '/potpaw_PBE/'
 
@@ -59,13 +59,13 @@ def vasp_addpot(xc, ele, backup=False, verbose=False):
     potdir_xc = vasp_getpotdir_xc(xc, verbose=False)
 
     if os.path.exists('POTCAR') and backup:
-        os.rename('POTCAR','POTCAR.old')
+        os.rename('POTCAR', 'POTCAR.old')
 
-    with open('POTCAR','w') as fpot:
-        for i in xrange(len(ele)):
-            e_potcar = potdir_xc+ele[i]+'/POTCAR'
+    with open('POTCAR', 'w') as fpot:
+        for i in range(len(ele)):
+            e_potcar = potdir_xc + ele[i] + '/POTCAR'
             if os.path.exists(e_potcar):
-                with open(e_potcar,'r') as fpotcar:
+                with open(e_potcar, 'r') as fpotcar:
                     lines = fpotcar.readlines()
                     for line in lines:
                         fpot.write(line)
@@ -75,48 +75,48 @@ def vasp_addpot(xc, ele, backup=False, verbose=False):
                 if verbose:
                     print(" - POTCAR of %8s not found. Skip" % ele[i])
 
+def __get_enmax(potcarpath):
+    '''
+    '''
+    return float(sp.check_output(['grep', 'ENMAX', potcarpath]).split()[2][:-1])
+
+def __get_enmin(potcarpath):
+    '''
+    '''
+    return float(sp.check_output(['grep', 'ENMIN', potcarpath]).split()[5])
+
 # ==============================
 
 def Main(ArgList):
 
     #potdir = '/home/stevezhang/software/vasppot-5.2/'
 
-    description = ' Create POTCAR from potcar directory defined as environment variable VASPPOT, e.g. /home/stevezhang/software/vasppot-5.2/ with paw_LDA and paw_PBE as subdirectories.'
+    '''
+    Create POTCAR from potcar directory defined as environment variable VASPPOT,
+    e.g. /home/stevezhang/software/vasppot-5.2/ with paw_LDA and paw_PBE as subdirectories.
+    '''
 
-    parser = ArgumentParser(description=description)
-    parser.add_argument('-e',dest='elements',default=None,nargs='+',help="Elements name, e.g. Cu, Fe_sv, H_GW, etc")
-    parser.add_argument("-x",dest='xc',help="XC functional to generate PAW. LDA or PBE (default).",default='PBE')
-    parser.add_argument("-c",dest='check',help="flag for check mode, checking available POTCARs",action='store_true')
-    parser.add_argument('-i',dest='posin',default='POSCAR',help="POSCAR file for checking mode")
-    parser.add_argument("-D",dest='debug',help="flag for debug mode",action='store_true')
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument('-e', dest='elements', default=None, nargs='+', \
+            help="Elements name, e.g. Cu, Fe_sv, H_GW, etc")
+    parser.add_argument("-x", dest='xc', default='PBE', \
+            help="XC functional to generate PAW. LDA or PBE (default).")
+    parser.add_argument("-c", dest='check', action='store_true', \
+            help="flag for check mode, checking available POTCARs")
+    parser.add_argument('-i', dest='posin', default='POSCAR', \
+            help="POSCAR file for checking mode")
+    parser.add_argument("-D", dest='debug', action='store_true', \
+            help="flag for debug mode")
 
     opts = parser.parse_args()
 
     print(" ============ pv_addpot.py ============")
-    #potdir = sp.check_output('echo $VASPPOT',shell=True).split()
-    #if len(potdir)==0:
-    #    print("The environment variable $VASPPOT is not set. Exit.")
-    #    sys.exit(1)
-    #elif len(potdir)==1:
-    #    potdir = potdir[0]
 
-    #if not os.path.exists(potdir):
-    #    print("Invalid POTCAR directory")
-    #    sys.exit(1)
-
-    #if potdir.endswith('5.2') or potdir.endswith('5.3'):
-    ## nomenclature suits for vasp-5.2 and vasp-5.3
-    #    potdir_xc = potdir+'/paw_'+opts.xc.upper()+'/'
-    #elif potdir.endswith('5.4'):
-    ## nomenclature suits for vasp-5.4
-    #    potdir_xc = potdir+'/potpaw_'+opts.xc.upper()+'/'
-
-    # check if the XC directory exists    
     if opts.elements is not None:
         ele = opts.elements
     else:
         posin = opts.posin
-        poscar=vasp_read_poscar(posin)
+        poscar = vasp_read_poscar(posin)
         ele = poscar.atom_type
 
     if opts.debug:
@@ -129,10 +129,10 @@ def Main(ArgList):
         for iele in ele:
             print("%s avail:" % iele)
             for idir in os.listdir(potdir_xc):
-                if fnmatch.fnmatch(idir,iele):
-                    print(" - " + idir)
-                if fnmatch.fnmatch(idir,iele+"_*"):
-                    print(" - " + idir)
+                if fnmatch.fnmatch(idir, iele) or fnmatch.fnmatch(idir, iele+"_*"):
+                    enmax = __get_enmax(os.path.join(potdir_xc, idir + '/POTCAR'))
+                    enmin = __get_enmin(os.path.join(potdir_xc, idir + '/POTCAR'))
+                    print(" - %-12s (%.2f - %.2f eV)" % (idir, enmin, enmax))
     else:
         vasp_addpot(opts.xc, ele, backup=True, verbose=True)
 
