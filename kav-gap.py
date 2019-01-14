@@ -2,12 +2,12 @@
 # get k-point-averaged band gap
 # need files: IBZKPT, OUTCAR
 
+from __future__ import print_function, absolute_import
 
 klist = []  # [kx,ky,kz,weight]
 gap = [] # [Eg]
 VB = []
 CB = []
-
 
 with open("IBZKPT","r") as f:
     kptlines = f.readlines()
@@ -54,7 +54,7 @@ for i in xrange(len(klist)):
         CBM = CB[i]
         k_CBM = [float(x) for x in klist[i][0:3]]
 
-print "CBM = %8.4f at (%6.4f, %6.4f, %6.4f)" % (CBM, k_CBM[0], k_CBM[1], k_CBM[2])
-print "VBM = %8.4f at (%6.4f, %6.4f, %6.4f)" % (VBM, k_VBM[0], k_VBM[1], k_VBM[2])
-print "Eg = %f" % (CBM-VBM)
-print "K-averaged band gap = %f" % (kavgap/kpts_tot)
+print( "CBM = %8.4f at (%6.4f, %6.4f, %6.4f)" % (CBM, k_CBM[0], k_CBM[1], k_CBM[2]))
+print( "VBM = %8.4f at (%6.4f, %6.4f, %6.4f)" % (VBM, k_VBM[0], k_VBM[1], k_VBM[2]))
+print( "Eg = %f" % (CBM-VBM))
+print( "K-averaged band gap = %f" % (kavgap/kpts_tot))

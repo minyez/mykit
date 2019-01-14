@@ -10,9 +10,10 @@
 # ====================================================
 
 from __future__ import print_function
-import sys,os
-import numpy as np
+import sys
+import os
 from xml.etree import ElementTree as etree
+import numpy as np
 from pc_utils import common_print_warn, common_ss_conv, \
                      common_print_verbose_bool
 
@@ -1026,7 +1027,7 @@ class vasp_read_xml():
 
 # sum the component of the atoms in at_index and partial waves in pw_index
 # can be more pythonic
-    def sum_atom_l_comp(self,spin,band,kp,at_index,pw_index):
+    def sum_atom_l_comp(self, spin, band, kp, at_index, pw_index):
         weigh = 0
         for at in at_index:
             for pw in pw_index:
