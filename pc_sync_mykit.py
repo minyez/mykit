@@ -11,10 +11,10 @@
 # ====================================================
 
 from __future__ import print_function
-from argparse import ArgumentParser
-from pc_utils import common_print_warn
 import sys, os, re
+from argparse import ArgumentParser
 import subprocess as sp
+from pc_utils import common_print_warn
 
 def common_read_scsites(f_scsites=None):
     '''

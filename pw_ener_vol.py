@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from pc_utils import common_get_dirname
+from pw_utils import w2k_get_casename
 import subprocess as sp
 import os,sys
 
@@ -30,7 +30,7 @@ ifile = 'optimize.job'
 ofile = 'Ener_Vol'
 struct_flag = False
 obj_struct = [ ]
-casename = common_get_dirname()
+casename = w2k_get_casename()
 if opts.debug: print casename
 
 

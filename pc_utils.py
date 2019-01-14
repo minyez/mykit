@@ -89,7 +89,7 @@ def common_io_cleandir(dirname=None):
 
 # ====================== CHECK LOCATION INFO ======================
 
-def common_get_dirname(path='.'):
+def common_get_dirpath(path='.'):
     '''
     return the directory location of path.
     Return: path,                         if path is a directory itself

@@ -3,7 +3,7 @@
 # write wien2k machine file
 
 from argparse import ArgumentParser
-from pc_utils import common_get_dirname
+from pw_anal_utils import w2k_get_casename
 import subprocess as sp
 import os,sys
 
@@ -42,7 +42,7 @@ def pw_gen_machine_files(ArgList):
     if opts.debug:
         print hostname
     if opts.casename is None:
-        dirname = common_get_dirname()
+        dirname = w2k_get_casename()
     else:
         dirname = opts.casename
     

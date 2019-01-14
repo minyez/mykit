@@ -11,7 +11,8 @@
 # ====================================================
 
 from __future__ import print_function, absolute_import
-import sys,os
+import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
@@ -47,7 +48,7 @@ def __datafile_name(mainname, fnpre=None, fnsuf=None):
 
 # ==============================
 
-def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
+def read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     '''
     Parameters
     ----------
@@ -71,9 +72,10 @@ def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     '''
     degw_data = []
     x_data = []
+    k_points = []
     vb = 0
 
-    with open(eqpeV_file,'r') as h_eqp:
+    with open(eqpeV_file, 'r') as h_eqp:
         eqp_lines = h_eqp.readlines()
     
     bandl, bandh = eqp_lines[4].split()[-2:]
@@ -83,11 +85,16 @@ def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     nspin = int(eqp_lines[2].split()[-1])
     
     bandgw = bandh - bandl + 1
+    print(bandl, bandh)
     
     for ik in range(nk):
         degw_data.append([])
         x_data.append([])
-        datalines = eqp_lines[12+ik*(bandgw + 2):12+ik*(bandgw+2)+bandgw]
+        kline = eqp_lines[10 + ik * (bandgw + 2)]
+        kint = [int(kline[25 + i * 4:29 + i * 4]) for i in range(3)]
+        kdiv = int(kline[44:48])
+        k_points.append([float(x)/kdiv for x in kint])
+        datalines = eqp_lines[12 + ik * (bandgw + 2):12 + ik * (bandgw + 2) + bandgw]
         for line in datalines:
             degw_data[-1].append(float(line.split()[col]))
             EKS = line.split()[2]
@@ -107,7 +114,7 @@ def __read_eqpeV(eqpeV_file, use_EKS_x, col=-4):
     x_data = np.transpose(np.array(x_data))
     nvb = vb - bandl + 1
 
-    return nvb, x_data, degw_data
+    return nvb, x_data, degw_data, k_points
 
 # ==============================
 
@@ -134,8 +141,8 @@ def __export_data(x_data, degw_data, nvb, data_index, filename, fnpre, fnsuf):
     >>> 
     '''
     # split data into valence and conduction part for coloring
-    VB_data = [[],[]]
-    CB_data = [[],[]]
+    VB_data = [[], []]
+    CB_data = [[], []]
     
     for i in range(len(x_data)):
         if i < nvb:
@@ -150,12 +157,12 @@ def __export_data(x_data, degw_data, nvb, data_index, filename, fnpre, fnsuf):
 
     for btype in bandtypes.iterkeys():
         OutFile = __datafile_name("degw_%s_%02d" % (btype, data_index), fnpre, fnsuf)
-        with open(OutFile,'w') as h_out:
+        with open(OutFile, 'w') as h_out:
             h_out.write("#data from %s\n" % os.path.abspath(filename))
             h_out.write("#x-axis could be band index or KS energy level\n")
             h_out.write("#x degw(eV)\n")
             for x, degw in zip(bandtypes[btype][0], bandtypes[btype][1]):
-                h_out.write("%7.3f  %9.3f\n" % (x,degw) )
+                h_out.write("%7.3f  %9.3f\n" % (x, degw))
 
 # ==============================
 
@@ -204,7 +211,7 @@ def __plot_degw(axs, use_EKS_x, f_compare, fnpre, fnsuf):
             x = []
             y = []
             DataFile = __datafile_name("degw_%s_%02d" % (btype, data_index), fnpre, fnsuf)
-            with open(DataFile,'r') as h_in:
+            with open(DataFile, 'r') as h_in:
                 datalines = h_in.readlines()[3:]
                 for line in datalines:
                     x.append(float(line.split()[0]))
@@ -226,9 +233,9 @@ def __plot_degw(axs, use_EKS_x, f_compare, fnpre, fnsuf):
 
     # plot zero
     ngrid = 200
-    axs.set_xlim([min(xmins)-2,max(xmaxs)+2])
-    axs.set_ylim([min(ymins)-0.5,max(ymaxs)+0.5])
-    zero_x = np.linspace(min(xmins)-2,max(xmaxs)+2,ngrid)
+    axs.set_xlim([min(xmins) - 2,  max(xmaxs) + 2])
+    axs.set_ylim([min(ymins) - 0.5, max(ymaxs) + 0.5])
+    zero_x = np.linspace(min(xmins ) -2, max(xmaxs) + 2, ngrid)
     zero_y = np.zeros(ngrid)
     axs.plot(zero_x, zero_y, linestyle="dashed", color="black")
     axs.legend()
@@ -251,12 +258,19 @@ def __Main(ArgList):
     opts = parser.parse_args()
 
     if opts.f_plot:
-        fig, axs = plt.subplots(1,1, figsize=(6, 6))
+        fig, axs = plt.subplots(1, 1, figsize=(6, 6))
 
     for i in range(len(opts.filenames)):
         filename = opts.filenames[i]
-        nvb, x_data, degw_data = __read_eqpeV(filename, opts.f_EKS_x)
+        nvb, x_data, degw_data, k_points = read_eqpeV(filename, opts.f_EKS_x)
         __export_data(x_data, degw_data, nvb, i+1, filename, opts.fnpre, opts.fnsuf)
+    # print VB and CD correction
+        print(opts.filenames[i])
+        print("%3s%-18s%12s%12s" % ("ik", " kvec  ", "DEGW_CB", "DEGWVB_VB"))
+        for ik in range(len(k_points)):
+            print("%3d%6.3f%6.3f%6.3f%12.6f%12.6f" % (ik+1, \
+                    k_points[ik][0], k_points[ik][1], k_points[ik][2], \
+                    degw_data[nvb][ik] , degw_data[nvb-1][ik]))
 
     if len(opts.filenames) > 1:
         f_compare = True
@@ -265,6 +279,9 @@ def __Main(ArgList):
     if opts.f_plot:
         __plot_degw(axs, opts.f_EKS_x, f_compare, opts.fnpre, opts.fnsuf)
         plt.show()
+
+
+
 
 # ==============================
 
