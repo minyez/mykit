@@ -13,6 +13,7 @@
 #                 Special thanks to Prof. Hong Jiang and Dr. Feng Wu
 # ====================================================
 
+from __future__ import print_function
 import sys, re, os, shutil, copy, commands, string
 import subprocess as sp
 from math import sqrt
@@ -33,10 +34,10 @@ def vasp_io_get_tag_value(tag,n_val=1,ifile='INCAR',eq='=',debug=False):
             lines = f.readlines()
             for line in lines:
                 x = [ y.strip() for y in re.split(r'[%s;]'%eq,line)]
-                if debug: print x
+                if debug: print(x)
                 if '#' in x:
                     i_comment = x.index('#')
-                    if debug: print i_comment
+                    if debug: print(i_comment)
                     if not i_comment == 0:
                         del x[i_comment:]
                     else: # this is just a comment line
@@ -52,7 +53,8 @@ def vasp_io_get_tag_value(tag,n_val=1,ifile='INCAR',eq='=',debug=False):
 
 # ====================================================
 
-def vasp_io_change_tag(name_ifile,tag,name_ofile='temp',new_val=None,n_val=1,replace=False,eq='=',backup=True):
+def vasp_io_change_tag(name_ifile, tag, \
+        name_ofile='temp', new_val=None, n_val=1, replace=False, eq='=', backup=True):
 
 # add, delete tag or change tag value in the name_ifile
 # for now can change one parameter and single-value parameter. If new_val=None, the tag will be delete
@@ -98,13 +100,14 @@ def vasp_io_change_tag(name_ifile,tag,name_ofile='temp',new_val=None,n_val=1,rep
 
 # if the tag is not found, add it to the bottom of file
     if flag_tag == 0 and str(new_val) != 'None':
-        print '%s tag does not exist. Add it to %s' % (tag,name_ifile)
+        print('%s tag does not exist. Add it to %s' % (tag,name_ifile))
         ofile.write(' %s = %s\n'%(tag,new_val))
 
     ofile.close()
     ifile.close()
 
-# if replace is set or name_ofile is unset or names of ifile and ofile are the same, then save the ifile as ifile_bak and rename the ofile as ifile
+    # if replace is set or name_ofile is unset or names of ifile and ofile are the same, 
+    # then save the ifile as ifile_bak and rename the ofile as ifile
     if replace or name_ofile == 'temp' or name_ifile == name_ofile:
         if backup:
             os.rename(name_ifile,name_ifile+'_bak')
@@ -163,13 +166,14 @@ def vasp_write_wannier90():
 
 # ====================================================
 
-def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False,f_slab=None):
+def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False,f_slab=None, \
+        koutput='KPOINTS'):
 
-    if os.path.isfile('KPOINTS'):
-        os.rename('KPOINTS','KPOINTS_old')
+    if os.path.isfile(koutput):
+        os.rename(koutput, koutput+'_old')
 
 # if nks is put as a string
-    if debug: print nks
+    if debug: print(nks)
     try:
         string = nks + 'str'
         nks = [ x.strip() for x in re.split(r'[,\[\]]',nks)]
@@ -186,28 +190,25 @@ def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False,f_slab=None):
         if f_slab in [1,2,3]:
             nks[f_slab-1] = 1
 
-    if debug: print nks
-    if mode == 'G':
-        ofile = open('KPOINTS','w')
-        ofile.write("K-Points\n")
-        ofile.write("0 \n")
-        ofile.write("Gamma \n")
-        ofile.write("%d %d %d\n"%(nks[0],nks[1],nks[2]))
-        if sh is None:
-          ofile.write("0 0 0\n")
-        else:
-          ofile.write("%8.4f %8.4f %8.4f\n"%(sh[0],sh[1],sh[2]))
+    if debug: print(nks)
 
+    ofile = open(koutput,'w')
+    ofile.write("K-Points\n")
+    ofile.write("0 \n")
+    if mode == 'G':
+        ofile.write("Gamma \n")
     elif mode == 'M':
-        ofile = open('KPOINTS','w')
-        ofile.write("K-Points\n")
-        ofile.write("0 \n")
         ofile.write("Monkhorst-Pack \n")
-        ofile.write("%d %d %d\n"%(nks[0],nks[1],nks[2]))
-        if sh is None:
-          ofile.write("0 0 0\n")
-        else:
-          ofile.write("%8.4f %8.4f %8.4f\n"%(sh[0],sh[1],sh[2]))
+    else:
+        print("Unsupported mode. Use Gamma")
+        ofile.write("Gamma \n")
+
+    ofile.write("%d %d %d\n"%(nks[0],nks[1],nks[2]))
+    if sh is None:
+      ofile.write("0 0 0\n")
+    else:
+      ofile.write("%8.4f %8.4f %8.4f\n"%(sh[0],sh[1],sh[2]))
+
     ofile.close()
 
 
@@ -268,7 +269,7 @@ def vasp_write_incar_minimal_elec(incar,tag_xc,\
             if len(mode_smear) == 2:
                 incar.write(" ISMEAR = %s ; SIGMA = %s\n" % (mode_smear[0],mode_smear[1]))
             else: # reject other setting and will use default
-                print "Invalid smearing setting, pass."
+                print("Invalid smearing setting, pass.")
 
     if npar != 1:
         incar.write(" NPAR = %s\n" % npar)
@@ -293,12 +294,12 @@ def vasp_write_incar_exact(incar,tag_xc,encut,nb=100,ediff="1E-8",npar=1,\
     '''
     vasp_write_incar_minimal_elec(incar,tag_xc,encut,ediff=ediff,npar=npar,mode_smear=mode_smear,wfrestart=1)
     incar.write("\n# Exact Diag.\n")
-    incar.write(" NELM   = 1\n")
+    #incar.write(" NELM   = 1\n")
     incar.write(" ALGO   = Exact\n")
     incar.write(" NBANDS = %s\n" % nb)
-# For RPA calculation of system with a gap, WAVEDER is required to include longwave contribution. Set LOPTICS to generate it.
+    # For RPA calculation of system with a gap, WAVEDER is required to include longwave contribution. Set LOPTICS to generate it.
     if loptics: incar.write(" LOPTICS = .TRUE.\n")
-# For GW and HF bandstructure calculation with WANNIER90
+    # For GW and HF bandstructure calculation with WANNIER90
     if lwannier:
         incar.write(" LWANNIER90 = .TRUE.\n")
         vasp_write_wannier90()
@@ -329,7 +330,7 @@ def vasp_vaspcmd_zmy(np=1,mpitype="mpirun",vasp_path="vasp"):
                 which_vasp = str(sp.check_output("which vasp_std",stderr=sp.STDOUT,shell=True)).split('\n')[0]
                 vasp_path = which_vasp
             except sp.CalledProcessError:
-                print "Path for vasp not found. Need manual setting"
+                print("Path for vasp not found. Need manual setting")
                 vasp_path = "vasp"
                 raise
 
