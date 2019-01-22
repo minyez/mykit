@@ -15,9 +15,9 @@ def create_path(path):
 
 parser = ArgumentParser()
 parser.add_argument("-i", help="input struct file, default POSCAR")
-parser.add_argument("-s", help="start volume ratio, default 0.92",type=float)
-parser.add_argument("-e", help="end volume ratio, default 1.08",type=float)
-parser.add_argument("-d", help="interval of volume ratio, default 0.02",type=float)
+parser.add_argument("-s", help="start volume ratio, default 0.92", type=float)
+parser.add_argument("-e", help="end volume ratio, default 1.08", type=float)
+parser.add_argument("-d", help="interval of volume ratio, default 0.02", type=float)
 args = parser.parse_args()
 
 if args.i:
@@ -43,6 +43,7 @@ else:
 with open(struct_file,'r') as f:
     lines = f.readlines()
 
+scale_old = float(lines[1].split()[0])
 grid = round(( rve - rvs ) / interval) + 1
 struct_range_np = np.linspace(rvs,rve,grid)
 struct_range_str = [ ]
@@ -56,7 +57,7 @@ for x in struct_range_np:
 for x in struct_range_str:
     create_path("./V_%s" % x)
     ra = np.power(float(x),1/3.0)
-    lines[1]= "%s\n" % str(ra)
+    lines[1]= "%s\n" % str(ra * scale_old)
     os.chdir("./V_%s" % x)
     with open("POSCAR",'w') as poscar:
         for line in lines:
