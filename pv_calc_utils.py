@@ -216,6 +216,7 @@ def vasp_write_kpoints_basic(nks,mode='G',sh=None,debug=False,f_slab=None, \
         ofile.write("Gamma\n")
 
     ofile.write("%d %d %d\n"%(_nks[0], _nks[1], _nks[2]))
+
     if sh is None:
       ofile.write("0 0 0\n")
     else:
