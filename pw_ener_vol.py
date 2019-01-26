@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from pw_utils import w2k_get_casename
+from pw_anal_utils import w2k_get_casename
 import subprocess as sp
 import os,sys
 
