@@ -13,6 +13,8 @@ INCAR*
 optimize.job
 test.py
 *.dat
+.idea/
+.vscode/
 
 # ignore private files
 scsites
