@@ -11,7 +11,9 @@
 # ====================================================
 
 from __future__ import print_function
-import sys, os, re
+import sys
+import os
+import re
 from argparse import ArgumentParser
 import subprocess as sp
 from pc_utils import common_print_warn
@@ -27,13 +29,13 @@ def common_read_scsites(f_scsites=None):
     if f_scsites is None:
         f_scsites = os.path.dirname(__file__)+'/scsites'
 
-    with open(f_scsites,'r') as h_scsites:
+    with open(f_scsites, 'r') as h_scsites:
         scsites = h_scsites.readlines()
 
-    for i in range(len(scsites)):
+    for i, site in enumerate(scsites):
         scsites[i] = scsites[i].strip()
         # remove slash at the end of the site according to the feature of rsync
-        while(scsites[i].endswith('/')):
+        while scsites[i].endswith('/'):
             scsites[i] = scsites[i][:-1]
 
     return scsites
@@ -72,7 +74,8 @@ def common_sync_mykit(ArgList):
     '''
 
     parser = ArgumentParser(description=description)
-    parser.add_argument('-f',dest='f_scsites',default=None,help="The file storing the supercomputer sites")
+    parser.add_argument('-f', dest='f_scsites', default=None, \
+            help="The file storing the supercomputer sites")
     opts = parser.parse_args()
 
     supercomputer_sites = common_read_scsites(opts.f_scsites)

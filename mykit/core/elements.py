@@ -1,22 +1,16 @@
-#!/usr/bin/env python
 # coding=utf-8
-
 # ====================================================
-#
 #     File Name : pc_elements.py
 # Creation Date : 09-04-2018
 #    Created By : Min-Ye Zhang
 #       Contact : stevezhang@pku.edu.cn
-#
 # ====================================================
 
 from __future__ import print_function
-import sys
 import string
 
-# ====================================================
-
-Periodic_Table = (
+# pylint: disable=bad-continuation,bad-whitespace,line-too-long
+periodicTable = (
                 'H' , 'He', 
                 'Li', 'Be', 'B' , 'C' , 'N' , 'O' , 'F' , 'Ne', 
                 'Na', 'Mg', 'Al', 'Si', 'P' , 'S' , 'Cl', 'Ar', 
@@ -43,10 +37,11 @@ Periodic_Table = (
 # Data from NIST database 144, last update January 2015
 # https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl
 # The data is double-checked with Wolfram Language ElementData (WLE)
-# In case that an atomic-weight interval is met in NIST, the data in WLE is used instead and noted below.
+# In case that an atomic-weight interval is met in NIST, 
+# the data in WLE is used instead and noted below.
 # All data are accurate to 6 decimals, if available
 # WLE data used: H, Li, B, C, N, O, Mg, Si, S, Cl, Br, Tl
-Atom_Weight = (
+atomWeight = (
 1.008     , 4.002602 ,
 6.94      , 9.012183 , 10.81    , 12.011 , 14.007   , 15.999 , 18.998403, 20.1797   ,
 22.989769 , 24.305   , 26.981539, 28.085 , 30.973762, 32.06  , 35.45    , 39.948    ,
@@ -68,87 +63,84 @@ Atom_Weight = (
 
 # ====================================================
 
-def common_molar_mass_calculator(chem_formula):
+def common_molar_mass_calculator(chemFormula):
+    '''calculate molar weight for a chemical formula
 
-    atom_type, natom_list = common_read_chemical_formula(chem_formula, debug=False)
+    Args:
+        chemFormula (str) : Chemical formula of compound. Parentheses are not supported.
+    '''
 
-    molar_mass = 0.0
+    atomType, natomList, compo = common_read_chemical_formula(chemFormula, debug=False)
 
-    for i in range(len(natom_list)):
-        atom_num = Periodic_Table.index(atom_type[i])
-        molar_mass += Atom_Weight[atom_num] * natom_list[i]
-   
-    return molar_mass
+    molarMass = 0.0
+
+    for i, _nat in enumerate(natomList):
+        atomNum = periodicTable.index(atomType[i])
+        molarMass += atomWeight[atomNum] * _nat
+
+    return molarMass
 
 # ====================================================
 
-def common_read_chemical_formula(chem_formula, debug=False):
+def common_read_chemical_formula(chemFormula, debug=False):
 
-    '''
-    Read the chemical formula
+    '''Read the chemical formula
 
-    Parameters:
-    chem_formula: str
-        the chemical formula of the system which reflects the total numbers of each element
-        in the molecule or the unit cell of crystal.
-    debug: bool
-        the flag to switch on debug mode.
+    Args:
+        chemFormula (str) : the chemical formula of the system which reflects the total numbers of each element
+            in the molecule or the unit cell of crystal.
+        debug (bool) : the flag to switch on debug mode.
         
-    Return:
-    atom_type: list of str
-        the types of elements in the system.
-    natom_list: list of int
-        the numbers of atoms for each type of element correspondent to the atom_type.
-    compositions: int
-        the number of compositions in the system.
-
+    Returns:
+        atomType (list of str) : the types of elements in the system.
+        natomList (list of int) : the numbers of atoms for each type of element correspondent to the atomType.
+        compositions (int) : the number of compositions in the system.
     '''
     
-    atom_type = []
-    natom_list = []
+    atomType = []
+    natomList = []
 
-    length_symbol_tmp = 0
+    _lenSymbol = 0
     natom = 0
-    symbol_tmp = ''
-    str_natom_tmp = ''
+    _symbol = ''
+    _strNatom = ''
 
-    for i in range(len(chem_formula)):
-        char_ce = chem_formula[i]
-        if char_ce in string.letters:
-            # If an uppercase is met, save the last element if symbol_tmp is not empty
+    for i, _charEle in enumerate(chemFormula):
+        if _charEle in string.letters:
+            # If an uppercase is met, save the last element if _symbol is not empty
             # and start a new element
-            if char_ce in string.uppercase:
-                if len(symbol_tmp) > 0:
+            if _charEle in string.uppercase:
+                if len(_symbol) > 0:
                     # check if the symbol is a valid element symbol
-                    if symbol_tmp in Periodic_Table:
-                        atom_type.append(symbol_tmp)
-                        natom_list.append(int(str_natom_tmp))
+                    if _symbol in periodicTable:
+                        atomType.append(_symbol)
+                        natomList.append(int(_strNatom))
                     else:
                         raise ValueError("Invalid element symbol not found in the periodic table.")
                     # clear the natom and length counter
-                    length_symbol_tmp = 0
-                    str_natom_tmp = ''
+                    _lenSymbol = 0
+                    _strNatom = ''
 
-                symbol_tmp = char_ce
+                _symbol = _charEle
 
-            elif char_ce in string.lowercase:
-                symbol_tmp += char_ce
-            length_symbol_tmp += 1
+            elif _charEle in string.lowercase:
+                _symbol += _charEle
+            _lenSymbol += 1
             # no chemical symbol has a length larger than 2
-            assert length_symbol_tmp <= 2
-        elif char_ce in string.digits:
-            str_natom_tmp += char_ce
+            assert _lenSymbol <= 2
+        elif _charEle in string.digits:
+            _strNatom += _charEle
         else:
             raise TypeError("Invalid character for chemical formula.")
             
         # save the last element
-        if i == (len(chem_formula)-1):
-            atom_type.append(symbol_tmp)
-            natom_list.append(int(str_natom_tmp))
+        if i == (len(chemFormula)-1):
+            atomType.append(_symbol)
+            natomList.append(int(_strNatom))
 
-    compositions = len(atom_type) 
+    compositions = len(atomType) 
         
     if debug:
-        print(atom_type, natom_list)
+        print(atomType, natomList)
 
-    return atom_type, natom_list, compositions
+    return atomType, natomList, compositions

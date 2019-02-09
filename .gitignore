@@ -4,18 +4,18 @@
 *.swp
 *.o
 # ignore the test files
-POTCAR
-POSCAR
-KPOINTS
-INCAR*
-*.struct
+#POTCAR
+#POSCAR
+#KPOINTS
+#INCAR*
+#*.struct
 *.sh
-optimize.job
-test.py
-*.dat
+#optimize.job
+#test.py
+#*.dat
 .idea/
 .vscode/
 
 # ignore private files
-scsites
-commit.info
+#scsites
+#commit.info
