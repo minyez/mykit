@@ -1,10 +1,4 @@
 # coding=utf-8
-# ====================================================
-#     File Name : pc_elements.py
-# Creation Date : 09-04-2018
-#    Created By : Min-Ye Zhang
-#       Contact : stevezhang@pku.edu.cn
-# ====================================================
 
 from __future__ import print_function
 import string
@@ -70,15 +64,15 @@ def common_molar_mass_calculator(chemFormula):
         chemFormula (str) : Chemical formula of compound. Parentheses are not supported.
     '''
 
-    atomType, natomList, compo = common_read_chemical_formula(chemFormula, debug=False)
+    _at, _natomList, _compo = common_read_chemical_formula(chemFormula, debug=False)
 
-    molarMass = 0.0
+    _molarMass = 0.0
 
-    for i, _nat in enumerate(natomList):
-        atomNum = periodicTable.index(atomType[i])
-        molarMass += atomWeight[atomNum] * _nat
+    for _i, _nat in enumerate(_natomList):
+        _atomNum = periodicTable.index(_at[_i])
+        _molarMass += atomWeight[_atomNum] * _nat
 
-    return molarMass
+    return _molarMass
 
 # ====================================================
 
@@ -101,15 +95,15 @@ def common_read_chemical_formula(chemFormula, debug=False):
     natomList = []
 
     _lenSymbol = 0
-    natom = 0
+    _natom = 0
     _symbol = ''
     _strNatom = ''
 
     for i, _charEle in enumerate(chemFormula):
-        if _charEle in string.letters:
+        if _charEle in string.ascii_letters:
             # If an uppercase is met, save the last element if _symbol is not empty
             # and start a new element
-            if _charEle in string.uppercase:
+            if _charEle in string.ascii_uppercase:
                 if len(_symbol) > 0:
                     # check if the symbol is a valid element symbol
                     if _symbol in periodicTable:
@@ -123,7 +117,7 @@ def common_read_chemical_formula(chemFormula, debug=False):
 
                 _symbol = _charEle
 
-            elif _charEle in string.lowercase:
+            elif _charEle in string.ascii_lowercase:
                 _symbol += _charEle
             _lenSymbol += 1
             # no chemical symbol has a length larger than 2

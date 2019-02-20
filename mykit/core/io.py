@@ -11,20 +11,18 @@ class __file:
     '''Meta-metaclass for file reading and writing
     '''
     path = ''
-    __path = ''
     __lines = []
     __fExist = False
 
-    def __init(self, filePath):
+    def __init__(self, filePath):
         self.path = filePath
-        self.__lines = []
         self.__fExist = False
     
     def __open(self):
         '''Open existing file
         '''
         if os.path.isfile(self.path):
-            with open(self.__path, 'r') as hIn:
+            with open(self.path, 'r') as hIn:
                 self.__lines = hIn.readlines()
                 self.__fExist = True
         else:
@@ -39,7 +37,7 @@ class file_in(__file):
     '''
 
     def __init__(self, filePath):
-        self.__init(filePath)
+        super(file_in, self).__init__(filePath)
         self.__open()
         self.iLines = self.__lines #: the lines of input file to write out
 
@@ -73,7 +71,7 @@ class file_out(__file):
         filePath (str): The name of the output file
     '''
     def __init__(self, filePath):
-        self.__init(filePath)
+        super(file_out, self).__init__(filePath)
         self.__open()
         self.oLines = self.__lines
 

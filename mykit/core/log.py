@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
+'''Defined functions for printing mykit information
 '''
-defined functions for printting mykit information
-'''
-
+import logging

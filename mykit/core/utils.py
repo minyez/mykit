@@ -4,18 +4,18 @@
 
 import os
 
-def get_dirpath(filepath):
-    '''get the name of directory with filepath
+def get_dirpath(filePath):
+    '''get the name of directory with filePath
 
     Args:
-        filepath (str): the string of the path of file
+        filePath (str): the string of the path of file
 
     Returns:
-        str: the path of parent directory if filepath represents a file,
+        str: the path of parent directory, if filepath represents a file,
             otherwise the path of the directory
     '''
 
-    __path = os.path.abspath(filepath)
-    if os.path.isdir(__path):
-        __path = __path + '/'
-    return os.path.dirname(__path)
+    _path = os.path.abspath(filePath)
+    if os.path.isdir(_path):
+        _path = _path + '/'
+    return os.path.dirname(_path)
