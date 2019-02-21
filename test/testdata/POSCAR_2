@@ -7,5 +7,5 @@ C
 2
 Selective dynamics
 Direct
-0.50  0.50  0.50
-0.75  0.75  0.75
+0.50  0.50  0.50 T T T
+0.75  0.75  0.75 F F F

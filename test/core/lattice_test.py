@@ -123,6 +123,11 @@ class lattice_factory_method(unittest.TestCase):
         self.assertEqual(4, len(_fcc))
 
 
+class lattice_element_utils(unittest.TestCase):
+    '''Test the utils to manipulate element lists for ``lattice`` use
+    '''
+    pass
+
 if __name__ == "__main__":
     unittest.main()
     

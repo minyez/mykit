@@ -26,6 +26,9 @@ class poscar(lattice):
             poscarPath (str) : path to the file to read as POSCAR
         '''
         # TODO can be decomposed to support reading structures stored in XDATCAR and OUTCAR
+        __flagSelDyn = False
+        __fix = {}
+        __fixDict = {'T': True, 'F': False}
         try:
             _f = open(poscarPath, 'r')
         except FileNotFoundError as _err:
@@ -42,7 +45,7 @@ class poscar(lattice):
                 _cell = np.array(_cell, dtype=cls._dtype) * _scale
             except ValueError:
                 _f.close()
-                raise poscarError("Bad lattice vector")
+                raise poscarError("Bad lattice vector: {}".format(poscarPath))
             # Next 2 or 1 line(s), depend on whether element symbols are typed or not
             _line = _f.readline().strip()
             if _line[0] in string.ascii_letters:
@@ -51,7 +54,7 @@ class poscar(lattice):
             if _line[0] in string.digits[1:]:
                 _natomsType = [int(_x) for _x in _line.split()]
                 if _symTypes is None:
-                    cls.print_cm_warn("No atom information in POSCAR")
+                    cls.print_cm_warn("No atom information in POSCAR: {}".format(poscarPath))
                     _symTypes = [string.ascii_lowercase[_i] for _i,_x in enumerate(_natomsType)]
             else:
                 _f.close()
@@ -60,21 +63,19 @@ class poscar(lattice):
                 assert len(_symTypes) == len(_natomsType)
             except AssertionError:
                 _f.close()
-                raise poscarError("Inconsistent input of symbol and numbers of atom")
+                raise poscarError("Inconsistent input of symbol and numbers of atom: {}".format(poscarPath))
             _atoms = atoms_from_sym_nat(_symTypes, _natomsType)
             _natoms = sum(_natomsType)
             # Next 2 or 1 line(s), depend on whether 'selective dynamics line' is typed
-            _fSelectDyn = False
             _line = _f.readline().strip()
             if _line[0].upper() not in ["C", "D", "K"]:
-                _fSelectDyn = True
+                __flagSelDyn = True
                 _line = _f.readline().strip()
             if _line[0].upper() in ["C", "K"]:
                 _cs = "C"
             else:
                 _cs = "D"
-            # Next _natoms lines: read atomic position
-            # TODO extract selective dynamics information
+            # Next _natoms lines: read atomic position and selective dynamics flag
             _pos = []
             _mult = 1.0E0
             if _cs == "C":
@@ -82,13 +83,25 @@ class poscar(lattice):
             for _i in range(_natoms):
                 try:
                     _line = _f.readline().strip()
-                    _pos.append([float(_x) for _x in _line.split()[:3]])
+                    _words = _line.split()
+                    _pos.append([float(_x) for _x in _words[:3]])
+                    if __flagSelDyn:
+                        __fixFlag = [__fixDict.get(_words[i]) for i in range(3,6)]
+                        if None in __fixFlag:
+                            raise IndexError
+                        elif __fixFlag == [True, True, True]:
+                            pass
+                        else:
+                            __fix.update({_i: __fixFlag})
                 except ValueError:
                     _f.close()
-                    raise poscarError("Bad internal coordinates at atom line {}".format(_i+1))
+                    raise poscarError("Bad internal coordinates at atom line {}: {}".format(_i+1, poscarPath))
+                except IndexError:
+                    _f.close()
+                    raise poscarError("Bad selective dynamics flag at atom line {}: {}".format(_i+1, poscarPath))
             _pos = np.array(_pos, dtype=cls._dtype) * _mult
             _f.close()
-            return cls(_cell, _atoms, _pos, unit="ang", coordSys=_cs, fSelectDyn=_fSelectDyn)
+            return cls(_cell, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix)
 
     @classmethod
     def create_from_lattice(cls, latt):

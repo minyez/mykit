@@ -7,6 +7,9 @@ from mykit.core.log import verbose
 from mykit.core.numeric import prec
 from mykit.core.constants import pi, au2ang, ang2au
 
+_latt_kwargs_doc = '''
+'''
+
 # ==================== classes ====================
 class latticeError(Exception):
     '''Exception in lattice module
@@ -21,23 +24,25 @@ class lattice(prec, verbose):
         cell (array-like) : The lattice vectors
         atoms (list of str) : The list of strings of type for each atom corresponding to the member in pos
         pos (array-like) : The internal coordinates of atoms
-    
+
     Available ``kwargs``:
         unit (str): The system of unit to use. Either "ang" or "au"
         coordSys (str): Coordinate system for the internal positions. Either "D" (Direct) or "C" (Cartesian)
-        fSelectDyn (bool) : switch of selective dynamics for geometry optimization
-        selectDyn (dict) : 
+        allRelax (bool) : default selective dynamics option for atoms. Set True to allow all DOFs to relax
+        selectDyn (dict) : a dictionary with key-value pair as "int: [bool, bool, bool]", which controls
+            the selective dynamic option for atom with the particular index (starting from 0)
     
     Examples:
     >>> latt = lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
+    <mykit.core.lattice.lattice>
     '''
     def __init__(self, cell, atoms, pos, **kwargs):
 
         # if kwargs:
             # super(lattice, self).__init__(**kwargs)
         self.comment= ''
-        self._fSelectDyn = False
-        self._selectDyn = None
+        self.__allRelax = True
+        self.__selectDyn = {}
         self._natoms = 0
         self.__unit = 'ang'
         self.__coordSys = 'D'
@@ -61,10 +66,10 @@ class lattice(prec, verbose):
         
         _directAssign = {
                             "comment": self.comment,
-                            "fSelectDyn": self._fSelectDyn,
-                            "selectDyn": self._selectDyn
+                            # "fSelectDyn": self._fSelectDyn,
+                            "selectDyn": self.__selectDyn,
+                            "allRelax": self.__allRelax
                         }
-
         for _k in _directAssign:
             if _k in kwargs:
                 _directAssign[_k] = kwargs[_k]
@@ -80,8 +85,8 @@ class lattice(prec, verbose):
                 "unit" : self.__unit, 
                 "coordSys" : self.__coordSys,
                 "comment": self.comment,
-                "fSelectDyn" : self._fSelectDyn,
-                "selectDyn" : self._selectDyn
+                "allRelax" : self.__allRelax,
+                "selectDyn" : self.__selectDyn
              }
         return _d
 
@@ -89,7 +94,6 @@ class lattice(prec, verbose):
         '''Purge the cell, atoms and pos, which is minimal for constructing ``lattice`` and its subclasses
         '''
         return self.__cell, self.__atoms, self.__pos
-
 
     def __check_consistency(self):
         try:
@@ -100,7 +104,8 @@ class lattice(prec, verbose):
         except AssertionError:
             raise latticeError("Invalid lattice setup")
 
-    def move(self, iAtom):
+    # TODO move atom
+    def move(self, ia):
         pass
 
     @property
@@ -158,6 +163,29 @@ class lattice(prec, verbose):
 
     def __getitem__(self, index):
         return self.__pos[index, :]
+
+# TODO make reciprocal lattice information to properties
+#    def __calc_latt(self):
+#         '''Calculate lattice information from the input
+#         '''
+#         vol = np.linalg.det(self.a)
+#         self.vol = vol
+
+#         # reciprocal lattice vectors in 2pi
+#         b = []
+#         for i in range(3):
+#             j = (i + 1) % 3
+#             k = (i + 2) % 3
+#             b.append(np.cross(self.a[j], self.a[k]))
+#         b = np.array(b, dtype=self._dtype)
+#         self.b2Pi = np.divide(b, vol)
+#         self.b = np.multiply(b, 2.0 * pi)
+
+#         # length of lattice vectors
+#         self.bLen = np.array([np.linalg.norm(x) for x in self.b], dtype=self._dtype)
+#         self.bLen2Pi = np.array([np.linalg.norm(x) for x in self.b2Pi], dtype=self._dtype)
+#         self.volBZ2Pi = np.linalg.det(self.b2Pi)
+#         self.volBZ = np.linalg.det(b)
 
     # Factory methods
     @classmethod
@@ -221,34 +249,6 @@ class lattice(prec, verbose):
         return cls.__bravis_c(atom, 'F', aLatt=aLatt, **kwargs)
     
 
-#    def __calc_latt(self):
-#         '''Calculate lattice information from the input
-#         '''
-#         vol = np.linalg.det(self.a)
-#         self.vol = vol
-
-#         # reciprocal lattice vectors in 2pi
-#         b = []
-#         for i in range(3):
-#             j = (i + 1) % 3
-#             k = (i + 2) % 3
-#             b.append(np.cross(self.a[j], self.a[k]))
-#         b = np.array(b, dtype=self._dtype)
-#         self.b2Pi = np.divide(b, vol)
-#         self.b = np.multiply(b, 2.0 * pi)
-
-#         # length of lattice vectors
-#         self.bLen = np.array([np.linalg.norm(x) for x in self.b], dtype=self._dtype)
-#         self.bLen2Pi = np.array([np.linalg.norm(x) for x in self.b2Pi], dtype=self._dtype)
-#         self.volBZ2Pi = np.linalg.det(self.b2Pi)
-#         self.volBZ = np.linalg.det(b)
-
-    # def rebuild(self):
-    #     '''Rebuild the lattice from cell, atoms and pos
-    #     '''
-    #     pass
-
-
 # class symmetry(prec):
 #     '''Class to obtain symmetry of a lattice
 
@@ -258,12 +258,16 @@ class lattice(prec, verbose):
 #     def __init__(self, latt):
 #         pass
 
+
 def atoms_from_sym_nat(syms, nats):
     '''Generate ``atom`` list for ``lattice`` initilization from list of atomic symbols and number of atoms
 
     Args :
         syms (list of str) : atomic symbols
         nats (list of int) : number of atoms for each symbol
+
+    Returns :
+        a list of str, containing symbol of each atom in the lattice
     
     Examples:
     >>> generate_atoms_from_sym_nat(["C", "Al", "F"], [2, 3, 1])
@@ -274,3 +278,30 @@ def atoms_from_sym_nat(syms, nats):
     for _s, _n in zip(syms, nats):
         _list.extend([_s,] * _n)
     return _list
+
+
+def sym_nat_from_atoms(atoms):
+    '''Generate lists of atomic symbols and number of atoms
+
+    The order of appearence of the element is conserved in the output.
+
+    Args :
+        atoms (list of str) : symbols of each atom in the lattice
+
+    Returns :
+        list of str : atomic symbols
+        list of int : number of atoms for each symbol
+    
+    Examples:
+    >>> generate_atoms_from_sym_nat(["C", "Al", "Al", "C", "Al", "F"])
+    ["C", "Al", "F"], [2, 3, 1]
+    '''
+    _syms = []
+    _natsDict = {}
+    for _at in atoms:
+        if _at in _syms:
+            _natsDict[_at] += 1
+        else:
+            _syms.append(_at)
+            _natsDict.update({_at: 0})
+    return _syms, [_natsDict[_at] for _at in _syms]
