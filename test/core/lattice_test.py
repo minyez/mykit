@@ -97,9 +97,11 @@ class lattice_factory_method(unittest.TestCase):
     '''Test the class methods to generate commonly used lattice structure'''
 
     def test_bravis_cubic(self):
-        _pc = lattice.bravis_cP("C", aLatt=5.0)
+        _pc = lattice.bravis_cP("C", aLatt=5.0, coordSys="D")
         self.assertEqual(1, len(_pc))
-        _bcc = lattice.bravis_cI("C", aLatt=5.0)
+        self.assertEqual("D", _pc.coordSys)
+        _bcc = lattice.bravis_cI("C", aLatt=5.0, unit="au")
+        self.assertEqual("au", _bcc.unit)
         self.assertEqual(2, len(_bcc))
         _fcc = lattice.bravis_cF("C", aLatt=5.0)
         self.assertEqual(4, len(_fcc))

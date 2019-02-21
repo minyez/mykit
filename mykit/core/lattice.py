@@ -27,14 +27,15 @@ class lattice(prec, verbose):
     Examples:
     >>> latt = lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
     '''
-    def __init__(self, cell, atoms, pos, unit="ang", coordSys="D", **kwargs):
+    def __init__(self, cell, atoms, pos, **kwargs):
 
-        if kwargs:
-            super(lattice, self).__init__(kwargs)
+        # if kwargs:
+            # super(lattice, self).__init__(**kwargs)
+        self.comment= ''
         self._atomIndexDict = {}
         self._natoms = 0
-        self._unit = 'ang'
-        self._coordSys = 'D'
+        self.__unit = 'ang'
+        self.__coordSys = 'D'
 
         try:
             self.cell = np.array(cell, dtype=self._dtype)
@@ -42,8 +43,6 @@ class lattice(prec, verbose):
         except ValueError as _err:
             raise latticeError("Fail to create cell and pos array. Please check.")
         self.atoms = atoms
-        self._unit = unit.lower()
-        self._coordSys = coordSys.upper()
         self.__parse_kwargs(**kwargs)
 
         # check input consistency
@@ -51,7 +50,12 @@ class lattice(prec, verbose):
         self.__generate_index_dict()
 
     def __parse_kwargs(self, **kwargs):
-        pass
+        if 'comment' in kwargs:
+            self.comment = kwargs['comment']
+        if 'unit' in kwargs:
+            self.__unit = kwargs['unit'].lower()
+        if 'coordSys' in kwargs:
+            self.__coordSys = kwargs['coordSys'].upper()
 
 
     def get_kwargs(self):
@@ -61,16 +65,16 @@ class lattice(prec, verbose):
             dictionary that can be parsed to ``create_from_lattice`` class method.
         '''
         _d = {
-                "unit" : self.unit, 
-                "coordSys" : self.coordSys
+                "unit" : self.__unit, 
+                "coordSys" : self.__coordSys,
+                "comment": self.comment
              }
         return _d
-        
 
     def __check_consistency(self):
         try:
-            assert self._coordSys in ["C", "D"]
-            assert self._unit in ["ang", "au"]
+            assert self.__coordSys in ["C", "D"]
+            assert self.__unit in ["ang", "au"]
             assert np.shape(self.cell) == (3, 3)
             assert np.shape(self.pos) == (len(self.atoms), 3)
         except AssertionError:
@@ -85,7 +89,7 @@ class lattice(prec, verbose):
 
     @property
     def unit(self):
-        return self._unit
+        return self.__unit
     @unit.setter
     def unit(self, u):
         _u = u.lower()
@@ -93,13 +97,13 @@ class lattice(prec, verbose):
         _conv = _convDict.get(_u)
 
         if _conv is not None:
-            if self._coordSys == "C":
+            if self.__coordSys == "C":
                 self.pos = self.pos * _conv
             self.cell = self.cell * _conv
 
     @property
     def coordSys(self):
-        return self._coordSys
+        return self.__coordSys
     @coordSys.setter
     def coordSys(self, s):
         _s = s.upper()
@@ -127,13 +131,6 @@ class lattice(prec, verbose):
     @classmethod
     def __bravis_c(cls, atom, typeLatt, aLatt=1.0, **kwargs):
 
-        __unit = "ang"
-        __coordSys = "D"
-        if "unit" in kwargs.keys():
-            __unit = kwargs.pop("unit")
-        if "coordSys" in kwargs.keys():
-            __coordSys = kwargs.pop("coordSys")
-
         __type = typeLatt.upper()
         try:
             assert isinstance(aLatt, (int, float))
@@ -156,7 +153,7 @@ class lattice(prec, verbose):
             __atoms =[atom, atom, atom, atom]
             __pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
 
-        return cls(__cell, __atoms, __pos, unit=__unit, coordSys=__coordSys, **kwargs)
+        return cls(__cell, __atoms, __pos, **kwargs)
 
     @classmethod
     def bravis_cP(cls, atom, aLatt=1.0, **kwargs):
@@ -229,3 +226,19 @@ class lattice(prec, verbose):
 #     def __init__(self, latt):
 #         pass
 
+def atoms_from_sym_nat(syms, nats):
+    '''Generate ``atom`` list for ``lattice`` initilization from list of atomic symbols and number of atoms
+
+    Args :
+        syms (list of str) : atomic symbols
+        nats (list of int) : number of atoms for each symbol
+    
+    Examples:
+    >>> generate_atoms_from_sym_nat(["C", "Al", "F"], [2, 3, 1])
+    ["C", "C", "Al", "Al", "Al", "F"]
+    '''
+    assert len(syms) == len(nats)
+    _list = []
+    for _s, _n in zip(syms, nats):
+        _list.extend([_s,] * _n)
+    return _list

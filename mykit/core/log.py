@@ -7,8 +7,7 @@ import sys
 class verbose:
     '''Class that controls the level of information print'''
 
-    _verbWarn = 0
-    _verbLog = 0
+    _verbWarn, _verbLog = global_config.get('verbWarn', 'verbLog')
     _indent = ' ' * global_config.get("logIndent")
     _prefix = {"log": '', "warn": ' WARNING!!!'}
     # range of verbose level
@@ -55,3 +54,25 @@ class verbose:
         self.__print(*warnStr, printType="warn", \
             indentLevel=depth, verbLevel=level, file=file)
     
+    @classmethod
+    def print_cm_log(cls, *strs, indentLevel=0, verbLevel=0, file=sys.stdout):
+        '''print log information for classmethod
+
+        This helps the classmethod of the subclasses of verbose to print hierachal log.
+        '''
+        assert isinstance(indentLevel, int)
+        _strPref = cls._indent * indentLevel + cls._prefix["log"]
+        if verbLevel <= cls._verbLog:
+            print(_strPref, *strs, file=file)
+
+    @classmethod
+    def print_cm_warn(cls, *strs, indentLevel=0, verbLevel=0, file=sys.stdout):
+        '''print warning information for classmethod
+
+        This helps the classmethod of the subclasses of verbose to print hierachal log.
+        '''
+        assert isinstance(indentLevel, int)
+        _strPref = cls._indent * indentLevel + cls._prefix["warn"]
+        if verbLevel <= cls._verbWarn:
+            print(_strPref, *strs, file=file)
+     

@@ -77,7 +77,7 @@ class global_config:
             try:
                 with open(__path, 'r') as _h:
                     __json = json.load(_h)
-                for key in __json.keys():
+                for key in __json:
                     if key in cls.__optKeys:
                         cls.__options[key][0] = __json[key]
             except json.JSONDecodeError as _err:
