@@ -25,6 +25,8 @@ class lattice(prec, verbose):
     Available ``kwargs``:
         unit (str): The system of unit to use. Either "ang" or "au"
         coordSys (str): Coordinate system for the internal positions. Either "D" (Direct) or "C" (Cartesian)
+        fSelectDyn (bool) : switch of selective dynamics for geometry optimization
+        selectDyn (dict) : 
     
     Examples:
     >>> latt = lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
@@ -36,17 +38,16 @@ class lattice(prec, verbose):
         self.comment= ''
         self._fSelectDyn = False
         self._selectDyn = None
-        self._atomIndexDict = {}
         self._natoms = 0
         self.__unit = 'ang'
         self.__coordSys = 'D'
 
         try:
-            self.cell = np.array(cell, dtype=self._dtype)
-            self.pos = np.array(pos, dtype=self._dtype)
+            self.__cell = np.array(cell, dtype=self._dtype)
+            self.__pos = np.array(pos, dtype=self._dtype)
         except ValueError as _err:
             raise latticeError("Fail to create cell and pos array. Please check.")
-        self.atoms = atoms
+        self.__atoms = atoms
         self.__parse_kwargs(**kwargs)
         # check input consistency
         self.__check_consistency()
@@ -84,21 +85,23 @@ class lattice(prec, verbose):
              }
         return _d
 
+    def get_latt(self):
+        '''Purge the cell, atoms and pos, which is minimal for constructing ``lattice`` and its subclasses
+        '''
+        return self.__cell, self.__atoms, self.__pos
+
+
     def __check_consistency(self):
         try:
             assert self.__coordSys in ["C", "D"]
             assert self.__unit in ["ang", "au"]
-            assert np.shape(self.cell) == (3, 3)
-            assert np.shape(self.pos) == (len(self.atoms), 3)
+            assert np.shape(self.__cell) == (3, 3)
+            assert np.shape(self.__pos) == (len(self.__atoms), 3)
         except AssertionError:
             raise latticeError("Invalid lattice setup")
 
-    def __generate_index_dict(self):
-        '''Generate the atomType-index dictionary
-        '''
-        _aSet = tuple(set(self.atoms))
-        for _i, _a in enumerate(_aSet):
-            self._atomIndexDict.update({_a: _i})
+    def move(self, iAtom):
+        pass
 
     @property
     def unit(self):
@@ -111,8 +114,8 @@ class lattice(prec, verbose):
 
         if _conv is not None:
             if self.__coordSys == "C":
-                self.pos = self.pos * _conv
-            self.cell = self.cell * _conv
+                self.__pos = self.__pos * _conv
+            self.__cell = self.__cell * _conv
 
     @property
     def coordSys(self):
@@ -120,16 +123,16 @@ class lattice(prec, verbose):
     @coordSys.setter
     def coordSys(self, s):
         _s = s.upper()
-        _convDict = {"C": self.cell, "D": np.linalg.inv(self.cell)}
+        _convDict = {"C": self.__cell, "D": np.linalg.inv(self.__cell)}
         _conv = _convDict.get(_s)
 
         if _conv is not None:
-            self.pos = np.matmul(self.pos, _conv)
+            self.__pos = np.matmul(self.__pos, _conv)
 
     @property
     def atomTypes(self):
         _list = []
-        for _a in self.atoms:
+        for _a in self.__atoms:
             if _a not in _list:
                 _list.append(_a)
         return tuple(_list)
@@ -140,49 +143,49 @@ class lattice(prec, verbose):
         _dict = {}
         for i, _at in enumerate(_ats):
             _dict.update({_at: i})
-        return tuple([ _dict[_a] for _a in self.atoms])
+        return tuple([ _dict[_a] for _a in self.__atoms])
 
     @property
     def vol(self):
-        return np.linalg.det(self.cell) 
+        return np.linalg.det(self.__cell) 
     
     @property
     def natoms(self):
-        return len(self.atoms)
+        return len(self.__atoms)
 
     def __len__(self):
-        return len(self.atoms)
+        return len(self.__atoms)
 
     def __getitem__(self, index):
-        return self.pos[index, :]
+        return self.__pos[index, :]
 
     # Factory methods
     @classmethod
     def __bravis_c(cls, atom, typeLatt, aLatt=1.0, **kwargs):
 
-        __type = typeLatt.upper()
+        _type = typeLatt.upper()
         try:
             assert isinstance(aLatt, (int, float))
         except AssertionError:
             raise latticeError("alatt should be a number")
         try:
-            assert __type in ["P", "I", "F"]
+            assert _type in ["P", "I", "F"]
         except AssertionError:
             raise latticeError("Invalid cubic Bravis system")
 
         _a = abs(aLatt)
-        __cell = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
-        if __type == "P":
-            __atoms =[atom]
-            __pos = [[0.0,0.0,0.0]]
-        if __type == "I":
-            __atoms =[atom, atom]
-            __pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
-        if __type == "F":
-            __atoms =[atom, atom, atom, atom]
-            __pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+        _cell = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+        if _type == "P":
+            _atoms =[atom]
+            _pos = [[0.0,0.0,0.0]]
+        if _type == "I":
+            _atoms =[atom, atom]
+            _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
+        if _type == "F":
+            _atoms =[atom, atom, atom, atom]
+            _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
 
-        return cls(__cell, __atoms, __pos, **kwargs)
+        return cls(_cell, _atoms, _pos, **kwargs)
 
     @classmethod
     def bravis_cP(cls, atom, aLatt=1.0, **kwargs):

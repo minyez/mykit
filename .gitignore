@@ -1,6 +1,7 @@
 # ignore all complied files
 *.pyc
 */*.pyc
+__pycache__
 *.swp
 *.o
 # ignore the test files
@@ -9,7 +10,7 @@
 #KPOINTS
 #INCAR*
 #*.struct
-*.sh
+
 #optimize.job
 #test.py
 #*.dat

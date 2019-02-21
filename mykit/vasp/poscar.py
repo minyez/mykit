@@ -99,5 +99,5 @@ class poscar(lattice):
         except AssertionError:
             raise poscarError("the input is not a lattice instance")
         __kw = latt.get_kwargs()
-        return cls(latt.cell, latt.atoms, latt.pos, **__kw)
+        return cls(*latt.get_latt(), **__kw)
     

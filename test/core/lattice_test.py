@@ -55,21 +55,23 @@ class simple_cubic_lattice(unittest.TestCase):
     def test_unit_conv(self):
         # ang2au
         self._latt.unit = 'au'
+        _cell = self._latt.get_latt()[0]
         if self._latt._dtype == 'float32':
-            self.assertAlmostEqual(self._latt.cell[0,0], self._a * ang2au, places=5)
+            self.assertAlmostEqual(_cell[0,0], self._a * ang2au, places=5)
         else:
-            self.assertAlmostEqual(self._latt.cell[0,0], self._a * ang2au)
+            self.assertAlmostEqual(_cell[0,0], self._a * ang2au)
         # au2ang
         self._latt.unit = 'ang'
-        self.assertEqual(self._latt.cell[0,0], self._a)
+        _cell = self._latt.get_latt()[0]
+        self.assertEqual(_cell[0,0], self._a)
 
     def test_coord_conv(self):
         # direct2cart
         self._latt.coordSys = 'C'
-        self.assertTupleEqual(tuple(self._latt.pos[0]), (self._frac * self._a, 0.0, 0.0))
+        self.assertTupleEqual(tuple(self._latt[0]), (self._frac * self._a, 0.0, 0.0))
         # cart2direct
         self._latt.coordSys = 'D'
-        self.assertEqual(self._latt.pos[0,0], self._frac)
+        self.assertEqual(self._latt[0][0], self._frac)
         
 
 class lattice_raise(unittest.TestCase):
