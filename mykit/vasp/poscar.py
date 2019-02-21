@@ -15,6 +15,8 @@ class poscar(lattice):
 
     def __init__(self, cell, atoms, pos, **kwargs):
         super(poscar, self).__init__(cell, atoms, pos, **kwargs)
+
+    #TODO rewrite atomType and typeIndex properties
     
     @classmethod
     def read_from_file(cls, poscarPath):

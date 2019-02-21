@@ -21,6 +21,8 @@ class lattice(prec, verbose):
         cell (array-like) : The lattice vectors
         atoms (list of str) : The list of strings of type for each atom corresponding to the member in pos
         pos (array-like) : The internal coordinates of atoms
+    
+    Available ``kwargs``:
         unit (str): The system of unit to use. Either "ang" or "au"
         coordSys (str): Coordinate system for the internal positions. Either "D" (Direct) or "C" (Cartesian)
     
@@ -32,6 +34,8 @@ class lattice(prec, verbose):
         # if kwargs:
             # super(lattice, self).__init__(**kwargs)
         self.comment= ''
+        self._fSelectDyn = False
+        self._selectDyn = None
         self._atomIndexDict = {}
         self._natoms = 0
         self.__unit = 'ang'
@@ -44,18 +48,25 @@ class lattice(prec, verbose):
             raise latticeError("Fail to create cell and pos array. Please check.")
         self.atoms = atoms
         self.__parse_kwargs(**kwargs)
-
         # check input consistency
         self.__check_consistency()
-        self.__generate_index_dict()
+        # self.__generate_index_dict()
 
     def __parse_kwargs(self, **kwargs):
-        if 'comment' in kwargs:
-            self.comment = kwargs['comment']
         if 'unit' in kwargs:
             self.__unit = kwargs['unit'].lower()
         if 'coordSys' in kwargs:
             self.__coordSys = kwargs['coordSys'].upper()
+        
+        _directAssign = {
+                            "comment": self.comment,
+                            "fSelectDyn": self._fSelectDyn,
+                            "selectDyn": self._selectDyn
+                        }
+
+        for _k in _directAssign:
+            if _k in kwargs:
+                _directAssign[_k] = kwargs[_k]
 
 
     def get_kwargs(self):
@@ -67,7 +78,9 @@ class lattice(prec, verbose):
         _d = {
                 "unit" : self.__unit, 
                 "coordSys" : self.__coordSys,
-                "comment": self.comment
+                "comment": self.comment,
+                "fSelectDyn" : self._fSelectDyn,
+                "selectDyn" : self._selectDyn
              }
         return _d
 
@@ -112,6 +125,22 @@ class lattice(prec, verbose):
 
         if _conv is not None:
             self.pos = np.matmul(self.pos, _conv)
+
+    @property
+    def atomTypes(self):
+        _list = []
+        for _a in self.atoms:
+            if _a not in _list:
+                _list.append(_a)
+        return tuple(_list)
+
+    @property
+    def typeIndex(self):
+        _ats = self.atomTypes
+        _dict = {}
+        for i, _at in enumerate(_ats):
+            _dict.update({_at: i})
+        return tuple([ _dict[_a] for _a in self.atoms])
 
     @property
     def vol(self):
