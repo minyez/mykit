@@ -25,9 +25,9 @@ class band_structure(prec):
     '''
     def __init__(self, bandE, nspin=0, nbands=0, nkp=0, bandProj=None, projName=None):
         try:
-            self.bandE = np.array(bandE, dtype=self.__dtype)
+            self.bandE = np.array(bandE, dtype=self._dtype)
             if not bandProj is None:
-                self.bandProj = np.array(bandProj, dtype=self.__dtype)
+                self.bandProj = np.array(bandProj, dtype=self._dtype)
         except ValueError:
             raise ValueError("Non-array bandE or bandProj input")
 

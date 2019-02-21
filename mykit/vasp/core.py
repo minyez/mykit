@@ -16,6 +16,7 @@ from xml.etree import ElementTree as etree
 from mykit.common.utils import print_warn, ss_conv, print_verbose_bool
 
 class vasp:
+    pass
 
 class incar:
 

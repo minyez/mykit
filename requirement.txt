@@ -1,0 +1,3 @@
+spglib
+numpy
+scipy

@@ -3,8 +3,9 @@
 '''
 import numpy as np
 # import spglib
+from mykit.core.log import verbose
 from mykit.core.numeric import prec
-from mykit.core.constants import pi, au2ang
+from mykit.core.constants import pi, au2ang, ang2au
 
 # ==================== classes ====================
 class latticeError(Exception):
@@ -13,7 +14,7 @@ class latticeError(Exception):
     pass
 
 
-class lattice(prec):
+class lattice(prec, verbose):
     '''Lattice structure class
 
     Args:
@@ -28,10 +29,12 @@ class lattice(prec):
     '''
     def __init__(self, cell, atoms, pos, unit="ang", coordSys="D", **kwargs):
 
+        if kwargs:
+            super(lattice, self).__init__(kwargs)
         self._atomIndexDict = {}
         self._natoms = 0
-        self._unit = ''
-        self._coordSys = ''
+        self._unit = 'ang'
+        self._coordSys = 'D'
 
         try:
             self.cell = np.array(cell, dtype=self._dtype)
@@ -41,10 +44,28 @@ class lattice(prec):
         self.atoms = atoms
         self._unit = unit.lower()
         self._coordSys = coordSys.upper()
+        self.__parse_kwargs(**kwargs)
 
         # check input consistency
         self.__check_consistency()
         self.__generate_index_dict()
+
+    def __parse_kwargs(self, **kwargs):
+        pass
+
+
+    def get_kwargs(self):
+        '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
+
+        Returns :
+            dictionary that can be parsed to ``create_from_lattice`` class method.
+        '''
+        _d = {
+                "unit" : self.unit, 
+                "coordSys" : self.coordSys
+             }
+        return _d
+        
 
     def __check_consistency(self):
         try:
@@ -68,29 +89,13 @@ class lattice(prec):
     @unit.setter
     def unit(self, u):
         _u = u.lower()
-        try:
-            assert _u in ["ang", "au"]
-        except AssertionError:
-            pass
-        else:
-            if _u == self._unit:
-                pass
-            else:
-                self._unit = _u
-                if _u == "ang":
-                    self.__au2ang()
-                elif _u == "au":
-                    self.__ang2au()
+        _convDict = {"ang": au2ang, "au": ang2au}
+        _conv = _convDict.get(_u)
 
-    def __au2ang(self):
-        if self._coordSys == "C":
-            self.pos = self.pos * au2ang
-        self.cell = self.cell * au2ang
-
-    def __ang2au(self):
-        if self._coordSys == "C":
-            self.pos = self.pos / au2ang
-        self.cell = self.cell / au2ang
+        if _conv is not None:
+            if self._coordSys == "C":
+                self.pos = self.pos * _conv
+            self.cell = self.cell * _conv
 
     @property
     def coordSys(self):
@@ -98,26 +103,11 @@ class lattice(prec):
     @coordSys.setter
     def coordSys(self, s):
         _s = s.upper()
-        try:
-            assert _s in ["D", "C"]
-        except AssertionError:
-            pass
-        else:
-            if _s == self._coordSys:
-                pass
-            else:
-                self._coordSys = _s
-                if _s == "D":
-                    self.__cart2direct()
-                elif _s == "C":
-                    self.__direct2cart()
-                    
-    def __cart2direct(self):
-        self.pos = np.matmul(self.pos, np.linalg.inv(self.cell))
+        _convDict = {"C": self.cell, "D": np.linalg.inv(self.cell)}
+        _conv = _convDict.get(_s)
 
-    def __direct2cart(self):
-        self.pos = np.matmul(self.pos, self.cell)
-
+        if _conv is not None:
+            self.pos = np.matmul(self.pos, _conv)
 
     @property
     def vol(self):
@@ -132,6 +122,75 @@ class lattice(prec):
 
     def __getitem__(self, index):
         return self.pos[index, :]
+
+    # Factory methods
+    @classmethod
+    def __bravis_c(cls, atom, typeLatt, aLatt=1.0, **kwargs):
+
+        __unit = "ang"
+        __coordSys = "D"
+        if "unit" in kwargs.keys():
+            __unit = kwargs.pop("unit")
+        if "coordSys" in kwargs.keys():
+            __coordSys = kwargs.pop("coordSys")
+
+        __type = typeLatt.upper()
+        try:
+            assert isinstance(aLatt, (int, float))
+        except AssertionError:
+            raise latticeError("alatt should be a number")
+        try:
+            assert __type in ["P", "I", "F"]
+        except AssertionError:
+            raise latticeError("Invalid cubic Bravis system")
+
+        _a = abs(aLatt)
+        __cell = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+        if __type == "P":
+            __atoms =[atom]
+            __pos = [[0.0,0.0,0.0]]
+        if __type == "I":
+            __atoms =[atom, atom]
+            __pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
+        if __type == "F":
+            __atoms =[atom, atom, atom, atom]
+            __pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+
+        return cls(__cell, __atoms, __pos, unit=__unit, coordSys=__coordSys, **kwargs)
+
+    @classmethod
+    def bravis_cP(cls, atom, aLatt=1.0, **kwargs):
+        '''Generate a primitive cubic Bravis lattice
+
+        Args:
+            atom (str) : the chemical symbol of atom
+            alatt (float) : the lattice constant (a)
+            unit (str) : the unit system to use
+        '''
+        return cls.__bravis_c(atom, 'P', aLatt=aLatt, **kwargs)
+
+    @classmethod
+    def bravis_cI(cls, atom, aLatt=1.0, **kwargs):
+        '''Generate a body-centered cubic Bravis lattice
+
+        Args:
+            atom (str) : the chemical symbol of atom
+            alatt (float) : the lattice constant (a)
+            unit (str) : the unit system to use
+        '''
+        return cls.__bravis_c(atom, 'I', aLatt=aLatt, **kwargs)
+
+    @classmethod
+    def bravis_cF(cls, atom, aLatt=1.0, **kwargs):
+        '''Generate a face-centered cubic Bravis lattice
+
+        Args:
+            atom (str) : the chemical symbol of atom
+            alatt (float) : the lattice constant (a)
+            unit (str) : the unit system to use
+        '''
+        return cls.__bravis_c(atom, 'F', aLatt=aLatt, **kwargs)
+    
 
 #    def __calc_latt(self):
 #         '''Calculate lattice information from the input
@@ -169,4 +228,4 @@ class lattice(prec):
 #     '''
 #     def __init__(self, latt):
 #         pass
-        
+
