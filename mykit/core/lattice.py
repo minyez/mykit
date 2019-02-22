@@ -33,7 +33,7 @@ class lattice(prec, verbose):
             the selective dynamic option for atom with the particular index (starting from 0)
     
     Examples:
-    >>> latt = lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
+    >>> lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
     <mykit.core.lattice.lattice>
     '''
     def __init__(self, cell, atoms, pos, **kwargs):

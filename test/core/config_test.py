@@ -13,8 +13,9 @@ class check_glocal_config(ut.TestCase):
 
     def test_non_existent_option(self):
         self.assertEqual(None, global_config.get())
+        self.assertEqual('', global_config.get(doc=True))
         self.assertEqual(None, global_config.get('opt_not_exist1'))
-        self.assertTupleEqual((None, None), global_config.get('opt_not_exist1', 'opt_not_exist2'))
+        self.assertEqual((None, None), global_config.get('opt_not_exist1', 'opt_not_exist2'))
 
     def test_defaults(self):
         os.unsetenv(global_config._env_var())
@@ -26,7 +27,11 @@ class check_glocal_config(ut.TestCase):
             os.rename(_path, _tf.name)
 
         self.assertEqual(which('mpirun'), global_config.get('mpiExec'))
-        self.assertEqual(which('vasp_std'), global_config.get('vaspStdExec'))
+        self.assertEqual((which('vasp_std'), which('mpirun')), \
+            global_config.get('vaspStdExec','mpiExec'))
+        self.assertEqual(global_config.get('mpiExec', doc=True), "the MPI executable to use")
+        self.assertEqual(global_config.get('mpiExec', 'vaspStdExec', doc=True), \
+            ("the MPI executable to use", "Path of `vasp_std` executive"))
 
         if _hasCustom:
             copy2(_tf.name, _path)
@@ -43,6 +48,8 @@ class check_glocal_config(ut.TestCase):
 
         os.environ[_envVar] = _tf.name
         self.assertEqual("vasp", global_config.get('vaspStdExec'))
+        self.assertEqual(global_config.get('vaspStdExec', doc=True), "Path of `vasp_std` executive")
+        # doc string should not be touch
         _tf.close()
 
     def test_print(self):

@@ -8,6 +8,7 @@ from pprint import pprint
 import os
 from shutil import which
 import logging
+import functools
  
 class global_config:
     '''class for MYKit configuration
@@ -30,8 +31,8 @@ class global_config:
         "mpiExec"     : [which('mpirun'), 'the MPI executable to use'],
         "numpyPrec"   : ["float32", 'NumPy precision'],
         "symPrec"     : [1.0E-5, 'Symmetry tolerance for SpgLIB'],
-        "vaspPAWPBE"  : [None, 'Path of the VASP PBE PAW directory'],
-        "vaspPAWLDA"  : [None, 'Path of the VASP LDA PAW directory'],
+        "vaspPAWPBE"  : [os.environ.get("VASP_POT_PBE", None), 'Path of the VASP PBE PAW directory'],
+        "vaspPAWLDA"  : [os.environ.get("VASP_POT_LDA", None), 'Path of the VASP LDA PAW directory'],
         "verbWarn"    : [0, 'Verbose level of warnings'],
         "verbLog"     : [0, 'Verbose level of log information'],
         "logIndent"   : [4, 'Spaces to use to show log at different code depth'],
@@ -47,13 +48,15 @@ class global_config:
         return cls.__envVar
 
     @classmethod
-    def __get_opt_val(cls, key):
+    def __get_opt(cls, key, doc=False):
+        assert isinstance(doc, bool)
         _v = cls.__options.get(key, None)
         if _v is not None:
-            return _v[0]
+            return _v[int(doc)]
+        return {True: '', False: None}[doc]
 
     @classmethod
-    def get(cls, *opts):
+    def get(cls, *opts, doc=False):
         '''Get the option from the configuration.
 
         It supports read in multiple options and returns a tuple of the option values.
@@ -61,13 +64,15 @@ class global_config:
         
         Args :
             *opts (str) : any number of options to extract from configuration
+            doc (bool) : set True to get the description of the option, instead of value
 
         Returns :
             None if no opts is input, a dictionary value if opts has one argument
-            and a tuple of values if opts has more than one argument
+            and a tuple of values if opts has more than one argument.
+            If ``doc`` is set to True, an empty string instead of None will be returned.
         '''
         if len(opts) == 0:
-            return None
+            return {True: '', False: None}[doc]
         try:
             __path = os.environ[cls._env_var()]
         except KeyError:
@@ -85,10 +90,11 @@ class global_config:
                 # Error in decoding the JSON config
                 pass
         if len(opts) == 1:
-            return cls.__get_opt_val(opts[0])
-        return tuple(map(cls.__get_opt_val, opts))
+            return cls.__get_opt(opts[0], doc=doc)
+        return tuple(map(functools.partial(cls.__get_opt, doc=doc), opts))
 
     @classmethod
     def print_opts(cls):
         '''print out all configurable options'''
         pprint(cls.__options.keys())
+
