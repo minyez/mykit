@@ -133,27 +133,72 @@ class lattice(prec, verbose):
             self.__pos = self.__pos - np.floor(self.__pos)
             self.coordSys = "C"
 
+    def __bubble_sort_atoms(self, key, indices, reverse=False):
+        '''sort atoms with bubble sort under various scenarios
+
+        The smaller value will appear earlier, if ``reverse`` is left
+        as False.
+        In both cases, when two same values are compared,
+        current bubble will just break.
+
+        Args:
+            key (natom-member list):
+            indices (iterable): the indices of the atoms to be sorted
+            reverse (bool): if set True, larger value appears earlier
+        '''
+        __ind = list(indices)
+        __key = [key[_i] for _i in __ind]
+        _n = len(__ind)
+        __sorted = True
+        for _i in range(_n -1):
+            _li = _i
+            _ri = _i+1
+            __dict = {True: __key[_li] > __key[_ri],
+                      False: __key[_li] < __key[_ri]}
+            if not __dict[reverse]:
+                __sorted = False
+                break
+        if not __sorted:
+            for _i in range(1, _n):
+                _j = _i
+                while _j > 0:
+                    _li = __ind[_j-1]
+                    _ri = __ind[_j]
+                    __dict = {True: __key[_ri] > __key[_li],
+                              False: __key[_ri] < __key[_li]}
+                    if __dict[reverse]:
+                        self._switch_two_atom_index(_li, _ri)
+                        __key[_li], __key[_ri] = __key[_ri], __key[_li]
+                        _j -= 1
+                    else:
+                        break
+
     def _sanitize_atoms(self):
         '''Sanitize the atoms arrangement after initialization.
 
         It mainly deals with arbitrary input of ``atoms`` when initialized. 
         '''
-        __ti = self.typeIndex
-        __ifSanitized = True
-        for _i in range(self.natoms - 1):
-            if __ti[_i] > __ti[_i+1]:
-                __ifSanitized = False
-                break
-        # Bubble sort
-        if not __ifSanitized:
-            for _i in range(1, self.natoms):
-                _j = _i
-                while __ti[_j] < __ti[_j-1] and _j >= 0:
-                    self._switch_two_atom_index(_j, _j-1)
-                    __ti[_j], __ti[_j-1] = __ti[_j-1], __ti[_j]
-                    _j -= 1
+        self.__bubble_sort_atoms(self.typeIndex, range(self.natoms))
 
-    def __sort(self, axis=3, reverse=False):
+        # __ti = self.typeIndex
+        # __ifSanitized = True
+        # for _i in range(self.natoms - 1):
+        #     if __ti[_i] > __ti[_i+1]:
+        #         __ifSanitized = False
+        #         break
+        # # Bubble sort
+        # if not __ifSanitized:
+        #     for _i in range(1, self.natoms):
+        #         _j = _i
+        #         while  _j > 0:
+        #             if __ti[_j] < __ti[_j-1]:
+        #                 self._switch_two_atom_index(_j, _j-1)
+        #                 __ti[_j], __ti[_j-1] = __ti[_j-1], __ti[_j]
+        #                 _j -= 1
+        #             else:
+        #                 break
+
+    def __sort_pos(self, axis=3, reverse=False):
         '''Sort the atoms by its coordinate along axis.
 
         The ``atoms`` list will not change in __sort.
