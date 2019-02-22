@@ -94,13 +94,13 @@ class poscar(lattice):
             _natoms = sum(_natomsType)
             # Next 2 or 1 line(s), depend on whether 'selective dynamics line' is typed
             _line = _f.readline().strip()
-            if _line[0].upper() not in ["C", "D", "K"]:
+            if _line[0].upper() == "S":
                 __flagSelDyn = True
                 _line = _f.readline().strip()
-            if _line[0].upper() in ["C", "K"]:
-                _cs = "C"
+            if _line[0].upper() in ["C", "K", "D"]:
+                _cs = {"C":"C", "K":"C", "D":"D"}[_line[0].upper()]
             else:
-                _cs = "D"
+                raise poscarError("Bad coordinate system: {}".format(poscarPath))
             # Next _natoms lines: read atomic position and selective dynamics flag
             _pos = []
             _mult = 1.0E0
@@ -132,7 +132,7 @@ class poscar(lattice):
                     raise poscarError("Bad selective dynamics flag at atom line {}: {}".format(_i+1, poscarPath))
             _pos = np.array(_pos, dtype=cls._dtype) * _mult
             _f.close()
-            return cls(_cell, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix)
+            return cls(_cell, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix, comment=_comment)
 
     @classmethod
     def create_from_lattice(cls, latt):

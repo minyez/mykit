@@ -40,7 +40,7 @@ class lattice(prec, verbose):
 
         # if kwargs:
             # super(lattice, self).__init__(**kwargs)
-        self.comment= ''
+        self.comment= 'Default lattice'
         self.__allRelax = True
         self.__selectDyn = {}
         self.__unit = 'ang'
@@ -64,7 +64,10 @@ class lattice(prec, verbose):
         return len(self.__atoms)
 
     def __getitem__(self, index):
-        return self.__pos[index, :]
+        if isinstance(index, int):
+            return self.__pos[index, :]
+        if isinstance(index, str):
+            return self.get_sym_index(index)
 
     def __parse_kwargs(self, **kwargs):
         if 'unit' in kwargs:
@@ -77,6 +80,21 @@ class lattice(prec, verbose):
             self.__selectDyn = kwargs["selectDyn"]
         if "comment" in kwargs:
             self.comment = kwargs["comment"]
+
+    def get_kwargs(self):
+        '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
+
+        Returns :
+            dictionary that can be parsed to ``create_from_lattice`` class method.
+        '''
+        _d = {
+                "unit" : self.__unit, 
+                "coordSys" : self.__coordSys,
+                "comment": self.comment,
+                "allRelax" : self.__allRelax,
+                "selectDyn" : self.__selectDyn
+             }
+        return _d
 
     def __check_consistency(self):
         try:
@@ -209,9 +227,13 @@ class lattice(prec, verbose):
     def sort_pos(self, axis=3, reverse=False):
         '''Sort the atoms by its coordinate along axis.
 
-        The ``atoms`` list will not change in __sort.
+        The ``atoms`` list will not change by sorting.
         If ``reverse`` is set as False, atom with higher coordinate in lattice (0,0,0)
         will appear earlier, otherwise later
+
+        Args :
+            axis (1,2,3)
+            reverse (bool)
         '''
         assert axis in range(1,4)
         assert isinstance(reverse, bool)
@@ -221,25 +243,11 @@ class lattice(prec, verbose):
             __ind = self.get_sym_index(_at)
             self.__bubble_sort_atoms(__sortKeys, __ind, reverse=not reverse)
 
-        # raise NotImplementedError    
-
-    def get_kwargs(self):
-        '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
-
-        Returns :
-            dictionary that can be parsed to ``create_from_lattice`` class method.
-        '''
-        _d = {
-                "unit" : self.__unit, 
-                "coordSys" : self.__coordSys,
-                "comment": self.comment,
-                "allRelax" : self.__allRelax,
-                "selectDyn" : self.__selectDyn
-             }
-        return _d
-
     def get_latt(self):
-        '''Purge out the cell, atoms and pos, which is minimal for constructing ``lattice`` and its subclasses
+        '''Purge out the cell, atoms and pos.
+        
+        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``lattice`` and its subclasses.
+        They can also be used to build sysmetry operations with spglib utilities.
         '''
         return self.__cell, self.__atoms, self.__pos
 

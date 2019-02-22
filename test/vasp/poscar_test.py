@@ -80,9 +80,10 @@ def _verify_poscar_by_json(tc, pc, pathJson):
         _vDict = json.load(f)
 
     _cellPos, _atomsPos, _posPos = pc.get_latt()
+    _kwargsPos = pc.get_kwargs()
     verifyMsg = "Verification failed: {}".format(pathJson)
     if "cell" in _vDict:
-        tc.assertTrue(np.array_equal(_cellPos, np.array(_vDict["cell"], dtype=pc._dtype)), msg=verifyMsg)
+        tc.assertTrue(np.array_equal(pc.cell, np.array(_vDict["cell"], dtype=pc._dtype)), msg=verifyMsg)
     if "sdFlags" in _vDict:
         _sdfDict = _vDict["sdFlags"]
         # print(_sdfDict.keys())
@@ -92,7 +93,22 @@ def _verify_poscar_by_json(tc, pc, pathJson):
     if "coordSys" in _vDict:
         tc.assertEqual(_vDict["coordSys"], pc.coordSys, msg=verifyMsg)
     if "atoms" in _vDict:
-        tc.assertListEqual(_vDict["atoms"], _atomsPos, msg=verifyMsg)
+        tc.assertListEqual(_vDict["atoms"], pc.atoms, msg=verifyMsg)
+    if "comment" in _vDict:
+        tc.assertEqual(_vDict["comment"], pc.comment)
+    if "pos" in _vDict:
+        tc.assertTrue(np.array_equal(pc.pos, np.array(_vDict["pos"], dtype=pc._dtype)))
+    # put sort check at the end
+    if "sorted" in _vDict:
+        for _axis in range(3):
+            pc.sort_pos(axis=_axis+1)
+            tc.assertTrue(np.array_equal(pc.pos[:, _axis], \
+                np.array(_vDict["sortedPos"][_axis], dtype=pc._dtype)))
+    if "sortedRev" in _vDict:
+        for _axis in range(3):
+            pc.sort_pos(axis=_axis+1, reverse=True)
+            tc.assertTrue(np.array_equal(pc.pos[:, _axis], \
+                np.array(_vDict["sortedPos"][_axis], dtype=pc._dtype)))
     return True
 
 

@@ -210,6 +210,8 @@ class lattice_sort(unittest.TestCase):
         self.assertTrue(np.array_equal(_latt.pos, np.array(_posSanitied, dtype=_latt._dtype)))
 
     def test_sort_pos_sic(self):
+        '''Test sorting atoms and their positions in SiC
+        '''
         _cell = [[1.0, 0.0, 0.0],
                  [0.0, 1.0, 0.0],
                  [0.0, 0.0, 1.0]]
