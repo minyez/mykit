@@ -140,6 +140,44 @@ class lattice_select_dynamics(unittest.TestCase):
         self.assertListEqual([True,]*3, _pc.sdFlags(0))
         self.assertListEqual([False,True,True,], _pc.sdFlags(1))
 
+    def test_fix_by_set_method(self):
+        _pc = lattice.bravis_cF("C")
+        _pc.set_fix(0, 1)
+        self.assertListEqual([False,False,False], _pc.sdFlags(0))
+        self.assertListEqual([False,False,False], _pc.sdFlags(1))
+        _pc.set_fix(2, axis=1)
+        self.assertListEqual([False,True,True], _pc.sdFlags(2))
+        _pc.set_fix(3, axis=[2, 3])
+        self.assertListEqual([True,False,False], _pc.sdFlags(3))
+
+    def test_relax_by_set_method(self):
+        _pc = lattice.bravis_cF("C", allRelax=False)
+        _pc.set_relax(0, 1)
+        self.assertListEqual([True,True,True], _pc.sdFlags(0))
+        self.assertListEqual([True,True,True], _pc.sdFlags(1))
+        _pc.set_relax(2, axis=1)
+        self.assertListEqual([True,False,False], _pc.sdFlags(2))
+        _pc.set_relax(3, axis=[2, 3])
+        self.assertListEqual([False,True,True], _pc.sdFlags(3))
+
+class lattice_sort(unittest.TestCase):
+    '''Test the sorting functionality of lattice
+    '''
+
+    def test_direct_switch_CsCl(self):
+        _cell = [[1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0]]
+        _atoms = ["Cl", "Cs"]
+        _pos = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
+        # Cs atom is fixed
+        _fix = [False, False, False]
+
+        _latt = lattice(_cell, _atoms, _pos, selectDyn={1: _fix})
+        _latt._switch_two_atom_index(0, 1)
+        _c, _a, _p = _latt.get_latt()
+        self.assertListEqual(_a, ["Cs", "Cl"])
+        self.assertListEqual(_fix, _latt.sdFlags(0))
 
 class lattice_element_utils(unittest.TestCase):
     '''Test the utils to manipulate element lists for ``lattice`` use

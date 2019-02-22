@@ -16,7 +16,9 @@ class poscar(lattice):
     def __init__(self, cell, atoms, pos, **kwargs):
         super(poscar, self).__init__(cell, atoms, pos, **kwargs)
 
-    #TODO rewrite atomType and typeIndex properties
+    # ? Rewrite atomType and typeIndex properties, as the element symbol can appear twice in POSCAR
+    # ? Maybe good to let user deal with it, such as using "Fe1", "Fe2" to distinguish
+    # ? In this case, should be careful to set POTCAR when recognizing atomic information in POSCAR
 
     def write(self, toPOSCAR='POSCAR'):
         '''Write POSCAR to ``toPOSCAR``

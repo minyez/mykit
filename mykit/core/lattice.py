@@ -75,6 +75,45 @@ class lattice(prec, verbose):
         if "comment" in kwargs:
             self.comment = kwargs["comment"]
 
+    def _switch_two_atom_index(self, iat1, iat2):
+        '''switch the index of atoms with index iat1 and iat2
+
+        Except ``__pos`` and ``__atoms``, 
+        this method should also deals possible switch in other positional 
+        attributes, e.g.
+
+        Note that this method is mainly for sorting, and does NOT change 
+        the geometry of the lattice at all.
+        
+        - ``selectDyn`` (DONE)
+        '''
+        try:
+            assert iat1 in range(self.natoms)
+            assert iat2 in range(self.natoms)
+            assert iat1 != iat2
+        except AssertionError:
+            raise latticeError("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
+
+        self.__pos[[iat1, iat2]] = self.__pos[[iat2, iat1]]
+        self.__atoms[iat1], self.__atoms[iat2] = self.__atoms[iat2], self.__atoms[iat1]
+
+        _sfd1 = self.__selectDyn.pop(iat1,[])
+        _sfd2 = self.__selectDyn.pop(iat2,[])
+        if _sfd1 != []:
+            self.__selectDyn.update({iat2: _sfd1})
+        if _sfd2 != []:
+            self.__selectDyn.update({iat1: _sfd2})
+
+    def __sanitize(self):
+        '''Sanitize the lattice properties after creation. 
+        '''
+        raise NotImplementedError    
+    
+    def __sort(self):
+        '''Sort the atoms by its coordinate
+        '''
+        raise NotImplementedError    
+
     def get_kwargs(self):
         '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
 
@@ -106,7 +145,7 @@ class lattice(prec, verbose):
 
     # TODO move atom
     def move(self, ia):
-        pass
+        raise NotImplementedError
 
     @property
     def unit(self):
@@ -162,6 +201,47 @@ class lattice(prec, verbose):
             return False
         return True
 
+    def set_fix(self, *iats, axis=0):
+        '''Fix the atoms with index in iats
+
+        Args:
+            axis (int or list): the axis along which the position of atom is fixed
+                It can be 0|1|2|3, or a list with all its members 1|2|3
+        '''
+        _new = {}
+        if len(iats) == 0:
+            pass
+        else:
+            for _ia in iats:
+                if _ia in range(self.natoms):
+                    _new.update({_ia: select_dyn_flag_from_axis(axis, relax=True)})
+            self.set_sdFlags(_new)
+
+    def set_relax(self, *iats, axis=0):
+        '''Relax the atoms with index in iats
+        '''
+        _new = {}
+        if len(iats) == 0:
+            pass
+        else:
+            for _ia in iats:
+                if _ia in range(self.natoms):
+                    _new.update({_ia: select_dyn_flag_from_axis(axis, relax=False)})
+            self.set_sdFlags(_new)
+
+    def set_sdFlags(self, selectDyn):
+        assert isinstance(selectDyn, dict)
+        for _k in selectDyn:
+            _flag = selectDyn[_k]
+            try:
+                assert isinstance(_flag, list)
+                assert len(_flag) == 3
+                assert all([isinstance(_x, bool) for _x in _flag])
+            except AssertionError:
+                pass
+            else:
+                self.__selectDyn.update({_k: _flag})
+
     def sdFlags(self, ia=-1):
         '''Return the selective dynamic flag (bool)
 
@@ -173,12 +253,12 @@ class lattice(prec, verbose):
             otherwise natoms-member list, each member a 3-member list
             as the flag for that atom
         '''
-        self.print_log("Global selective dynamics flag: {}".format(self.__allRelax), level=2)
+        self.print_log("Global selective dynamics flag: {}".format(self.__allRelax), level=3)
         if ia in self.__selectDyn:
-            self.print_log("Found custom flag in __selectDyn for atom {}".format(ia), depth=1, level=1)
+            self.print_log("Found custom flag in __selectDyn for atom {}".format(ia), depth=1, level=3)
             _flag = self.__selectDyn[ia]
         elif ia in range(self.natoms):
-            self.print_log("Use global flag for atom {}".format(ia), level=1, depth=1)
+            self.print_log("Use global flag for atom {}".format(ia), level=3, depth=1)
             _flag = [self.__allRelax,] *3
         else:
             _flag = [[self.__allRelax,]*3 for _r in range(self.natoms)]
@@ -327,3 +407,23 @@ def sym_nat_from_atoms(atoms):
             _syms.append(_at)
             _natsDict.update({_at: 0})
     return _syms, [_natsDict[_at] for _at in _syms]
+
+
+def select_dyn_flag_from_axis(axis, relax=True):
+    assert isinstance(relax, bool)
+    _base = [relax, relax, relax]
+    if isinstance(axis, int):
+        if axis == 0:
+            _base = [not _b for _b in _base]
+        if axis in range(1,4):
+            _base[axis-1] = not _base[axis-1]
+    elif isinstance(axis, (list, tuple)):
+        __axisSet = list(set(axis))
+        for _a in __axisSet:
+            assert isinstance(_a, int)
+            if _a == 0:
+                _base = [not _b for _b in _base]
+                break
+            if _a in range(1,4):
+                _base[_a-1] = not _base[_a-1]
+    return _base
