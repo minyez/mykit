@@ -20,8 +20,8 @@ class verbose:
     Level set higher than the above number by calling property will be ignored.
     '''
 
-    _verbWarn, _verbLog = global_config.get('verbWarn', 'verbLog')
-    _indent = ' ' * global_config.get("logIndent")
+    _verbWarn, _verbLog, _indent = global_config.get('verbWarn', 'verbLog', 'logIndent')
+    _indent = ' ' * _indent
     _prefix = {"log": '', "warn": ' WARNING!!!'}
     # range of verbose level
     __rangeW = range(0, 4)

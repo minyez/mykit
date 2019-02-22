@@ -33,9 +33,9 @@ class global_config:
         "symPrec"     : [1.0E-5, 'Symmetry tolerance for SpgLIB'],
         "vaspPAWPBE"  : [os.environ.get("VASP_POT_PBE", None), 'Path of the VASP PBE PAW directory'],
         "vaspPAWLDA"  : [os.environ.get("VASP_POT_LDA", None), 'Path of the VASP LDA PAW directory'],
-        "verbWarn"    : [0, 'Verbose level of warnings'],
-        "verbLog"     : [0, 'Verbose level of log information'],
-        "logIndent"   : [4, 'Spaces to use to show log at different code depth'],
+        "verbWarn"    : [1, 'Verbose level of warnings'],
+        "verbLog"     : [1, 'Verbose level of log information'],
+        "logIndent"   : [4, 'Spaces to differentiate logs at different depth'],
     }
     __optKeys = __options.keys()
 

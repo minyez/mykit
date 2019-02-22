@@ -33,14 +33,14 @@ class simple_cubic_lattice(unittest.TestCase):
             self.assertIn("can't set attribute", _err.args)
         else:
             self.assertTrue(False, "lattice.natoms should be read-only")
-        self.assertTupleEqual(tuple(self._atoms), self._latt.atomTypes)
+        self.assertListEqual(list(self._atoms), self._latt.atomTypes)
         try:
             self._latt.atomTypes = ["B"]
         except AttributeError as _err:
             self.assertIn("can't set attribute", _err.args)
         else:
             self.assertTrue(False, "lattice.atomTypes should be read-only")
-        self.assertTupleEqual(tuple(range(len(self._atoms))), self._latt.typeIndex)
+        self.assertListEqual(list(range(len(self._atoms))), self._latt.typeIndex)
         try:
             self._latt.typeIndex = (0)
         except AttributeError as _err:
@@ -164,7 +164,7 @@ class lattice_sort(unittest.TestCase):
     '''Test the sorting functionality of lattice
     '''
 
-    def test_direct_switch_CsCl(self):
+    def test_direct_switch_cscl(self):
         _cell = [[1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0],
                 [0.0, 0.0, 1.0]]
@@ -178,6 +178,32 @@ class lattice_sort(unittest.TestCase):
         _c, _a, _p = _latt.get_latt()
         self.assertListEqual(_a, ["Cs", "Cl"])
         self.assertListEqual(_fix, _latt.sdFlags(0))
+
+    def test_sanitize_atoms_sic(self):
+        _cell = [[1.0, 0.0, 0.0],
+                 [0.0, 1.0, 0.0],
+                 [0.0, 0.0, 1.0]]
+        _atoms = ["Si", "C", "Si", "Si", "C", "C", "Si", "C"]
+        _pos = [[0.0, 0.0, 0.0],     #Si 
+                [0.25, 0.25, 0.25],  #C
+                [0.0, 0.5, 0.5],     #Si
+                [0.5, 0.0, 0.5],     #Si
+                [0.25, 0.75, 0.75],  #C
+                [0.75, 0.25, 0.75],  #C
+                [0.5, 0.5, 0.0],     #Si
+                [0.75, 0.75, 0.25]]  #C
+        _posSanitied = [[0.0, 0.0, 0.0],     #Si 
+                        [0.0, 0.5, 0.5],     #Si
+                        [0.5, 0.0, 0.5],     #Si
+                        [0.5, 0.5, 0.0],     #Si
+                        [0.25, 0.25, 0.25],  #C
+                        [0.25, 0.75, 0.75],  #C
+                        [0.75, 0.25, 0.75],  #C
+                        [0.75, 0.75, 0.25]]  #C
+        _latt = lattice(_cell, _atoms, _pos, selectDyn={2:[False, False, False]})
+        _latt._sanitize_atoms()
+        self.assertListEqual(list(sorted(_atoms, reverse=True)), _latt.atoms)
+        self.assertTrue(np.array_equal(_latt.pos, np.array(_posSanitied, dtype=_latt._dtype)))
 
 class lattice_element_utils(unittest.TestCase):
     '''Test the utils to manipulate element lists for ``lattice`` use

@@ -51,11 +51,12 @@ class lattice(prec, verbose):
             self.__pos = np.array(pos, dtype=self._dtype)
         except ValueError as _err:
             raise latticeError("Fail to create cell and pos array. Please check.")
-        self.__atoms = atoms
+        self.__atoms = [_a.capitalize() for _a in atoms]
         self.__parse_kwargs(**kwargs)
         # check input consistency
         self.__check_consistency()
-        # self.__generate_index_dict()
+        # move all atoms into the lattice (0,0,0)
+        self.__assure_atoms_in_fist_lattice()
 
     def __len__(self):
         return len(self.__atoms)
@@ -75,17 +76,32 @@ class lattice(prec, verbose):
         if "comment" in kwargs:
             self.comment = kwargs["comment"]
 
+    def __check_consistency(self):
+        try:
+            assert self.__coordSys in ["C", "D"]
+            assert self.__unit in ["ang", "au"]
+            assert np.shape(self.__cell) == (3, 3)
+            assert self.natoms > 0
+            assert np.shape(self.__pos) == (self.natoms, 3)
+        except AssertionError:
+            raise latticeError("Invalid lattice setup")
+        # ? switch automatically, or let the user deal with it
+        try:
+            assert self.vol > 0
+        except AssertionError:
+            raise latticeError("Left-handed system found (vol<0). Switch two vector.")
+
     def _switch_two_atom_index(self, iat1, iat2):
         '''switch the index of atoms with index iat1 and iat2
 
         Except ``__pos`` and ``__atoms``, 
         this method should also deals possible switch in other positional 
         attributes, e.g.
-
-        Note that this method is mainly for sorting, and does NOT change 
-        the geometry of the lattice at all.
         
         - ``selectDyn`` (DONE)
+
+        Note that this method is mainly for sorting use, and does NOT change 
+        the geometry of the lattice at all.
         '''
         try:
             assert iat1 in range(self.natoms)
@@ -104,13 +120,45 @@ class lattice(prec, verbose):
         if _sfd2 != []:
             self.__selectDyn.update({iat1: _sfd2})
 
-    def __sanitize(self):
-        '''Sanitize the lattice properties after creation. 
+    def __assure_atoms_in_fist_lattice(self):
+        '''Move all atoms into the lattice (0,0,0)
+
+        For Cartisian system, the move is achieved by first 
+        converting to and thn back from direct system.
         '''
-        raise NotImplementedError    
-    
-    def __sort(self):
-        '''Sort the atoms by its coordinate
+        if self.coordSys == "D":
+            self.__pos = self.__pos - np.floor(self.__pos)
+        elif self.coordSys == "C":
+            self.coordSys = "D"
+            self.__pos = self.__pos - np.floor(self.__pos)
+            self.coordSys = "C"
+
+    def _sanitize_atoms(self):
+        '''Sanitize the atoms arrangement after initialization.
+
+        It mainly deals with arbitrary input of ``atoms`` when initialized. 
+        '''
+        __ti = self.typeIndex
+        __ifSanitized = True
+        for _i in range(self.natoms - 1):
+            if __ti[_i] > __ti[_i+1]:
+                __ifSanitized = False
+                break
+        # Bubble sort
+        if not __ifSanitized:
+            for _i in range(1, self.natoms):
+                _j = _i
+                while __ti[_j] < __ti[_j-1] and _j >= 0:
+                    self._switch_two_atom_index(_j, _j-1)
+                    __ti[_j], __ti[_j-1] = __ti[_j-1], __ti[_j]
+                    _j -= 1
+
+    def __sort(self, axis=3, reverse=False):
+        '''Sort the atoms by its coordinate along axis.
+
+        The ``atoms`` list will not change in __sort.
+        If ``reverse`` is set as False, atom with higher coordinate in lattice (0,0,0)
+        will appear earlier, otherwise later
         '''
         raise NotImplementedError    
 
@@ -130,22 +178,46 @@ class lattice(prec, verbose):
         return _d
 
     def get_latt(self):
-        '''Purge the cell, atoms and pos, which is minimal for constructing ``lattice`` and its subclasses
+        '''Purge out the cell, atoms and pos, which is minimal for constructing ``lattice`` and its subclasses
         '''
         return self.__cell, self.__atoms, self.__pos
 
-    def __check_consistency(self):
-        try:
-            assert self.__coordSys in ["C", "D"]
-            assert self.__unit in ["ang", "au"]
-            assert np.shape(self.__cell) == (3, 3)
-            assert np.shape(self.__pos) == (len(self.__atoms), 3)
-        except AssertionError:
-            raise latticeError("Invalid lattice setup")
-
     # TODO move atom
-    def move(self, ia):
+    def __move(self, ia):
         raise NotImplementedError
+
+    # TODO centering the lattice
+    def centering(self, axis=0):
+        '''Centering the atoms along axes
+        '''
+        _aList = axis_list(axis)
+        _wasDirect = self.coordSys == "D"
+
+        for _ia in _aList:
+            _i = _ia - 1
+        #     if self.check_vacuum_pos(zdirt):
+        #         self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
+        #         continue
+        #     else:
+        #         surf_atom = [self.check_extreme_atom(0.0,zdirt,False,1.0),self.check_extreme_atom(0.0,zdirt,True,1.0)]
+        #         # debug
+        #         # print surf_atom
+        #         shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
+        #         self.action_shift(shift,zdirt)
+        # self.__print(" Complete centering.")
+        raise NotImplementedError
+
+    @property
+    def cell(self):
+        return self.__cell
+
+    @property
+    def atoms(self):
+        return self.__atoms
+
+    @property
+    def pos(self):
+        return self.__pos
 
     @property
     def unit(self):
@@ -177,7 +249,7 @@ class lattice(prec, verbose):
         for _a in self.__atoms:
             if _a not in _list:
                 _list.append(_a)
-        return tuple(_list)
+        return _list
 
     @property
     def typeIndex(self):
@@ -185,7 +257,7 @@ class lattice(prec, verbose):
         _dict = {}
         for i, _at in enumerate(_ats):
             _dict.update({_at: i})
-        return tuple([ _dict[_a] for _a in self.__atoms])
+        return [_dict[_a] for _a in self.__atoms]
 
     @property
     def vol(self):
@@ -205,7 +277,25 @@ class lattice(prec, verbose):
         '''Fix the atoms with index in iats
 
         Args:
-            axis (int or list): the axis along which the position of atom is fixed
+            iats (list of int): the indices of atoms to fix
+            axis (int or list): the axes along which the position of atom is fixed
+                It can be 0|1|2|3, or a list with all its members 1|2|3
+        '''
+        _new = {}
+        if len(iats) == 0:
+            pass
+        else:
+            for _ia in iats:
+                if _ia in range(self.natoms):
+                    _new.update({_ia: select_dyn_flag_from_axis(axis, relax=False)})
+            self.__set_sdFlags(_new)
+
+    def set_relax(self, *iats, axis=0):
+        '''Relax the atoms with index in iats
+
+        Args:
+            iats (list of int): the indices of atoms to relax
+            axis (int or list): the axes along which the position of atom is relaxed
                 It can be 0|1|2|3, or a list with all its members 1|2|3
         '''
         _new = {}
@@ -215,21 +305,9 @@ class lattice(prec, verbose):
             for _ia in iats:
                 if _ia in range(self.natoms):
                     _new.update({_ia: select_dyn_flag_from_axis(axis, relax=True)})
-            self.set_sdFlags(_new)
+            self.__set_sdFlags(_new)
 
-    def set_relax(self, *iats, axis=0):
-        '''Relax the atoms with index in iats
-        '''
-        _new = {}
-        if len(iats) == 0:
-            pass
-        else:
-            for _ia in iats:
-                if _ia in range(self.natoms):
-                    _new.update({_ia: select_dyn_flag_from_axis(axis, relax=False)})
-            self.set_sdFlags(_new)
-
-    def set_sdFlags(self, selectDyn):
+    def __set_sdFlags(self, selectDyn):
         assert isinstance(selectDyn, dict)
         for _k in selectDyn:
             _flag = selectDyn[_k]
@@ -238,7 +316,7 @@ class lattice(prec, verbose):
                 assert len(_flag) == 3
                 assert all([isinstance(_x, bool) for _x in _flag])
             except AssertionError:
-                pass
+                raise latticeError("Bad flag for selective dynamics")
             else:
                 self.__selectDyn.update({_k: _flag})
 
@@ -409,21 +487,42 @@ def sym_nat_from_atoms(atoms):
     return _syms, [_natsDict[_at] for _at in _syms]
 
 
-def select_dyn_flag_from_axis(axis, relax=True):
+def select_dyn_flag_from_axis(axis, relax=False):
+    '''Generate selective dynamic flags, i.e. [bool, bool, bool]
+    '''
     assert isinstance(relax, bool)
-    _base = [relax, relax, relax]
+    _base = [not relax, not relax, not relax]
+    _aList = axis_list(axis)
+    for _a in _aList:
+        _base[_a-1] = not _base[_a-1]
+    return _base
+
+def axis_list(axis):
+    '''Generate axis index () from ``axis``
+
+    Args:
+        axis (int or list of int)
+    
+    Returns:
+        tuple
+    '''
+    _aList = []
     if isinstance(axis, int):
         if axis == 0:
-            _base = [not _b for _b in _base]
+            _aList = [1, 2, 3]
         if axis in range(1,4):
-            _base[axis-1] = not _base[axis-1]
+            _aList = [axis]
     elif isinstance(axis, (list, tuple)):
-        __axisSet = list(set(axis))
-        for _a in __axisSet:
-            assert isinstance(_a, int)
-            if _a == 0:
-                _base = [not _b for _b in _base]
-                break
-            if _a in range(1,4):
-                _base[_a-1] = not _base[_a-1]
-    return _base
+        _aSet = list(set(axis))
+        for _a in _aSet:
+            try:
+                assert isinstance(_a, int)
+            except AssertionError:
+                pass
+            else:
+                if _a == 0:
+                    _aList = [1, 2, 3]
+                    break
+                if _a in range(1,4):
+                    _aList.append(_a)
+    return tuple(_aList)
