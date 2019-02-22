@@ -5,7 +5,20 @@ from mykit.core.config import global_config
 import sys
 
 class verbose:
-    '''Class that controls the level of information print'''
+    '''Class that controls the level of information print.
+
+    Warning and information have their own level of verbose.
+    The levels can be set in the configure file, ``verbLog`` and ``verbWarn``,
+    and also be adjusted by calling ``warnLevel`` and ``logLevel`` property
+    
+    level 0: Minimal
+    level 1: Normal
+    level 2: Check work
+    level 3: Debug code
+
+    Level set higher than the above number in configure file is not necessary.
+    Level set higher than the above number by calling property will be ignored.
+    '''
 
     _verbWarn, _verbLog = global_config.get('verbWarn', 'verbLog')
     _indent = ' ' * global_config.get("logIndent")

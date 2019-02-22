@@ -4,7 +4,7 @@
 import numpy as np
 import logging
 import string
-from mykit.core.lattice import lattice, atoms_from_sym_nat
+from mykit.core.lattice import lattice, atoms_from_sym_nat, sym_nat_from_atoms
 
 class poscarError(Exception):
     pass
@@ -17,6 +17,30 @@ class poscar(lattice):
         super(poscar, self).__init__(cell, atoms, pos, **kwargs)
 
     #TODO rewrite atomType and typeIndex properties
+
+    def write(self, toPOSCAR='POSCAR'):
+        '''Write POSCAR to ``toPOSCAR``
+        '''
+        # TODO test it
+        with open(toPOSCAR, 'w') as f:
+            _cell, _atoms, _pos = self.get_latt()
+            _syms, _nats = sym_nat_from_atoms(_atoms)
+            print(self.comment, file=f)
+            print(1.00000, file=f)
+            for i in range(3):
+                print(_cell[i,:], file=f)
+            print(_syms, file=f)
+            print(_nats, file=f)
+            if self.useSelDyn:
+                print("Selective Dynamics", file=f)
+            print({"D": "Direct", "C": "Cart"}[self.coordSys], file=f)
+            for i in range(self.natoms):
+                if self.useSelDyn:
+                    _dyn = self.sdFlags(ia=i)
+                else:
+                    _dyn = []
+                _dynFlag = [{True:"T", False:"F"}[_d] for _d in _dyn] + ['#{}'.format(_atoms[i])]
+                print(self[i], _dynFlag, file=f)
     
     @classmethod
     def read_from_file(cls, poscarPath):
@@ -25,7 +49,7 @@ class poscar(lattice):
         Args :
             poscarPath (str) : path to the file to read as POSCAR
         '''
-        # TODO can be decomposed to support reading structures stored in XDATCAR and OUTCAR
+        # TODO may be decomposed to support reading structures stored in XDATCAR and OUTCAR?
         __flagSelDyn = False
         __fix = {}
         __fixDict = {'T': True, 'F': False}
@@ -84,6 +108,11 @@ class poscar(lattice):
                 try:
                     _line = _f.readline().strip()
                     _words = _line.split()
+                    # remove comment part
+                    for _j, _s in enumerate(_words):
+                        if _s.startswith("#"):
+                            _words = _words[0:_j+1]
+                            break
                     _pos.append([float(_x) for _x in _words[:3]])
                     if __flagSelDyn:
                         __fixFlag = [__fixDict.get(_words[i]) for i in range(3,6)]
@@ -113,4 +142,6 @@ class poscar(lattice):
             raise poscarError("the input is not a lattice instance")
         __kw = latt.get_kwargs()
         return cls(*latt.get_latt(), **__kw)
+
+    # TODO inherit factory methods from ``lattice`` for space group and Bravis cell creation
     

@@ -122,6 +122,24 @@ class lattice_factory_method(unittest.TestCase):
         _fcc = lattice.bravis_cF("C", aLatt=5.0)
         self.assertEqual(4, len(_fcc))
 
+class lattice_select_dynamics(unittest.TestCase):
+    '''Test the functionality of selective dynamics
+    '''
+    def test_fix_all(self):
+        _pc = lattice.bravis_cP("C")
+        self.assertFalse(_pc.useSelDyn)
+        _pc = lattice.bravis_cP("C", allRelax=False)
+        self.assertTrue(_pc.useSelDyn)
+        self.assertListEqual([False,]*3, _pc.sdFlags(0))
+        _pc = lattice.bravis_cI("C", allRelax=False)
+        self.assertTrue(_pc.useSelDyn)
+        self.assertListEqual([[False,]*3,]*2, _pc.sdFlags())
+    
+    def test_fix_some(self):
+        _pc = lattice.bravis_cF("C", selectDyn={1:[False, True, True]})
+        self.assertListEqual([True,]*3, _pc.sdFlags(0))
+        self.assertListEqual([False,True,True,], _pc.sdFlags(1))
+
 
 class lattice_element_utils(unittest.TestCase):
     '''Test the utils to manipulate element lists for ``lattice`` use

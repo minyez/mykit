@@ -43,7 +43,6 @@ class lattice(prec, verbose):
         self.comment= ''
         self.__allRelax = True
         self.__selectDyn = {}
-        self._natoms = 0
         self.__unit = 'ang'
         self.__coordSys = 'D'
 
@@ -58,22 +57,23 @@ class lattice(prec, verbose):
         self.__check_consistency()
         # self.__generate_index_dict()
 
+    def __len__(self):
+        return len(self.__atoms)
+
+    def __getitem__(self, index):
+        return self.__pos[index, :]
+
     def __parse_kwargs(self, **kwargs):
         if 'unit' in kwargs:
             self.__unit = kwargs['unit'].lower()
         if 'coordSys' in kwargs:
             self.__coordSys = kwargs['coordSys'].upper()
-        
-        _directAssign = {
-                            "comment": self.comment,
-                            # "fSelectDyn": self._fSelectDyn,
-                            "selectDyn": self.__selectDyn,
-                            "allRelax": self.__allRelax
-                        }
-        for _k in _directAssign:
-            if _k in kwargs:
-                _directAssign[_k] = kwargs[_k]
-
+        if "allRelax" in kwargs:
+            self.__allRelax = kwargs["allRelax"]
+        if "selectDyn" in kwargs:
+            self.__selectDyn = kwargs["selectDyn"]
+        if "comment" in kwargs:
+            self.comment = kwargs["comment"]
 
     def get_kwargs(self):
         '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
@@ -116,7 +116,6 @@ class lattice(prec, verbose):
         _u = u.lower()
         _convDict = {"ang": au2ang, "au": ang2au}
         _conv = _convDict.get(_u)
-
         if _conv is not None:
             if self.__coordSys == "C":
                 self.__pos = self.__pos * _conv
@@ -130,7 +129,6 @@ class lattice(prec, verbose):
         _s = s.upper()
         _convDict = {"C": self.__cell, "D": np.linalg.inv(self.__cell)}
         _conv = _convDict.get(_s)
-
         if _conv is not None:
             self.__pos = np.matmul(self.__pos, _conv)
 
@@ -152,17 +150,41 @@ class lattice(prec, verbose):
 
     @property
     def vol(self):
-        return np.linalg.det(self.__cell) 
+        return np.linalg.det(self.__cell)
     
     @property
     def natoms(self):
         return len(self.__atoms)
 
-    def __len__(self):
-        return len(self.__atoms)
+    @property
+    def useSelDyn(self):
+        if self.__allRelax and not bool(self.__selectDyn):
+            return False
+        return True
 
-    def __getitem__(self, index):
-        return self.__pos[index, :]
+    def sdFlags(self, ia=-1):
+        '''Return the selective dynamic flag (bool)
+
+        Args:
+            ia (int) : index of atom
+
+        Returns:
+            3-member list, if ia is in range(natoms),
+            otherwise natoms-member list, each member a 3-member list
+            as the flag for that atom
+        '''
+        self.print_log("Global selective dynamics flag: {}".format(self.__allRelax), level=2)
+        if ia in self.__selectDyn:
+            self.print_log("Found custom flag in __selectDyn for atom {}".format(ia), depth=1, level=1)
+            _flag = self.__selectDyn[ia]
+        elif ia in range(self.natoms):
+            self.print_log("Use global flag for atom {}".format(ia), level=1, depth=1)
+            _flag = [self.__allRelax,] *3
+        else:
+            _flag = [[self.__allRelax,]*3 for _r in range(self.natoms)]
+            for _i in self.__selectDyn:
+                _flag[_i] = self.__selectDyn[_i]
+        return _flag
 
 # TODO make reciprocal lattice information to properties
 #    def __calc_latt(self):
