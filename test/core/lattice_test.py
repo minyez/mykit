@@ -72,6 +72,7 @@ class simple_cubic_lattice(unittest.TestCase):
         # cart2direct
         self._latt.coordSys = 'D'
         self.assertEqual(self._latt[0][0], self._frac)
+
         
 
 class lattice_raise(unittest.TestCase):
@@ -174,9 +175,12 @@ class lattice_sort(unittest.TestCase):
         _fix = [False, False, False]
 
         _latt = lattice(_cell, _atoms, _pos, selectDyn={1: _fix})
+        self.assertListEqual([0], _latt.get_sym_index("Cl"))
+        self.assertListEqual([1], _latt.get_sym_index("Cs"))
         _latt._switch_two_atom_index(0, 1)
-        _c, _a, _p = _latt.get_latt()
-        self.assertListEqual(_a, ["Cs", "Cl"])
+        self.assertListEqual(_latt.atoms, ["Cs", "Cl"])
+        self.assertListEqual([0], _latt.get_sym_index("Cs"))
+        self.assertListEqual([1], _latt.get_sym_index("Cl"))
         self.assertListEqual(_fix, _latt.sdFlags(0))
 
     def test_sanitize_atoms_sic(self):
@@ -201,9 +205,36 @@ class lattice_sort(unittest.TestCase):
                         [0.75, 0.25, 0.75],  #C
                         [0.75, 0.75, 0.25]]  #C
         _latt = lattice(_cell, _atoms, _pos, selectDyn={2:[False, False, False]})
-        _latt._sanitize_atoms()
+        # _latt._sanitize_atoms()
         self.assertListEqual(list(sorted(_atoms, reverse=True)), _latt.atoms)
         self.assertTrue(np.array_equal(_latt.pos, np.array(_posSanitied, dtype=_latt._dtype)))
+
+    def test_sort_pos_sic(self):
+        _cell = [[1.0, 0.0, 0.0],
+                 [0.0, 1.0, 0.0],
+                 [0.0, 0.0, 1.0]]
+        _atoms = ["Si", "Si", "Si", "Si", "C", "C", "C", "C"]
+        _pos = [[0.0, 0.0, 0.0],     #Si 
+                [0.0, 0.5, 0.5],     #Si
+                [0.5, 0.0, 0.5],     #Si
+                [0.5, 0.5, 0.0],     #Si
+                [0.25, 0.25, 0.25],  #C
+                [0.25, 0.75, 0.75],  #C
+                [0.75, 0.25, 0.75],  #C
+                [0.75, 0.75, 0.25]]  #C
+        _posSorted = [0.5, 0.5, 0.0, 0.0, 0.75, 0.75, 0.25, 0.25]
+        _posSortedRev = [0.0, 0.0, 0.5, 0.5, 0.25, 0.25, 0.75, 0.75]
+        _latt = lattice(_cell, _atoms, _pos)
+        # no need to sanitize atoms
+        self.assertListEqual(_atoms, _latt.atoms)
+        for _axis in range(3):
+            _latt.sort_pos(axis=_axis+1)
+            self.assertTrue(np.array_equal(np.array(_posSorted, dtype=_latt._dtype), \
+                _latt.pos[:,_axis]))
+            _latt.sort_pos(axis=_axis+1, reverse=True)
+            self.assertTrue(np.array_equal(np.array(_posSortedRev, dtype=_latt._dtype), \
+                _latt.pos[:,_axis]))
+
 
 class lattice_element_utils(unittest.TestCase):
     '''Test the utils to manipulate element lists for ``lattice`` use

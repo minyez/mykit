@@ -57,6 +57,8 @@ class lattice(prec, verbose):
         self.__check_consistency()
         # move all atoms into the lattice (0,0,0)
         self.__assure_atoms_in_fist_lattice()
+        # sanitize atoms arrangement
+        self.__sanitize_atoms()
 
     def __len__(self):
         return len(self.__atoms)
@@ -146,6 +148,8 @@ class lattice(prec, verbose):
             indices (iterable): the indices of the atoms to be sorted
             reverse (bool): if set True, larger value appears earlier
         '''
+        _depth = 1
+        # self.print_log("Bubble sort with key:", key, ", indices:", indices, level=3, depth=_depth)
         __ind = list(indices)
         __key = [key[_i] for _i in __ind]
         _n = len(__ind)
@@ -153,6 +157,7 @@ class lattice(prec, verbose):
         for _i in range(_n -1):
             _li = _i
             _ri = _i+1
+            # self.print_log("Check index: ", _i, level=3, depth=_depth+2)
             __dict = {True: __key[_li] > __key[_ri],
                       False: __key[_li] < __key[_ri]}
             if not __dict[reverse]:
@@ -161,19 +166,22 @@ class lattice(prec, verbose):
         if not __sorted:
             for _i in range(1, _n):
                 _j = _i
+                # self.print_log("Sorting size {}".format(_i+1), level=3, depth=_depth+1)
                 while _j > 0:
-                    _li = __ind[_j-1]
-                    _ri = __ind[_j]
+                    _li = _j-1
+                    _ri = _j
                     __dict = {True: __key[_ri] > __key[_li],
                               False: __key[_ri] < __key[_li]}
                     if __dict[reverse]:
-                        self._switch_two_atom_index(_li, _ri)
+                        self._switch_two_atom_index(__ind[_li], __ind[_ri])
                         __key[_li], __key[_ri] = __key[_ri], __key[_li]
                         _j -= 1
                     else:
                         break
+                # self.print_log("Sorting size {} done".format(_i+1), level=3, depth=_depth+1)
+        # self.print_log("Bubble sort done", level=3, depth=_depth)
 
-    def _sanitize_atoms(self):
+    def __sanitize_atoms(self):
         '''Sanitize the atoms arrangement after initialization.
 
         It mainly deals with arbitrary input of ``atoms`` when initialized. 
@@ -198,14 +206,22 @@ class lattice(prec, verbose):
         #             else:
         #                 break
 
-    def __sort_pos(self, axis=3, reverse=False):
+    def sort_pos(self, axis=3, reverse=False):
         '''Sort the atoms by its coordinate along axis.
 
         The ``atoms`` list will not change in __sort.
         If ``reverse`` is set as False, atom with higher coordinate in lattice (0,0,0)
         will appear earlier, otherwise later
         '''
-        raise NotImplementedError    
+        assert axis in range(1,4)
+        assert isinstance(reverse, bool)
+        __sortKeys = self.pos[:, axis-1]
+        # self.print_log("__sortKeys in sort_pos", __sortKeys, level=3)
+        for _at in self.atomTypes:
+            __ind = self.get_sym_index(_at)
+            self.__bubble_sort_atoms(__sortKeys, __ind, reverse=not reverse)
+
+        # raise NotImplementedError    
 
     def get_kwargs(self):
         '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
@@ -226,6 +242,18 @@ class lattice(prec, verbose):
         '''Purge out the cell, atoms and pos, which is minimal for constructing ``lattice`` and its subclasses
         '''
         return self.__cell, self.__atoms, self.__pos
+
+    def get_sym_index(self, csymbol):
+        '''
+        Args:
+            csymbol (str) : chemical-symbol-like identifier
+        '''
+        __ind = []
+        _csym = csymbol.capitalize()
+        for _i, _s in enumerate(self.atoms):
+            if _csym == _s:
+                __ind.append(_i)
+        return __ind
 
     # TODO move atom
     def __move(self, ia):
@@ -376,12 +404,12 @@ class lattice(prec, verbose):
             otherwise natoms-member list, each member a 3-member list
             as the flag for that atom
         '''
-        self.print_log("Global selective dynamics flag: {}".format(self.__allRelax), level=3)
+        # self.print_log("Global selective dynamics flag: {}".format(self.__allRelax), level=3)
         if ia in self.__selectDyn:
-            self.print_log("Found custom flag in __selectDyn for atom {}".format(ia), depth=1, level=3)
+            # self.print_log("Found custom flag in __selectDyn for atom {}".format(ia), depth=1, level=3)
             _flag = self.__selectDyn[ia]
         elif ia in range(self.natoms):
-            self.print_log("Use global flag for atom {}".format(ia), level=3, depth=1)
+            # self.print_log("Use global flag for atom {}".format(ia), level=3, depth=1)
             _flag = [self.__allRelax,] *3
         else:
             _flag = [[self.__allRelax,]*3 for _r in range(self.natoms)]
