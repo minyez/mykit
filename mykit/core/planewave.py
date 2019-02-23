@@ -1,87 +1,75 @@
 # -*- coding: utf-8 -*-
 '''define classes and functions related to plane wave basis setup
 '''
+class planewaveError(Exception):
+    pass
+
 
 class plane_wave:
-    '''the class that defines variables that control the plane wave basis
-
-    This is the base class for classes that control input parameters for calculations
-    in plane-wave software.
+    '''the base class that manage parameters of plane-wave basis.
     '''
 
-    __progName = "n a" # not assigned
-    __encutPw = None
-    __restart = 0
-    __encutPwGw = None
-    __mapProgTag = {
+    __pwTagMaps = {
                     "encutPw":{"n a":"encutPw", "vasp": "ENCUT"},
                     "encutPwGw": {"n a":"encutPwGw", "vasp": "ENCUTGW"},
-                    "restart":{"n a": "restart", "vasp": "ISTART"},
+                    "restartWave":{"n a": "restartWave", "vasp": "ISTART"},
+                    "restartCharg":{"n a": "restartCharg", "vasp": "ICHARG"},
+                    "nscf": {"n a": "nscf", "vasp": "NELM"},
+                    "ediff": {"n a": "ediff", "vasp": "EDIFF"},
+                    "scfAlgo": {"n a": "scfAlgo", "vasp": "ALGO"},
+                    "globalPrec": {"n a": "globalPrec", "vasp": "PREC"},
+                    "ifWriteWave": {"n a": "ifWriteWave", "vasp": "LWAVE"},
+                    "ifWriteCharg": {"n a": "ifWriteCharg", "vasp": "LCHARG"},
                    }
     __pwTags = {}
 
-    def __init__(self, program, **kwargs):
-        __progName = program.lower()
-        if len(kwargs) > 0:
-            self.__pwTags = kwargs
-        self.__initialize_pwtags()
+    def __init__(self, **pwargs):
+        if len(pwargs) > 0:
+            self.__initialize_pwtags(**pwargs)
+        else:
+            pass
+
+    # def __getitem__(self, index):
+    #     return self.__pwTags[index]
     
-    def __initialize_pwtags(self):
+    def __initialize_pwtags(self, **kwargs):
         '''initialize the fundamental tags of pw class
 
         This will purge out all non-available tags
         '''
-        for _pwt, _v in enumerate(self.__pwTags):
-            if _pwt in self.__mapProgTag:
-                self._parse_one_pwtag(_pwt, _v)
-            else:
-                self.__pwTags.pop(_pwt)
+        for _pwt in kwargs:
+            self.__parse_pwtag(_pwt, kwargs[_pwt])
 
-    def _parse_one_pwtag(self, pwTagName, value):
-        if pwTagName == "encutPw":
-            self.__encutPw = value
-        elif pwTagName == "encutPwGw":
-            self.__encutPwGw = value
-        elif pwTagName == "restart":
-            self.__restart = value
+    def parse_tag(self, tagName, value):
+        self.__parse_pwtag(tagName, value)
 
-    def __get_pwtag_value(self, pwTagName):
+    def __parse_pwtag(self, pwTagName, value):
+        if pwTagName in self.__pwTagMaps:
+            self.__pwTags.update({pwTagName: value})
+
+    def _get_one_pwtag(self, pwTagName):
         return self.__pwTags.get(pwTagName, None)
 
-    # def __back_map_pw_tag(self, tag):
-    #     '''back map the tag for particular program to the pw tag
-    #     '''
-    #     pass
-
-    @property
-    def progName(self):
-        '''Return the name of the program which the plane_wave class control is currently for
-        '''
-        return self.__progName
 
     @property
     def pwTagvals(self):
         return self.__pwTags
 
-    def tagvals(self):
-        '''All values of plane_wave tags that have been set. 
+    def tag_vals(self, *tags):
+        return self.__tag_vals(*tags, progName="n a")
+
+    def __tag_vals(self, *tags, progName="n a"):
+        '''find values of plane_wave tags from program-specific tags of progName
         
         The tags name depends on the program, i.e. ``progName``.
 
         Returns:
             dict, with key-value pair as : ``program-specific tag: tag value``
         '''
-        _d = {}
-        for _pwt in self.__pwTags:
-            _tDict = self.__mapProgTag.get(_pwt, None)
-            if _tDict is not None:
-                _progTag = _tDict.get(self.__progName, None)
-                if _progTag is not None:
-                    _d.update({_progTag: self.__pwTags[_pwt]})
-        return _d
-
-    # @classmethod
-    # def __map_one_tag(cls, )
+        _vals = []
+        _pwtags = plane_wave.map2PwTags(*tags, progName=progName)
+        _pwvals = list(map(self._get_one_pwtag, _pwtags))
+        return _pwvals
 
     @classmethod
     def map_tags(cls, *tags, progFrom="n a", progTo="n a"):
@@ -96,9 +84,9 @@ class plane_wave:
         _pT = progTo.lower()
         _d = {}
         
-        for _pwt in cls.__mapProgTag:
-            _d.update({cls.__mapProgTag.get(_pwt, {}).get(_pF, None): \
-                       cls.__mapProgTag.get(_pwt, {}).get(_pT, None)})
+        for _pwt in cls.__pwTagMaps:
+            _d.update({cls.__pwTagMaps.get(_pwt, {}).get(_pF, None): \
+                       cls.__pwTagMaps.get(_pwt, {}).get(_pT, None)})
         # ensure tags not implemented will be mapped to None
         _d.update({None:None})
         if len(tags) == 0:

@@ -45,7 +45,7 @@ class poscar(lattice):
                 print(self[i], _dynFlag, file=f)
     
     @classmethod
-    def read_from_file(cls, poscarPath):
+    def read_from_file(cls, poscarPath="POSCAR"):
         '''Read from an existing POSCAR file ``poscarPath``
 
         Args :

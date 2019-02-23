@@ -68,7 +68,7 @@ class poscar_build_test(ut.TestCase):
                     _i = _f.split('_')[2]
                     _path = os.path.join(__poscarDir, _f)
                     self.assertRaises(poscarError, poscar.read_from_file, _path)
-        print("{} good POSCARs readed ({} verified by JSON file), {} bad POSCARs readed".format(_countGood, _countVerified, _countBad))
+        print("{} good POSCARs readed ({} verified by JSON file). {} bad POSCARs raised.".format(_countGood, _countVerified, _countBad))
 
 
 def _verify_poscar_by_json(tc, pc, pathJson):

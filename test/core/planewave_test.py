@@ -2,9 +2,10 @@
 # coding = utf-8
 
 import unittest as ut
-from mykit.core.planewave import plane_wave
+from mykit.core.planewave import plane_wave, planewaveError
 
-haveImplePwTags = ("encutPw", "encutPwGw", "restart")
+# These test tuples should have the same length
+haveImplePwTags = ("encutPw", "encutPwGw", "restartWave")
 haveImpleVaspMap = ("ENCUT", "ENCUTGW", "ISTART")
 haveImpleQeMap = (None, None, None)
 haveImpleAbiMap = (None, None, None)
@@ -36,6 +37,12 @@ class test_tag_mapping(ut.TestCase):
         # Should be noticed that the tag list to map from should not have None in it, 
         # otherwise the following test must fail.
         self.assertTupleEqual(haveImpleQeMap, plane_wave.map_tags(*haveImpleVaspMap, progFrom="vasp", progTo="qe"))
+
+class test_intialize(ut.TestCase):
+    
+    def test_direct_init(self):
+        _pw = plane_wave(encutPw=300, restartWave=0)
+        self.assertListEqual([300, 0], _pw.tag_vals("encutPw", "restartWave"))
         
 
 if __name__ == "__main__":
