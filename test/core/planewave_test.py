@@ -19,7 +19,10 @@ class test_pwtags(ut.TestCase):
         for _t in haveImplePwTags:
             self.assertIn(_t, implePwTags)
 
+
 class test_tag_mapping(ut.TestCase):
+
+    pass
 
     def test_map_tags(self):
         '''Test the map_tags classmethod
@@ -65,6 +68,7 @@ class test_tag_manipulation(ut.TestCase):
         _pw = plane_wave()
         _pw = plane_wave(encutPw=300, restartWave=0)
         self.assertListEqual([300, 0], _pw.tag_vals("encutPw", "restartWave"))
+        self.assertListEqual([300, 0], _pw.tag_vals("ENCUT", "restartWave", progName="vasp"))
 
     def test_parse_tags(self):
         _pw = plane_wave(restartWave=0)

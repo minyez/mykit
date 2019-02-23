@@ -22,7 +22,7 @@ run_one_unittest() {
 coreTestDir="core"
 coreTests=(config_test.py lattice_test.py log_test.py utils_test.py planewave_test.py)
 vaspTestDir="vasp"
-vaspTests=(poscar_test.py)
+vaspTests=(poscar_test.py incar_test.py)
 
 for ct in ${coreTests[@]}
 do

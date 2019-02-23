@@ -44,25 +44,30 @@ class plane_wave(verbose):
     def __get_one_pwtag(self, pwTagName):
         return self.__pwTags.get(pwTagName, None)
 
-    def tag_vals(self, *tags):
-        return self.__tag_vals(*tags, progName="n a")
+    def tag_vals(self, *tags, progName="n a"):
+        return self.__pwtag_vals(*tags, progName=progName)
 
-    def __tag_vals(self, *tags, progName="n a"):
+    def __pwtag_vals(self, *tags, progName="n a"):
         '''find values of plane_wave tags from program-specific tags of progName
         
         The tags name depends on the program, i.e. ``progName``.
 
         Returns:
-            list, if tags are specified, otherwise None
+            list, if tags is specified, otherwise None
         '''
         if len(tags) == 0:
             return None
-        _vals = []
+        # _vals = []
         _pwtags = plane_wave.map2pwtags(*tags, progFrom=progName)
         # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
-        # if len(tags) == 1:
-        #     return self.__get_one_pwtag(_pwtags)
-        return list(map(self.__get_one_pwtag, _pwtags))
+        # ? get value from plane_wave tag, even progName is not "n a"
+        _vals = list(map(self.__get_one_pwtag, _pwtags))
+        if progName != "n a":
+            for _i, _v in enumerate(_vals):
+                if _v == None:
+                    if tags[_i] in self.__pwTags:
+                        _vals[_i] = self.__pwTags[tags[_i]]
+        return _vals
 
     @property
     def pwTags(self):
