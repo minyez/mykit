@@ -45,8 +45,18 @@ class incar(plane_wave, xc_control):
                   )
     tagAll = tagElecBasic + tagElecAdv + tagElecXc + \
         tagIonBasic + tagIonSlab + tagPara + tagNotCateg
+    tagMap2Base = {}
+    __availMap2Pw = plane_wave.map2pwtags(*tagAll, progFrom="vasp")
+    # TODO xc map
+    __availMap2Xc = (None,)*len(tagAll)
+    for _m in [__availMap2Pw, __availMap2Xc]:
+        for _i, _v in enumerate(_m):
+            if _v != None:
+                tagMap2Base.update({tagAll[_i]:_v})
+    
 
-    __vaspTagval = {}
+
+    __vaspTags = {}
 
     # xc_dict = {
     #             # 'LDA'    : {'GGA'     : 'CA'} ,
@@ -59,31 +69,71 @@ class incar(plane_wave, xc_control):
     #             # 'HF'     : self.tag_HF
     #             }
 
-    def __init__(self, **incarargs):
+    def __init__(self, **incarArgs):
         '''Initialize
 
         First, filter all incarargs to get all pwTags, xcTags, and remove their VASP equivalents,
         and then add those tags not implemented in the plane_wave tag mapping.
         '''
-        kwargs = copy.deepcopy(incarargs)
-        _vaspKs = []
-        _vaspVs = []
-        for _k in kwargs:
-            if _k in self.__pwTagMaps:
-                pass
-            elif _k in self.tagAll:
-                _v = kwargs.pop(_k)
-        plane_wave.__init__(self, "vasp", **kwargs)
+        # _vaspKs = []
+        # _vaspVs = []
+        # for _k in kwargs:
+        #     if _k in self.__pwTagMaps:
+        #         pass
+        #     elif _k in self.tagAll:
+        #         _v = kwargs.pop(_k)
+        super(incar, self).__init__(**incarArgs)
+        self.__parse_vasptags(**incarArgs)
 
-    def __parse_vasp_only_tags(self, **tags):
-        pass
+    def parse_tags(self, **keyval):
+        super(incar,self).parse_tags(**keyval)
+        self.__parse_vasptags(**keyval)
+
+    def __parse_vasptags(self, **tags):
+        __keyFiltered = []
+        if len(tags) != 0:
+            __keyFiltered = self.__filter_tags_incar_not_pw_xc(*tags.keys())
+        for _k in __keyFiltered:
+            self.__vaspTags.update({_k:tags[_k]})
+
+    @classmethod
+    def __filter_tags_incar_not_pw_xc(cls, *tags):
+        '''Get tags that are implemented in incar but not implemented as common plane_wave or xc_control tags
+
+        Returns:
+            list
+        
+        Note:
+            Order is not kept.
+        '''
+        _filter1 = []
+        if len(tags) == 0:
+            return _filter1
+        __tagsDict = {}
+        # Remove duplicate by constructing dict
+        for _i,_t in enumerate(tags):
+            __tagsDict.update({_t:_i})
+        # Filter xcTags and pwTags
+        for _k, _v in __tagsDict.items():
+            if _k in cls.tagMap2Base.values():
+                pass
+            elif _k in cls.tagAll:
+                _filter1.append(_k)
+        if len(_filter1) == 0:
+            return _filter1
+        # Filter tags which can be mapped to xcTags and pwTags
+        # __map2pw = plane_wave.map2pwtags(*_filter1, progFrom="vasp")
+        # __map2xc = [None,] * len(_filter1)
+        # # __map2xc = xc_control.map2xctags(*_filter1, progFrom="vasp")
+        _filter2 = []
+        for _t in _filter1:
+            if _t not in cls.tagMap2Base:
+                _filter2.append(_t)
+        return _filter2
 
     def write(self, pathIncar="INCAR"):
         '''Write to INCAR file at 
         '''
-        pass
-
-    def add_tag(self, tagName, value):
         pass
 
     @classmethod
