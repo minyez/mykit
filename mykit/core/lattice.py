@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
 '''Module that defines classes for lattice manipulation and symmtetry operation
+
+The ``lattice`` class and its subclasses accept the following kwargs when being instantialized:
+
+    - unit (str): The unit system  to use, either "ang" (default) or "au".
+    - coordSys (str): Coordinate system for the internal positions, 
+      either "D" (Direct, default) or "C" (Cartesian)
+    - allRelax (bool) : default selective dynamics option for atoms. 
+      Set True (default) to allow all DOFs to relax
+    - selectDyn (dict) : a dictionary with key-value pair as ``int: [bool, bool, bool]``, which controls
+      the selective dynamic option for atom with the particular index (starting from 0). Default is an
+      empty ``dict``
 '''
 import numpy as np
 # import spglib
 from mykit.core.log import verbose
 from mykit.core.numeric import prec
 from mykit.core.constants import pi, au2ang, ang2au
-
-_latt_kwargs_doc = '''
-'''
 
 # ==================== classes ====================
 class latticeError(Exception):
@@ -25,12 +33,8 @@ class lattice(prec, verbose):
         atoms (list of str) : The list of strings of type for each atom corresponding to the member in pos
         pos (array-like) : The internal coordinates of atoms
 
-    Available ``kwargs``:
-        unit (str): The system of unit to use. Either "ang" or "au"
-        coordSys (str): Coordinate system for the internal positions. Either "D" (Direct) or "C" (Cartesian)
-        allRelax (bool) : default selective dynamics option for atoms. Set True to allow all DOFs to relax
-        selectDyn (dict) : a dictionary with key-value pair as "int: [bool, bool, bool]", which controls
-            the selective dynamic option for atom with the particular index (starting from 0)
+    Note:
+        Various kwargs are acceptable for ``lattice`` and its subclasses. Check ``lattice`` module docstring.
     
     Examples:
     >>> lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
@@ -80,6 +84,14 @@ class lattice(prec, verbose):
             self.__selectDyn = kwargs["selectDyn"]
         if "comment" in kwargs:
             self.comment = kwargs["comment"]
+
+    def get_latt(self):
+        '''Purge out the cell, atoms and pos.
+        
+        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``lattice`` and its subclasses.
+        They can also be used to build sysmetry operations with spglib utilities.
+        '''
+        return self.__cell, self.__atoms, self.__pos
 
     def get_kwargs(self):
         '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
@@ -162,7 +174,7 @@ class lattice(prec, verbose):
         current bubble will just break.
 
         Args:
-            key (natom-member list):
+            key (natom-member list): the key value to be sorted
             indices (iterable): the indices of the atoms to be sorted
             reverse (bool): if set True, larger value appears earlier
         '''
@@ -206,28 +218,11 @@ class lattice(prec, verbose):
         '''
         self.__bubble_sort_atoms(self.typeIndex, range(self.natoms))
 
-        # __ti = self.typeIndex
-        # __ifSanitized = True
-        # for _i in range(self.natoms - 1):
-        #     if __ti[_i] > __ti[_i+1]:
-        #         __ifSanitized = False
-        #         break
-        # # Bubble sort
-        # if not __ifSanitized:
-        #     for _i in range(1, self.natoms):
-        #         _j = _i
-        #         while  _j > 0:
-        #             if __ti[_j] < __ti[_j-1]:
-        #                 self._switch_two_atom_index(_j, _j-1)
-        #                 __ti[_j], __ti[_j-1] = __ti[_j-1], __ti[_j]
-        #                 _j -= 1
-        #             else:
-        #                 break
-
     def sort_pos(self, axis=3, reverse=False):
         '''Sort the atoms by its coordinate along axis.
 
-        The ``atoms`` list will not change by sorting.
+        The ``atoms`` list will not change by sorting, i.e. the sorting is performed
+        within each atomic group.
         If ``reverse`` is set as False, atom with higher coordinate in lattice (0,0,0)
         will appear earlier, otherwise later
 
@@ -243,16 +238,11 @@ class lattice(prec, verbose):
             __ind = self.get_sym_index(_at)
             self.__bubble_sort_atoms(__sortKeys, __ind, reverse=not reverse)
 
-    def get_latt(self):
-        '''Purge out the cell, atoms and pos.
-        
-        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``lattice`` and its subclasses.
-        They can also be used to build sysmetry operations with spglib utilities.
-        '''
-        return self.__cell, self.__atoms, self.__pos
-
     def get_sym_index(self, csymbol):
-        '''
+        '''Get the indices of atom with element symbol ``csymbol``
+
+        Note that this is equivalent to ``latt[csymbol]``, given ``lattice`` instance latt.
+
         Args:
             csymbol (str) : chemical-symbol-like identifier
         '''
@@ -354,6 +344,18 @@ class lattice(prec, verbose):
             return False
         return True
 
+    def fix_all(self):
+        '''Fix all atoms.
+        '''
+        self.__selectDyn = {}
+        self.__allRelax = False
+    
+    def relax_all(self):
+        '''Relax all atoms.
+        '''
+        self.__selectDyn = {}
+        self.__allRelax = True
+
     def set_fix(self, *iats, axis=0):
         '''Fix the atoms with index in iats
 
@@ -402,7 +404,7 @@ class lattice(prec, verbose):
                 self.__selectDyn.update({_k: _flag})
 
     def sdFlags(self, ia=-1):
-        '''Return the selective dynamic flag (bool)
+        '''Return the selective dynamic flag (bool) of atom
 
         Args:
             ia (int) : index of atom

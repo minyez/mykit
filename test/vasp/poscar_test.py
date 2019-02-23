@@ -92,6 +92,7 @@ def _verify_poscar_by_json(tc, pc, pathJson):
             tc.assertListEqual(_sdfDict[_a], pc.sdFlags(_ind), msg=verifyMsg+", sdFlag: atom {}".format(_a))
     if "coordSys" in _vDict:
         tc.assertEqual(_vDict["coordSys"], pc.coordSys, msg=verifyMsg)
+    # atoms after arrangement sanitization
     if "atoms" in _vDict:
         tc.assertListEqual(_vDict["atoms"], pc.atoms, msg=verifyMsg)
     if "comment" in _vDict:
@@ -103,12 +104,12 @@ def _verify_poscar_by_json(tc, pc, pathJson):
         for _axis in range(3):
             pc.sort_pos(axis=_axis+1)
             tc.assertTrue(np.array_equal(pc.pos[:, _axis], \
-                np.array(_vDict["sortedPos"][_axis], dtype=pc._dtype)))
+                np.array(_vDict["sorted"][_axis], dtype=pc._dtype)))
     if "sortedRev" in _vDict:
         for _axis in range(3):
             pc.sort_pos(axis=_axis+1, reverse=True)
             tc.assertTrue(np.array_equal(pc.pos[:, _axis], \
-                np.array(_vDict["sortedPos"][_axis], dtype=pc._dtype)))
+                np.array(_vDict["sortedRev"][_axis], dtype=pc._dtype)))
     return True
 
 

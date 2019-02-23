@@ -176,7 +176,9 @@ class lattice_sort(unittest.TestCase):
 
         _latt = lattice(_cell, _atoms, _pos, selectDyn={1: _fix})
         self.assertListEqual([0], _latt.get_sym_index("Cl"))
+        self.assertListEqual([0], _latt["Cl"])
         self.assertListEqual([1], _latt.get_sym_index("Cs"))
+        self.assertListEqual([1], _latt["Cs"])
         _latt._switch_two_atom_index(0, 1)
         self.assertListEqual(_latt.atoms, ["Cs", "Cl"])
         self.assertListEqual([0], _latt.get_sym_index("Cs"))
