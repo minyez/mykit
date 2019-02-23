@@ -9,14 +9,14 @@ class plane_wave:
     in plane-wave software.
     '''
 
-    __progName = "na" # not assigned
+    __progName = "n a" # not assigned
     __encutPw = None
     __restart = 0
     __encutPwGw = None
     __mapProgTag = {
-                    "encutPw":{"vasp": "ENCUT"},
-                    "encutPwGw": {"vasp": "ENCUTGW"},
-                    "restart":{"vasp": "ISTART"},
+                    "encutPw":{"n a":"encutPw", "vasp": "ENCUT"},
+                    "encutPwGw": {"n a":"encutPwGw", "vasp": "ENCUTGW"},
+                    "restart":{"n a": "restart", "vasp": "ISTART"},
                    }
     __pwTags = {}
 
@@ -72,8 +72,6 @@ class plane_wave:
             dict, with key-value pair as : ``program-specific tag: tag value``
         '''
         _d = {}
-        if self.__progName == "na":
-            return self.__pwTags
         for _pwt in self.__pwTags:
             _tDict = self.__mapProgTag.get(_pwt, None)
             if _tDict is not None:
@@ -82,9 +80,53 @@ class plane_wave:
                     _d.update({_progTag: self.__pwTags[_pwt]})
         return _d
 
+    # @classmethod
+    # def __map_one_tag(cls, )
+
     @classmethod
-    def map2PwTags(cls, *tagNames, progName="na"):
-        '''Map program-specific tags to ``plane_wave`` tags
+    def map_tags(cls, *tags, progFrom="n a", progTo="n a"):
+        '''classmethod to map tags of progFrom to corresponding tags of progTo
+
+        Args:
+            tags (str) : the tag name of progFrom to map from
+            progFrom (str)
+            progTo (str)
+        '''
+        _pF = progFrom.lower()
+        _pT = progTo.lower()
+        _d = {}
+        
+        for _pwt in cls.__mapProgTag:
+            _d.update({cls.__mapProgTag.get(_pwt, {}).get(_pF, None): \
+                       cls.__mapProgTag.get(_pwt, {}).get(_pT, None)})
+        # ensure tags not implemented will be mapped to None
+        _d.update({None:None})
+        if len(tags) == 0:
+            return tuple(_d.values())
+        if len(tags) == 1:
+            return _d.get(tags, None)
+        return tuple(_d.get(_t, None) for _t in tags)
+
+    @classmethod
+    def mapFromPwTags(cls, *pwTagNames, progName="n a"):
+        
+        '''Class method to map ``plane_wave`` tags to program-specific tags 
+
+        If the pwTagName is not found, None will be return
+
+        Args:
+            pwTagNames (str) : the plane_wave tag name to map from
+            progName (str) : the name of the programe to which the plane_wave tags will be mapped
+
+        Return:
+            a dict value, or a list of dict value corresponding to tagNames
+            If no tagNames is specified, all available program-specifi tags will be returned.
+        '''
+        return cls.map_tags(*pwTagNames, progTo=progName)
+
+    @classmethod
+    def map2PwTags(cls, *tagNames, progName="n a"):
+        '''Class method to map program-specific tags to ``plane_wave`` tags
 
         If the tag name is not found, None will be return
 
@@ -94,20 +136,6 @@ class plane_wave:
 
         Return:
             a dict value, or a list of dict value corresponding to tagNames
-            If no tagNames is specified, all available mapping will be returned.
+            If no tagNames is specified, all available plane_wave tags will be returned.
         '''
-        _prog = progName.lower()
-        _d = {}
-        # if self.__progName == "na":
-        #     assert all([tag in self.__mapProgTag for tag in tagNames])
-        #     pass
-        if _prog == "na":
-            _d = {_pwt:_pwt for _pwt in cls.__mapProgTag}
-        else:
-            for _pwt in cls.__mapProgTag:
-                _d.update({cls.__mapProgTag.get(_pwt, {}).get(_prog, None): _pwt})
-        if len(tagNames) == 0:
-            return tuple(_d.values())
-        if len(tagNames) == 1:
-            return _d.get(tagNames, None)
-        return tuple(_d.get(_t, None) for _t in tagNames)
+        return cls.map_tags(*tagNames, progFrom=progName)
