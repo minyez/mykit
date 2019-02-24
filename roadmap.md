@@ -17,4 +17,6 @@
 - [ ] `outcar`
 
 ## Future plan
-- [ ] `control` for `_control` base classes
+- [x] `control_map` for `*_control` base classes
+  - [x] tags mapping
+  - [ ] values mapping :wrench:

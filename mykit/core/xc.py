@@ -2,12 +2,13 @@
 '''
 '''
 from mykit.core.log import verbose
+from mykit.core._control import control_map
 
 class xcError(Exception):
     pass
 
 
-class xc_control(verbose):
+class xc_control(verbose, control_map):
     '''base class that controls exchange-correlation setup
     '''
 
@@ -63,24 +64,25 @@ class xc_control(verbose):
 
     @classmethod
     def map_tags_in_xc(cls, *tags, progFrom="n a", progTo="n a", getAll=False):
+        # if len(tags) == 0:
+        #     return tuple()
         _pF = progFrom.lower()
         _pT = progTo.lower()
-        _d = {}
-        # cls.print_cm_log("In map_tags_in_xc", level=3, depth=1)
-        for _xct, _map in cls.__xcTagMaps.items():
-            _d.update({_map.get(_pF, None): _map.get(_pT, None)})
-        # ensure tags not implemented will be mapped to None
-        if None in _d:
-            _d.update({None:None})
-        # cls.print_cm_log("Mapping to xcTags", _d, level=3, depth=2)
-        if getAll:
-            _d.pop(None, None)
-            return tuple(_d.values())
-        if len(tags) == 0:
-            return tuple()
-        if len(tags) == 1:
-            return (_d.get(tags[0], None),)
-        return tuple(_d.get(_t, None) for _t in tags)
+        # _d = {}
+        # # cls.print_cm_log("In map_tags_in_xc", level=3, depth=1)
+        # for _xct, _map in cls.__xcTagMaps.items():
+        #     _d.update({_map.get(_pF, None): _map.get(_pT, None)})
+        # # ensure tags not implemented will be mapped to None
+        # if None in _d:
+        #     _d.update({None:None})
+        # # cls.print_cm_log("Mapping to xcTags", _d, level=3, depth=2)
+        # if getAll:
+        #     _d.pop(None, None)
+        #     return tuple(_d.values())
+        # if len(tags) == 1:
+        #     return (_d.get(tags[0], None),)
+        # return tuple(_d.get(_t, None) for _t in tags)
+        return control_map._tags_mapping(cls.__xcTagMaps, _pF, _pT, *tags, getAll=getAll)
 
     
     @classmethod

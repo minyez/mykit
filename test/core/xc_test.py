@@ -12,8 +12,6 @@ haveImpleAbiMap = (None, None)
 
 class test_init(ut.TestCase):
 
-    pass
-
     def test_direct_init(self):
         _xc = xcc("n a")
         _xc = xcc("n a", gga="PE")

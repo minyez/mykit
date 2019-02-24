@@ -11,6 +11,7 @@ class incarError(Exception):
     pass
 
 
+# TODO check ion tags
 class incar(plane_wave_control, xc_control, program):
     '''manage tags and IO of VASP input file INCAR
     '''
@@ -24,26 +25,26 @@ class incar(plane_wave_control, xc_control, program):
                    )
     tagElecXc = (
                     "GGA","LHFCALC","PRECFOCK",'METAGGA',
-                    # 'AEXX','AGGAX','AGGAC','ALDAC',
+                    'AEXX','AGGAX','AGGAC','ALDAC',
                 )
     tagElecAdv = (
                     "ENCUTGW","LASPH","LPEAD","LOPTICS","ENCUTGWSOFT"
-                    # 'NKRED','NKREDX','NKREDY','NKREDZ',
-                    # 'NGX','NGY','NGZ','NGXF','NGYF','NGZF',
-                    # 'ODDONLY','EVENONLY','LASPH',
+                    'NKRED','NKREDX','NKREDY','NKREDZ',
+                    'NGX','NGY','NGZ','NGXF','NGYF','NGZF',
+                    'ODDONLY','EVENONLY','LASPH',
                  )
     tagIonBasic = (
-                    # 'NSW','IBRION','ISIF','ISYM','EDIFFG','POTIM',
+                    'NSW','IBRION','ISIF','ISYM','EDIFFG','POTIM',
                   )
     tagIonSlab = (
-                    # "LDIPOL","DIPOL","IDIPOL",'LVHAR','LVTOT',
+                    "LDIPOL","DIPOL","IDIPOL",'LVHAR','LVTOT',
                  )
     tagPara = (
-                    # 'NPAR','NCORE','KPAR',
+                    'NPAR','NCORE','KPAR',
               )
     tagNotCateg = (
-                    # 'LMIXTAU','NWRITE',
-                    # 'AMIX','BMIX','TIME','SMASS',
+                    'LMIXTAU','NWRITE',
+                    'AMIX','BMIX','TIME','SMASS',
                   )
     __tagNotImple= ()
     tagAll = tagElecBasic + tagElecAdv + tagElecXc + \
@@ -51,9 +52,7 @@ class incar(plane_wave_control, xc_control, program):
     # Map INCAR tags to tags of base classes
     tagMap2Base = {}
     __availMap2Pw = plane_wave_control.map2pwtags(*tagAll, progFrom="vasp")
-    # TODO xc map
-    # __availMap2Xc = xc_control.map2xctags(*tagAll, progFrom="vasp")
-    __availMap2Xc = (None,)*len(tagAll)
+    __availMap2Xc = xc_control.map2xctags(*tagAll, progFrom="vasp")
     for _m in [__availMap2Pw, __availMap2Xc]:
         for _i, _v in enumerate(_m):
             if _v != None:
@@ -77,13 +76,6 @@ class incar(plane_wave_control, xc_control, program):
         First, filter all incarargs to get all pwTags, xcTags, and remove their VASP equivalents,
         and then add those tags not implemented in the plane_wave tag mapping.
         '''
-        # _vaspKs = []
-        # _vaspVs = []
-        # for _k in kwargs:
-        #     if _k in self.__pwTagMaps:
-        #         pass
-        #     elif _k in self.tagAll:
-        #         _v = kwargs.pop(_k)
         super(incar, self).__init__("vasp", **incarArgs)
         self.parse_tags(**incarArgs)
 
@@ -113,7 +105,6 @@ class incar(plane_wave_control, xc_control, program):
         __vals = [None,] * len(tags)
         __pwTagVals = plane_wave_control.tag_vals(self, *tags, progName="vasp")
         __xcTagVals = xc_control.tag_vals(self, *tags, progName="vasp")
-        # TODO check ion tags
         __vaspTagVals = self.__vasptag_vals(*tags)
         __search = ( __pwTagVals, __xcTagVals, __vaspTagVals)
         self.print_log("Searching value in ", __search, depth=2, level=3)

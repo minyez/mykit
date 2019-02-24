@@ -42,7 +42,6 @@ class test_tag_mapping(ut.TestCase):
         # Should be noticed that the tag list to map from should not have None in it, 
         # otherwise the following test must fail.
         self.assertTupleEqual(haveImplePwTags, pwc.map_tags_in_pw(*haveImpleVaspMap, progFrom="vasp"))
-        # self.assertTupleEqual(self.__haveImplePwTags, plane_wave.map_tags(*self.__haveImpleQeMap, progFrom="qe"))
 
         # Map tags from one program to another.
         # Should be noticed that the tag list to map from should not have None in it, 

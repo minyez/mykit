@@ -2,12 +2,13 @@
 '''define classes and functions related to plane wave basis setup
 '''
 from mykit.core.log import verbose
+from mykit.core._control import control_map
 
 class planewaveError(Exception):
     pass
 
 
-class plane_wave_control(verbose):
+class plane_wave_control(verbose, control_map):
     '''the base class that manage parameters of plane-wave basis.
 
     parse_tags method for all base class need to specify a progName argument
@@ -109,22 +110,24 @@ class plane_wave_control(verbose):
         '''
         _pF = progFrom.lower()
         _pT = progTo.lower()
-        _d = {}
-        # cls.print_cm_log("In map_tags_in_pw", level=3, depth=1)
-        for _pwt, _map in cls.__pwTagMaps.items():
-            _d.update({_map.get(_pF, None): _map.get(_pT, None)})
-        # ensure tags not implemented will be mapped to None
-        if None in _d:
-            _d.update({None:None})
-        # cls.print_cm_log("Mapping to pwTags", _d, level=3, depth=2)
-        if getAll:
-            _d.pop(None, None)
-            return tuple(_d.values())
-        if len(tags) == 0:
-            return tuple()
-        if len(tags) == 1:
-            return (_d.get(tags[0], None),)
-        return tuple(_d.get(_t, None) for _t in tags)
+        # _d = {}
+        # # cls.print_cm_log("In map_tags_in_pw", level=3, depth=1)
+        # for _map in cls.__pwTagMaps.values():
+        #     _d.update({_map.get(_pF, None): _map.get(_pT, None)})
+        # # ensure None will be mapped to None, not some 
+        # if None in _d:
+        #     _d.update({None:None})
+        # # cls.print_cm_log("Mapping to pwTags", _d, level=3, depth=2)
+        # if getAll:
+        #     _d.pop(None, None)
+        #     return tuple(_d.values())
+        # if len(tags) == 0:
+        #     return tuple()
+        # if len(tags) == 1:
+        #     return (_d.get(tags[0], None),)
+        # return tuple(_d.get(_t, None) for _t in tags)
+        # TODO map tags by using control method
+        return control_map._tags_mapping(cls.__pwTagMaps, _pF, _pT, *tags, getAll=getAll)
 
     @classmethod
     def map_from_pwtags(cls, *pwTagNames, progTo="n a", getAll=False):
