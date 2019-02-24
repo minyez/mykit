@@ -28,6 +28,7 @@ class xc_control(verbose, control_map):
     def __parse_xctags(self, progName, **xctags):
         if len(xctags) == 0:
             return
+        self.print_log(" In __parse_xctags. Parsing: ", xctags, depth=1, level=3)
         for _origTag, _v in xctags.items():
             if _origTag == None:
                 continue
@@ -38,7 +39,7 @@ class xc_control(verbose, control_map):
                     if _origTag == _xcmap.get(progName, None):
                         self.__xcTags.update({_xct: _v})
                         break
-        self.print_log("__parse_xctags: xcTags", self.__xcTags, depth=1, level=3)
+        self.print_log("End __parse_xctags, now xcTags: ", self.__xcTags, depth=1, level=3)
         
     def delete_tags(self, progName, *tags):
         self.__pop_xctags(progName, *tags)
@@ -76,9 +77,9 @@ class xc_control(verbose, control_map):
             return []
         self.print_log("In __xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
         _xctags = xc_control.map2xctags(*tags, progFrom=progName)
-        self.print_log("_xctags:", _xctags, level=3, depth=2)
+        # self.print_log("_xctags:", _xctags, level=3, depth=2)
         _vals = list(map(self.__get_one_xctag, _xctags))
-        self.print_log("_values:", _vals, level=3, depth=2)
+        # self.print_log("_values:", _vals, level=3, depth=2)
         if progName != "n a":
             for _i, _v in enumerate(_vals):
                 if _v == None:
@@ -90,6 +91,7 @@ class xc_control(verbose, control_map):
                     del self.__xcTags[_v]
                 if tags[_i] in self.__xcTags:
                     del self.__xcTags[tags[_i]]
+        self.print_log("Found values:", _vals, level=3, depth=3)
         return _vals
 
     @classmethod

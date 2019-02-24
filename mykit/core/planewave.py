@@ -20,8 +20,8 @@ class plane_wave_control(verbose, control_map):
                     "restartWave":{"n a": "restartWave", "vasp": "ISTART"},
                     "restartCharg":{"n a": "restartCharg", "vasp": "ICHARG"},
                     # "nscf": {"n a": "nscf", "vasp": "NELM"},
-                    # "ediff": {"n a": "ediff", "vasp": "EDIFF"},
-                    # "scfAlgo": {"n a": "scfAlgo", "vasp": "ALGO"},
+                    "ediff": {"n a": "ediff", "vasp": "EDIFF"},
+                    "scfAlgo": {"n a": "scfAlgo", "vasp": "ALGO"},
                     # "globalPrec": {"n a": "globalPrec", "vasp": "PREC"},
                     # "ifWriteWave": {"n a": "ifWriteWave", "vasp": "LWAVE"},
                     # "ifWriteCharg": {"n a": "ifWriteCharg", "vasp": "LCHARG"},
@@ -47,6 +47,26 @@ class plane_wave_control(verbose, control_map):
         '''
         self.__parse_pwtags(progName, **pwtags)
 
+    def __parse_pwtags(self, progName, **pwtags):
+        if len(pwtags) == 0:
+            return
+        self.print_log(" In __parse_pwtags. Parsing {} Tags ".format(progName), pwtags, depth=1, level=3)
+        self.print_log("                    pwTags before:", self.__pwTags, depth=1, level=3)
+        for _origTag, _v in pwtags.items():
+            if _origTag == None:
+                continue
+            # check plane_wave tags
+            elif _origTag in self.__pwTagMaps.keys():
+                self.__pwTags.update({_origTag:_v})
+            else:
+            # check program-specific tags
+            # ? Can be optimized
+                for _pwt, _pwmap in self.__pwTagMaps.items():
+                    if _origTag == _pwmap.get(progName, None):
+                        self.__pwTags.update({_pwt: _v})
+                        break
+        self.print_log("End __parse_pwtags. pwTags after:", self.__pwTags, depth=1, level=3)
+
     def delete_tags(self, progName, *tags):
         self.__pop_pwtags(progName, *tags)
 
@@ -56,24 +76,6 @@ class plane_wave_control(verbose, control_map):
     def __pop_pwtags(self, progName, *tags):
         _vals = self.__pwtag_vals(progName, *tags, delete=True)
         return _vals
-
-    def __parse_pwtags(self, progName, **pwtags):
-        if len(pwtags) == 0:
-            return
-        for _origTag, _v in pwtags.items():
-            if _origTag == None:
-                continue
-            # check plane_wave tags
-            elif _origTag in self.__pwTagMaps:
-                self.__pwTags.update({_origTag:_v})
-            else:
-            # check program-specific tags
-            # ? Can be optimized
-                for _pwt, _pwmap in self.__pwTagMaps.items():
-                    if _origTag == _pwmap.get(progName, None):
-                        self.__pwTags.update({_pwt: _v})
-                        break
-        # self.print_log("__parse_pwtags: pwTags", self.__pwTags, depth=1, level=3)
 
     def __get_one_pwtag(self, pwTagName):
         return self.__pwTags.get(pwTagName, None)
@@ -99,9 +101,8 @@ class plane_wave_control(verbose, control_map):
     def __pwtag_vals(self, progName, *tags, delete=False):
         if len(tags) == 0:
             return []
-        # self.print_log("In __pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
+        self.print_log("In __pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
         _pwtags = plane_wave_control.map2pwtags(*tags, progFrom=progName)
-        # self.print_log("_pwtags:", _pwtags, level=3, depth=2)
         # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
         # ? get value from plane_wave tag, even progName is not "n a"
         _vals = list(map(self.__get_one_pwtag, _pwtags))
@@ -117,6 +118,7 @@ class plane_wave_control(verbose, control_map):
                     del self.__pwTags[_v]
                 if tags[_i] in self.__pwTags:
                     del self.__pwTags[tags[_i]]
+        self.print_log("Found values:", _vals, level=3, depth=3)
         return _vals
 
     @property
