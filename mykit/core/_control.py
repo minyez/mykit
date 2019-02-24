@@ -20,8 +20,8 @@ class control_map:
         assert isinstance(mapDict, dict)
         for _v in mapDict.values():
             assert isinstance(_v, dict)
-        verbose.print_cm_log("Use mapDict:", mapDict, level=3, depth=1)
-        verbose.print_cm_log("To map tags:", tags, level=3, depth=1)
+        verbose.print_cm_log("Use mapDict:", mapDict, level=4, depth=1)
+        verbose.print_cm_log("To map tags:", tags, level=4, depth=1)
         _pF = progFrom
         _pT = progTo
         _d = {}

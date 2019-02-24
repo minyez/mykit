@@ -40,14 +40,38 @@ class xc_control(verbose, control_map):
                         break
         self.print_log("__parse_xctags: xcTags", self.__xcTags, depth=1, level=3)
         
+    def delete_tags(self, progName, *tags):
+        self.__pop_xctags(progName, *tags)
+
+    def pop_tags(self, progName, *tags):
+        return self.__pop_xctags(progName, *tags)
+
+    def __pop_xctags(self, progName, *tags):
+        _vals = self.__xctag_vals(progName, *tags, delete=True)
+        return _vals
 
     def __get_one_xctag(self, xcTagName):
         return self.__xcTags.get(xcTagName, None)
 
-    def tag_vals(self, *tags, progName="n a"):
-        return self.__xctag_vals(*tags, progName=progName)
+    def tag_vals(self, progName, *tags):
+        '''find values of xc tags from program-specific tags of progName
+        
+        The tags name depends on the program, i.e. ``progName``.
 
-    def __xctag_vals(self, *tags, progName="n a"):
+        Note:
+            Tag in ``tags`` that belong to xcTags will get its value instead of None,
+            even when progName is not assigned ("n a")
+
+        Args:
+            tags (str): names of tags to request values
+            progName (str): the program of which the tags belong to.
+
+        Returns:
+            list containing all tag values.
+        '''
+        return self.__xctag_vals(progName, *tags)
+
+    def __xctag_vals(self, progName, *tags, delete=False):
         if len(tags) == 0:
             return []
         self.print_log("In __xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
@@ -60,6 +84,12 @@ class xc_control(verbose, control_map):
                 if _v == None:
                     if tags[_i] in self.__xcTags:
                         _vals[_i] = self.__xcTags[tags[_i]]
+        if delete:
+            for _i, _v in enumerate(_xctags):
+                if _v in self.__xcTags:
+                    del self.__xcTags[_v]
+                if tags[_i] in self.__xcTags:
+                    del self.__xcTags[tags[_i]]
         return _vals
 
     @classmethod
@@ -68,20 +98,6 @@ class xc_control(verbose, control_map):
         #     return tuple()
         _pF = progFrom.lower()
         _pT = progTo.lower()
-        # _d = {}
-        # # cls.print_cm_log("In map_tags_in_xc", level=3, depth=1)
-        # for _xct, _map in cls.__xcTagMaps.items():
-        #     _d.update({_map.get(_pF, None): _map.get(_pT, None)})
-        # # ensure tags not implemented will be mapped to None
-        # if None in _d:
-        #     _d.update({None:None})
-        # # cls.print_cm_log("Mapping to xcTags", _d, level=3, depth=2)
-        # if getAll:
-        #     _d.pop(None, None)
-        #     return tuple(_d.values())
-        # if len(tags) == 1:
-        #     return (_d.get(tags[0], None),)
-        # return tuple(_d.get(_t, None) for _t in tags)
         return control_map._tags_mapping(cls.__xcTagMaps, _pF, _pT, *tags, getAll=getAll)
 
     

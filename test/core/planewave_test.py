@@ -67,15 +67,24 @@ class test_tag_manipulation(ut.TestCase):
         # empty initialization
         _pw = pwc("n a")
         _pw = pwc("n a", encutPw=300, restartWave=0)
-        self.assertListEqual([300, 0], _pw.tag_vals("encutPw", "restartWave"))
-        self.assertListEqual([300, 0], _pw.tag_vals("ENCUT", "restartWave", progName="vasp"))
-        self.assertListEqual([300, 0], _pw.tag_vals("ENCUT", "ISTART", progName="vasp"))
+        self.assertListEqual([300, 0], _pw.tag_vals("n a", "encutPw", "restartWave"))
+        self.assertListEqual([300, 0], _pw.tag_vals("vasp", "ENCUT", "restartWave"))
+        self.assertListEqual([300, 0], _pw.tag_vals("vasp", "ENCUT", "ISTART"))
 
     def test_parse_tags(self):
         _pw = pwc("n a", restartWave=0)
-        self.assertListEqual([0], _pw.tag_vals("restartWave"))
+        self.assertListEqual([0], _pw.tag_vals("n a", "restartWave"))
         _pw.parse_tags("n a", encutPw=200)
-        self.assertListEqual([200], _pw.tag_vals("encutPw"))
+        self.assertListEqual([200], _pw.tag_vals("n a", "encutPw"))
+    
+    def test_pop_delete_tags(self):
+        _pw = pwc("n a", encutPw=300, restartWave=1)
+        self.assertListEqual([300, 1], _pw.pop_tags("n a", "encutPw", "restartWave"))
+        self.assertListEqual([None, None], _pw.tag_vals("n a", "encutPw", "restartWave"))
+        _pw.parse_tags("n a", encutPw=100)
+        self.assertListEqual([100], _pw.tag_vals("vasp", "ENCUT"))
+        _pw.delete_tags("vasp", "ENCUT")
+        self.assertListEqual([None], _pw.tag_vals("n a", "encutPw"))
         
 
 if __name__ == "__main__":

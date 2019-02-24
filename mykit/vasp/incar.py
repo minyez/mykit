@@ -103,8 +103,8 @@ class incar(plane_wave_control, xc_control, program):
         if len(tags) == 0:
             return []
         __vals = [None,] * len(tags)
-        __pwTagVals = plane_wave_control.tag_vals(self, *tags, progName="vasp")
-        __xcTagVals = xc_control.tag_vals(self, *tags, progName="vasp")
+        __pwTagVals = plane_wave_control.tag_vals(self, "vasp", *tags)
+        __xcTagVals = xc_control.tag_vals(self, "vasp", *tags)
         __vaspTagVals = self.__vasptag_vals(*tags)
         __search = ( __pwTagVals, __xcTagVals, __vaspTagVals)
         self.print_log("Searching value in ", __search, depth=2, level=3)

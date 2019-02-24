@@ -41,13 +41,20 @@ class test_map_tags_in_xc(ut.TestCase):
         '''
         self.assertTupleEqual(haveImpleVaspMap, xcc.map_from_xctags(*haveImpleXcTags, progTo="vasp"))
 
-class test_tag_val(ut.TestCase):
+class test_tag_manipulation(ut.TestCase):
 
-    def test_direct(self):
-        _xc = xcc("n a", gga="PE")
-        _xc.parse_tags("n a", metagga="SCAN")
-        self.assertListEqual(["PE"], _xc.tag_vals("gga"))
-        self.assertListEqual(["PE","SCAN"], _xc.tag_vals("gga", "metagga"))
+    def test_direct_get_tag_value(self):
+        _xc = xcc("n a", gga="pbe")
+        _xc.parse_tags("n a", metagga="scan")
+        self.assertListEqual(["pbe"], _xc.tag_vals("n a","gga"))
+        self.assertListEqual(["pbe","scan"], _xc.tag_vals("n a", "gga", "metagga"))
+
+    def test_pop_delete_tag_value(self):
+        _xc = xcc("n a", gga="pbe", metagga="scan")
+        self.assertListEqual(["pbe"], _xc.pop_tags("n a", "gga"))
+        self.assertListEqual([None], _xc.tag_vals("n a", "gga"))
+        _xc.delete_tags("n a", "metagga")
+        self.assertListEqual([None], _xc.tag_vals("n a", "metagga"))
 
 
 if __name__ == '__main__':

@@ -47,6 +47,16 @@ class plane_wave_control(verbose, control_map):
         '''
         self.__parse_pwtags(progName, **pwtags)
 
+    def delete_tags(self, progName, *tags):
+        self.__pop_pwtags(progName, *tags)
+
+    def pop_tags(self, progName, *tags):
+        return self.__pop_pwtags(progName, *tags)
+
+    def __pop_pwtags(self, progName, *tags):
+        _vals = self.__pwtag_vals(progName, *tags, delete=True)
+        return _vals
+
     def __parse_pwtags(self, progName, **pwtags):
         if len(pwtags) == 0:
             return
@@ -63,36 +73,50 @@ class plane_wave_control(verbose, control_map):
                     if _origTag == _pwmap.get(progName, None):
                         self.__pwTags.update({_pwt: _v})
                         break
-        self.print_log("__parse_pwtags: pwTags", self.__pwTags, depth=1, level=3)
+        # self.print_log("__parse_pwtags: pwTags", self.__pwTags, depth=1, level=3)
 
     def __get_one_pwtag(self, pwTagName):
         return self.__pwTags.get(pwTagName, None)
 
-    def tag_vals(self, *tags, progName="n a"):
-        return self.__pwtag_vals(*tags, progName=progName)
-
-    def __pwtag_vals(self, *tags, progName="n a"):
+    def tag_vals(self, progName, *tags):
         '''find values of plane_wave tags from program-specific tags of progName
         
         The tags name depends on the program, i.e. ``progName``.
 
+        Note:
+            Tag in ``tags`` that belong to pwTags will get its value instead of None,
+            even when progName is not assigned ("n a")
+
+        Args:
+            tags (str): names of tags to request values
+            progName (str): the program of which the tags belong to.
+
         Returns:
-            list, if tags is specified, otherwise None
+            list containing all tag values.
         '''
+        return self.__pwtag_vals(progName, *tags)
+
+    def __pwtag_vals(self, progName, *tags, delete=False):
         if len(tags) == 0:
             return []
-        # _vals = []
-        self.print_log("In __pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
+        # self.print_log("In __pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
         _pwtags = plane_wave_control.map2pwtags(*tags, progFrom=progName)
-        self.print_log("_pwtags:", _pwtags, level=3, depth=2)
+        # self.print_log("_pwtags:", _pwtags, level=3, depth=2)
         # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
         # ? get value from plane_wave tag, even progName is not "n a"
         _vals = list(map(self.__get_one_pwtag, _pwtags))
+        # No need to get pwtags again, when program is not assigned
         if progName != "n a":
             for _i, _v in enumerate(_vals):
                 if _v == None:
                     if tags[_i] in self.__pwTags:
                         _vals[_i] = self.__pwTags[tags[_i]]
+        if delete:
+            for _i, _v in enumerate(_pwtags):
+                if _v in self.__pwTags:
+                    del self.__pwTags[_v]
+                if tags[_i] in self.__pwTags:
+                    del self.__pwTags[tags[_i]]
         return _vals
 
     @property
@@ -110,23 +134,6 @@ class plane_wave_control(verbose, control_map):
         '''
         _pF = progFrom.lower()
         _pT = progTo.lower()
-        # _d = {}
-        # # cls.print_cm_log("In map_tags_in_pw", level=3, depth=1)
-        # for _map in cls.__pwTagMaps.values():
-        #     _d.update({_map.get(_pF, None): _map.get(_pT, None)})
-        # # ensure None will be mapped to None, not some 
-        # if None in _d:
-        #     _d.update({None:None})
-        # # cls.print_cm_log("Mapping to pwTags", _d, level=3, depth=2)
-        # if getAll:
-        #     _d.pop(None, None)
-        #     return tuple(_d.values())
-        # if len(tags) == 0:
-        #     return tuple()
-        # if len(tags) == 1:
-        #     return (_d.get(tags[0], None),)
-        # return tuple(_d.get(_t, None) for _t in tags)
-        # TODO map tags by using control method
         return control_map._tags_mapping(cls.__pwTagMaps, _pF, _pT, *tags, getAll=getAll)
 
     @classmethod
