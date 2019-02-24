@@ -7,7 +7,7 @@ import scipy.constants as scc
 
 pi = scc.pi
 # fine stucture constant
-fsa = scc.alpha
+fsca = scc.alpha
 # Avogadro constant, in mol^-1
 nav = scc.N_A
 # Planck constant, in J s
