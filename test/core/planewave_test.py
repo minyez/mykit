@@ -66,16 +66,16 @@ class test_tag_manipulation(ut.TestCase):
     
     def test_initialization(self):
         # empty initialization
-        _pw = pwc()
-        _pw = pwc(encutPw=300, restartWave=0)
+        _pw = pwc("n a")
+        _pw = pwc("n a", encutPw=300, restartWave=0)
         self.assertListEqual([300, 0], _pw.tag_vals("encutPw", "restartWave"))
         self.assertListEqual([300, 0], _pw.tag_vals("ENCUT", "restartWave", progName="vasp"))
         self.assertListEqual([300, 0], _pw.tag_vals("ENCUT", "ISTART", progName="vasp"))
 
     def test_parse_tags(self):
-        _pw = pwc(restartWave=0)
+        _pw = pwc("n a", restartWave=0)
         self.assertListEqual([0], _pw.tag_vals("restartWave"))
-        _pw.parse_tags(encutPw=200)
+        _pw.parse_tags("n a", encutPw=200)
         self.assertListEqual([200], _pw.tag_vals("encutPw"))
         
 

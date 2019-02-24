@@ -9,6 +9,8 @@ class planewaveError(Exception):
 
 class plane_wave_control(verbose):
     '''the base class that manage parameters of plane-wave basis.
+
+    parse_tags method for all base class need to specify a progName argument
     '''
 
     __pwTagMaps = {
@@ -16,30 +18,51 @@ class plane_wave_control(verbose):
                     "encutPwGw": {"n a":"encutPwGw", "vasp": "ENCUTGW"},
                     "restartWave":{"n a": "restartWave", "vasp": "ISTART"},
                     "restartCharg":{"n a": "restartCharg", "vasp": "ICHARG"},
-                    "nscf": {"n a": "nscf", "vasp": "NELM"},
-                    "ediff": {"n a": "ediff", "vasp": "EDIFF"},
-                    "scfAlgo": {"n a": "scfAlgo", "vasp": "ALGO"},
-                    "globalPrec": {"n a": "globalPrec", "vasp": "PREC"},
-                    "ifWriteWave": {"n a": "ifWriteWave", "vasp": "LWAVE"},
-                    "ifWriteCharg": {"n a": "ifWriteCharg", "vasp": "LCHARG"},
+                    # "nscf": {"n a": "nscf", "vasp": "NELM"},
+                    # "ediff": {"n a": "ediff", "vasp": "EDIFF"},
+                    # "scfAlgo": {"n a": "scfAlgo", "vasp": "ALGO"},
+                    # "globalPrec": {"n a": "globalPrec", "vasp": "PREC"},
+                    # "ifWriteWave": {"n a": "ifWriteWave", "vasp": "LWAVE"},
+                    # "ifWriteCharg": {"n a": "ifWriteCharg", "vasp": "LCHARG"},
                    }
+    __pwValMaps = {}
     __pwTags = {}
 
-    def __init__(self, **pwargs):
-        if len(pwargs) > 0:
-            self.__parse_pwtags(**pwargs)
-        else:
-            pass
+    def __init__(self, progName, **pwargs):
+        # if len(pwargs) > 0:
+        self.__parse_pwtags(progName, **pwargs)
+        # else:
+        #     pass
 
-    def parse_tags(self, **pwtags):
-        self.__parse_pwtags(**pwtags)
+    def parse_tags(self, progName, **pwtags):
+        '''parse plane_wave and program-specific tags to pwTags.
 
-    def __parse_pwtags(self, **pwtags):
+        Note:
+            if a program-specific tag and its plane_wave correspondent
+        exists, the program-specific tag value is preferred.
+
+        Args:
+            progName : the name of program that is required.
+        '''
+        self.__parse_pwtags(progName, **pwtags)
+
+    def __parse_pwtags(self, progName, **pwtags):
         if len(pwtags) == 0:
             return
-        for _k, _v in pwtags.items():
-            if _k in self.__pwTagMaps:
-                self.__pwTags.update({_k:_v})
+        for _origTag, _v in pwtags.items():
+            if _origTag == None:
+                continue
+            # check plane_wave tags
+            elif _origTag in self.__pwTagMaps:
+                self.__pwTags.update({_origTag:_v})
+            else:
+            # check program-specific tags
+            # ? Can be optimized
+                for _pwt, _pwmap in self.__pwTagMaps.items():
+                    if _origTag == _pwmap.get(progName, None):
+                        self.__pwTags.update({_pwt: _v})
+                        break
+        self.print_log("__parse_pwtags: pwTags", self.__pwTags, depth=1, level=3)
 
     def __get_one_pwtag(self, pwTagName):
         return self.__pwTags.get(pwTagName, None)

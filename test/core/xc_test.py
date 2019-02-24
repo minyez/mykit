@@ -15,9 +15,9 @@ class test_init(ut.TestCase):
     pass
 
     def test_direct_init(self):
-        _xc = xcc()
-        _xc = xcc(gga="PE")
-        _xc = xcc(encutGw=500)
+        _xc = xcc("n a")
+        _xc = xcc("n a", gga="PE")
+        _xc = xcc("n a", encutGw=500)
 
 
 class test_map_tags_in_xc(ut.TestCase):
@@ -46,8 +46,8 @@ class test_map_tags_in_xc(ut.TestCase):
 class test_tag_val(ut.TestCase):
 
     def test_direct(self):
-        _xc = xcc(gga="PE")
-        _xc.parse_tags(metagga="SCAN")
+        _xc = xcc("n a", gga="PE")
+        _xc.parse_tags("n a", metagga="SCAN")
         self.assertListEqual(["PE"], _xc.tag_vals("gga"))
         self.assertListEqual(["PE","SCAN"], _xc.tag_vals("gga", "metagga"))
 
