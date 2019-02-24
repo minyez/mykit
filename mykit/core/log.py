@@ -68,24 +68,24 @@ class verbose:
             indentLevel=depth, verbLevel=level, file=file)
     
     @classmethod
-    def print_cm_log(cls, *strs, indentLevel=0, verbLevel=0, file=sys.stdout):
+    def print_cm_log(cls, *strs, depth=0, level=0, file=sys.stdout):
         '''print log information for classmethod
 
         This helps the classmethod of the subclasses of verbose to print hierachal log.
         '''
-        assert isinstance(indentLevel, int)
-        _strPref = cls._indent * indentLevel + cls._prefix["log"]
-        if verbLevel <= cls._verbLog:
+        assert isinstance(depth, int)
+        _strPref = cls._indent * depth + cls._prefix["log"]
+        if level <= cls._verbLog:
             print(_strPref, *strs, file=file)
 
     @classmethod
-    def print_cm_warn(cls, *strs, indentLevel=0, verbLevel=0, file=sys.stdout):
+    def print_cm_warn(cls, *strs, depth=0, level=0, file=sys.stdout):
         '''print warning information for classmethod
 
         This helps the classmethod of the subclasses of verbose to print hierachal log.
         '''
-        assert isinstance(indentLevel, int)
-        _strPref = cls._indent * indentLevel + cls._prefix["warn"]
-        if verbLevel <= cls._verbWarn:
+        assert isinstance(depth, int)
+        _strPref = cls._indent * depth + cls._prefix["warn"]
+        if level <= cls._verbWarn:
             print(_strPref, *strs, file=file)
      

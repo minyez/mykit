@@ -7,7 +7,7 @@ class planewaveError(Exception):
     pass
 
 
-class plane_wave(verbose):
+class plane_wave_control(verbose):
     '''the base class that manage parameters of plane-wave basis.
     '''
 
@@ -31,13 +31,13 @@ class plane_wave(verbose):
         else:
             pass
 
-    def parse_tags(self, **keyval):
-        self.__parse_pwtags(**keyval)
+    def parse_tags(self, **pwtags):
+        self.__parse_pwtags(**pwtags)
 
-    def __parse_pwtags(self, **keyval):
-        if len(keyval) == 0:
+    def __parse_pwtags(self, **pwtags):
+        if len(pwtags) == 0:
             return
-        for _k, _v in keyval.items():
+        for _k, _v in pwtags.items():
             if _k in self.__pwTagMaps:
                 self.__pwTags.update({_k:_v})
 
@@ -56,9 +56,11 @@ class plane_wave(verbose):
             list, if tags is specified, otherwise None
         '''
         if len(tags) == 0:
-            return None
+            return []
         # _vals = []
-        _pwtags = plane_wave.map2pwtags(*tags, progFrom=progName)
+        self.print_log("In __pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
+        _pwtags = plane_wave_control.map2pwtags(*tags, progFrom=progName)
+        self.print_log("_pwtags:", _pwtags, level=3, depth=2)
         # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
         # ? get value from plane_wave tag, even progName is not "n a"
         _vals = list(map(self.__get_one_pwtag, _pwtags))
@@ -85,12 +87,15 @@ class plane_wave(verbose):
         _pF = progFrom.lower()
         _pT = progTo.lower()
         _d = {}
+        # cls.print_cm_log("In map_tags_in_pw", level=3, depth=1)
         for _pwt, _map in cls.__pwTagMaps.items():
             _d.update({_map.get(_pF, None): _map.get(_pT, None)})
         # ensure tags not implemented will be mapped to None
-        _d.update({None:None})
+        if None in _d:
+            _d.update({None:None})
+        # cls.print_cm_log("Mapping to pwTags", _d, level=3, depth=2)
         if getAll:
-            _d.pop(None)
+            _d.pop(None, None)
             return tuple(_d.values())
         if len(tags) == 0:
             return tuple()

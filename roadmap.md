@@ -3,7 +3,7 @@
 ## Base classes
 
 - [x] `lattice` 
-- [ ] `plane_wave`  :wrench:
+- [ ] `plane_wave_control`  :wrench:
 - [ ] `xc_control`  :wrench:
 - [ ] `ion_control`
 - [ ] `pseudopot`
@@ -15,3 +15,6 @@
 - [ ] `potcar`
 - [ ] `wavecar`
 - [ ] `outcar`
+
+## Future plan
+- [ ] `control` for `_control` base classes

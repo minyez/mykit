@@ -2,14 +2,15 @@
 '''this module implements the ``incar`` class that manages the VASP input file INCAR
 '''
 import copy
-from mykit.core.planewave import plane_wave, planewaveError
+from mykit.core.planewave import plane_wave_control, planewaveError
 from mykit.core.xc import xc_control, xcError
+
 
 class incarError(Exception):
     pass
 
 
-class incar(plane_wave, xc_control):
+class incar(plane_wave_control, xc_control):
     '''manage tags and IO of VASP input file INCAR
     '''
     # For VASP tags that is not easily to find analogy in other programs
@@ -46,16 +47,15 @@ class incar(plane_wave, xc_control):
     tagAll = tagElecBasic + tagElecAdv + tagElecXc + \
         tagIonBasic + tagIonSlab + tagPara + tagNotCateg
     tagMap2Base = {}
-    __availMap2Pw = plane_wave.map2pwtags(*tagAll, progFrom="vasp")
+    __availMap2Pw = plane_wave_control.map2pwtags(*tagAll, progFrom="vasp")
     # TODO xc map
+    # __availMap2Xc = xc_control.map2xctags(*tagAll, progFrom="vasp")
     __availMap2Xc = (None,)*len(tagAll)
     for _m in [__availMap2Pw, __availMap2Xc]:
         for _i, _v in enumerate(_m):
             if _v != None:
                 tagMap2Base.update({tagAll[_i]:_v})
     
-
-
     __vaspTags = {}
 
     # xc_dict = {
@@ -90,11 +90,39 @@ class incar(plane_wave, xc_control):
         self.__parse_vasptags(**keyval)
 
     def __parse_vasptags(self, **tags):
-        __keyFiltered = []
+        __tagFiltered = []
         if len(tags) != 0:
-            __keyFiltered = self.__filter_tags_incar_not_pw_xc(*tags.keys())
-        for _k in __keyFiltered:
+            __tagFiltered = self.__filter_tags_incar_not_pw_xc(*tags.keys())
+        for _k in __tagFiltered:
             self.__vaspTags.update({_k:tags[_k]})
+
+    def tag_vals(self, *tags):
+
+        # self.print_log("In tag_vals (incar)", level=3, depth=1)
+        if len(tags) == 0:
+            return []
+        __vals = [None,] * len(tags)
+        __pwTagVals = plane_wave_control.tag_vals(self, *tags, progName="vasp")
+        __xcTagVals = xc_control.tag_vals(self, *tags, progName="vasp")
+        # TODO check ion tags
+        __vaspTagVals = self.__vasptag_vals(*tags)
+        __search = ( __pwTagVals, __xcTagVals, __vaspTagVals)
+        # self.print_log("Searching value in ", __search, depth=2, level=3)
+        for _i, _v in enumerate(__vals):
+            if _v is None:
+                for _sList in __search:
+                    if _sList[_i] != None:
+                        __vals[_i] = _sList[_i]
+                        break
+        return __vals
+                
+
+    def __vasptag_vals(self, *tags):
+        if len(tags) == 0:
+            return []
+        if len(tags) == 1:
+            return [self.__vaspTags.get(tags[0]),]
+        return list(map(self.__vaspTags.get, tags))
 
     @classmethod
     def __filter_tags_incar_not_pw_xc(cls, *tags):

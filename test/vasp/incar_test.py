@@ -10,10 +10,10 @@ class test_direct_set(ut.TestCase):
         _ic = incar()
         _ic.parse_tags(encutPw=100)
         self.assertEqual([100], _ic.tag_vals("encutPw"))
-        # self.assertEqual([100], _ic.tag_vals("INCAR"))
-        _ic.parse_tags(INCAR=100)
+        self.assertEqual([100], _ic.tag_vals("ENCUT"))
+        _ic.parse_tags(ENCUT=100)
         self.assertEqual([100], _ic.tag_vals("encutPw"))
-        # self.assertEqual([100], _ic.tag_vals("INCAR"))
+        self.assertEqual([100], _ic.tag_vals("ENCUT"))
 
 
 class test_read_from_file(ut.TestCase):
