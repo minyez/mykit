@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # coding = utf-8
 
+import os
+import re
 import unittest as ut
+import json
 from mykit.vasp.incar import incar, incarError
 
 class test_direct_set(ut.TestCase):
@@ -42,15 +45,39 @@ class test_tag_manipulation(ut.TestCase):
         _ic.delete_tags("gga","ISTART")
         self.assertListEqual([None,]*2, _ic.tag_vals("GGA", "restartWave"))
 
+class test_incar_factory(ut.TestCase):
 
-
-class test_read_from_file(ut.TestCase):
-    pass
-
+    def test_read_from_file(self):
+        _countGood = 0
+        _countBad = 0
+        _countVerified = 0
+        __incarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../testdata')
+        if os.path.isdir(__incarDir):
+            for _f in os.listdir(__incarDir):
+                if re.match('^INCAR_[0-9]+$', _f):
+                    _countGood += 1
+                    _i = _f.split('_')[1]
+                    _path = os.path.join(__incarDir, _f)
+                    _incar = incar.read_from_file(_path)
+                    _verifyJson = os.path.join(__incarDir, 'verify_incar_'+_i+'.json')
+                    if os.path.isfile(_verifyJson):
+                        _vs = _verify_incar_from_json(self, _incar, _verifyJson)
+                        if _vs:
+                            _countVerified += 1
+                if re.match('^bad_INCAR_[0-9]+$', _f):
+                    _countBad += 1
+                    _i = _f.split('_')[2]
+                    _path = os.path.join(__incarDir, _f)
+                    self.assertRaises(incarError, incar.read_from_file, _path)
+        print("{} good INCARs readed ({} verified by JSON file). {} bad INCARs raised.".format(_countGood, _countVerified, _countBad))
 
 
 def _verify_incar_from_json(tc, ic, pathJson):
-    pass
+    assert isinstance(tc, ut.TestCase)
+    assert isinstance(ic, incar)
+    with open(pathJson, 'r') as f:
+        _vDict = json.load(f)
+    return False
 
 
 if __name__ == '__main__':

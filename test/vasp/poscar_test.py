@@ -45,7 +45,7 @@ class poscar_build_test(ut.TestCase):
         self.assertEqual(_poscar.coordSys, "C")
         self.assertEqual(len(_poscar), 4)
 
-    def test_init_from_file(self):
+    def test_read_from_file(self):
 
         _countGood = 0
         _countBad = 0
@@ -98,6 +98,8 @@ def _verify_poscar_by_json(tc, pc, pathJson):
     if "comment" in _vDict:
         tc.assertEqual(_vDict["comment"], pc.comment)
     if "pos" in _vDict:
+        print(pc.pos)
+        print(_vDict["pos"])
         tc.assertTrue(np.array_equal(pc.pos, np.array(_vDict["pos"], dtype=pc._dtype)))
     # put sort check at the end
     if "sorted" in _vDict:

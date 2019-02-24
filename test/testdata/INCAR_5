@@ -1,0 +1,15 @@
+#Si_gw
+System  = Si
+
+PREC = Normal ; ENCUT = 250.0
+
+ALGO = Nothing   ; NELM = 1
+ISMEAR = 0 ; SIGMA = 0.01
+KPAR = 2
+
+NBANDS = 128
+
+LWAVE = .FALSE.
+LOPTICS = .TRUE. ; LPEAD = .TRUE.
+
+OMEGAMAX = 40

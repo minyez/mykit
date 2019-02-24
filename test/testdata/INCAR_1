@@ -1,0 +1,9 @@
+#Si_dft_exc
+System  = Si
+
+PREC = Normal ; ENCUT = 250.0
+
+ISMEAR = 0 ; SIGMA = 0.01
+KPAR = 2
+
+EDIFF = 1.E-8

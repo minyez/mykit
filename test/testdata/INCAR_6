@@ -1,0 +1,15 @@
+#Si_gw
+System  = Si
+
+PREC = Normal ; ENCUT = 250.0
+
+ALGO = scGW0  ; IMIX = 0 ; TIME = 0.8 # default=NORMAL --> sets IALGO=38
+ISMEAR = 0 ; SIGMA = 0.01 # ; NKRED = 2
+ENCUTGW = 150 ; NELM = 7 ;  NOMEGA = 50 ;  OMEGATL = 280
+KPAR = 2
+
+NBANDS =  128
+NBANDSGW = 8
+
+LWAVE = .TRUE.
+PRECFOCK = Normal

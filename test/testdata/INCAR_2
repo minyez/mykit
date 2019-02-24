@@ -1,0 +1,17 @@
+#Si_gw
+System  = Si
+
+PREC = Normal ; ENCUT = 250.0
+
+ALGO = GW0  
+ISMEAR = 0 ; SIGMA = 0.01 
+ENCUTGW = 150 ; NELM = 1 ;  NOMEGA =  50 ;  OMEGATL = 280
+KPAR = 2
+
+#NBANDSO=4 ; NBANDSV=8 ; LADDER=.TRUE. ; LUSEW=.TRUE.
+
+NBANDS = 128
+NBANDSGW = 12
+
+LWAVE = .TRUE.
+PRECFOCK = Normal
