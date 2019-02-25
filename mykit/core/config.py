@@ -29,7 +29,7 @@ class global_config:
     __options = {
         "vaspStdExec" : [which('vasp_std'), 'Path of `vasp_std` executive'],
         "mpiExec"     : [which('mpirun'), 'the MPI executable to use'],
-        "numpyPrec"   : ["float32", 'NumPy precision'],
+        "numpyPrec"   : ["32", 'NumPy precision'],
         "symPrec"     : [1.0E-5, 'Symmetry tolerance for SpgLIB'],
         "vaspPAWPBE"  : [os.environ.get("VASP_POT_PBE", None), 'Path of the VASP PBE PAW directory'],
         "vaspPAWLDA"  : [os.environ.get("VASP_POT_LDA", None), 'Path of the VASP LDA PAW directory'],

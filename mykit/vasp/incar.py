@@ -88,9 +88,25 @@ class incar(plane_wave_control, xc_control):
         super(incar, self).__init__("vasp", **incarArgs)
         self.parse_tags(**incarArgs)
 
+    def __getattr__(self, attr):
+        # pw and xc tags are not achievable by attribute
+        _attr = attr.upper()
+        if _attr not in self.tagAll:
+            raise AttributeError("Invalid VASP tag: {}".format(_attr))
+        return self.tag_vals(_attr)[0]
+    
+    def __setattr__(self, attr, value):
+        # pw and xc tags are not achievable by attribute
+        _attr = attr.upper()
+        if _attr not in self.tagAll:
+            self.print_warn("Invalid VASP tag: {}. Change nothing.".format(_attr),depth=0,level=1)
+        else:
+            self.parse_tags(**{_attr: value})
+            
+
     def parse_tags(self, **keyval):
         if "comment" in keyval:
-            self.comment = keyval["comment"]
+            self.comment = keyval.pop("comment")
         self.print_log("incar Parsing ", keyval, depth=0, level=3)
         plane_wave_control.parse_tags(self, "vasp", **keyval)
         xc_control.parse_tags(self, "vasp", **keyval)
