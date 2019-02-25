@@ -7,6 +7,7 @@
 - [x] `control_map` for `*_control` base classes
     - [x] tags mapping
     - [ ] values mapping
+    - [ ] store all tags (keywords) mapping in a metadata file, like rST
 - [x] `plane_wave_control`
 - [x] `xc_control`
 - [ ] `ion_control`
@@ -15,7 +16,7 @@
 ## VASP
 
 - [x] `incar`
-- [ ] `poscar`  :wrench:
+- [x] `poscar` 
 - [ ] `potcar`
 - [ ] `wavecar`
 - [ ] `outcar`

@@ -228,11 +228,16 @@ class incar(plane_wave_control, xc_control):
                 print(self.comment, file=f)
             for _i, _v in enumerate(__all):
                 if _v != None:
-                    print(self.tagAll[_i], "=", _v, file=f)
+                    if isinstance(_v, (list, tuple)):
+                        print(self.tagAll[_i], "=", *_v, file=f)
+                    elif isinstance(_v, dict):
+                        print(self.tagAll[_i], "=", **_v, file=f)
+                    else:
+                        print(self.tagAll[_i], "=", _v, file=f)
             
 
     @classmethod
-    def analyze_incar_line(cls, lineNum, incarLine, filePath=None):
+    def analyze_incar_line(cls, incarLine, lineNum=-1, filePath=None):
         '''Analyze one INCAR line
         '''
         _kw = {}
@@ -362,7 +367,7 @@ class incar(plane_wave_control, xc_control):
         _lines = _f.readlines()
         _f.close()
         for _i, _l in enumerate(_lines):
-            __tags = cls.analyze_incar_line(_i, _l, filePath=pathIncar)
+            __tags = cls.analyze_incar_line(_l, lineNum=_i, filePath=pathIncar)
             for _k, _v in __tags.items():
                 __incarTags.update({_k:_v})
         return cls(**__incarTags)
