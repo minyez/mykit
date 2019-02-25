@@ -37,5 +37,5 @@ class control_map:
         return tuple(_d.get(_t, None) for _t in tags)
 
     @staticmethod
-    def _val_mapping(m, progFrom, progTo, *val, getAll=False):
+    def _vals_mapping(m, progFrom, progTo, *val, getAll=False):
         raise NotImplementedError

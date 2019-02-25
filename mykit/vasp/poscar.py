@@ -21,19 +21,7 @@ class poscar(lattice):
     # ? But it may be good to let user deal with it, such as using "Fe1", "Fe2" to distinguish.
     # ? In this case, it should be careful to set POTCAR when recognizing atomic information in POSCAR
 
-    def write(self, pathPoscar='POSCAR', backup=False, suffix="_bak"):
-        '''Write POSCAR to path ``toPOSCAR``
-        '''
-        # TODO test it
-        _name = pathPoscar
-        try:
-            assert not os.path.isdir(_name)
-        except AssertionError:
-            raise poscarError("The path to write POSCAR is a directory.")
-        if os.path.isfile(_name) and backup:
-            _bakname = _name + suffix.strip()
-            os.rename(_name, _bakname)
-        with open(_name, 'w') as f:
+    def __print(self, f):
             _cell, _atoms, _pos = self.get_latt()
             _syms, _nats = sym_nat_from_atoms(_atoms)
             print(self.comment, file=f)
@@ -57,6 +45,27 @@ class poscar(lattice):
                     _ainfo = []
                 _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
                 print("  %11.8f  %11.8f  %11.8f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), *_aflag, file=f)
+
+    def print(self):
+        '''Preview the POSCAR output
+        '''
+        from sys import stdout
+        self.__print(stdout)
+
+    def write(self, pathPoscar='POSCAR', backup=False, suffix="_bak"):
+        '''Write POSCAR to path ``toPOSCAR``
+        '''
+        # TODO test it
+        _name = pathPoscar
+        try:
+            assert not os.path.isdir(_name)
+        except AssertionError:
+            raise poscarError("The path to write POSCAR is a directory.")
+        if os.path.isfile(_name) and backup:
+            _bakname = _name + suffix.strip()
+            os.rename(_name, _bakname)
+        with open(_name, 'w') as f:
+            self.__print(f)
     
     @classmethod
     def read_from_file(cls, poscarPath="POSCAR"):

@@ -5,8 +5,9 @@ import copy
 import os
 import re
 from mykit.core.utils import check_duplicates_in_tag_tuple, trim_comment
-from mykit.core.planewave import plane_wave_control, planewaveError
-from mykit.core.xc import xc_control, xcError
+from mykit.core.planewave import planewave_control
+from mykit.core.xc import xc_control
+from mykit.core.ion import ion_control
 # from mykit.core.program import program
 
 
@@ -14,18 +15,18 @@ class incarError(Exception):
     pass
 
 
-# TODO check ion tags
-class incar(plane_wave_control, xc_control):
+class incar(planewave_control, xc_control, ion_control):
     '''manage tags and IO of VASP input file INCAR
     '''
     # For VASP tags that is not easily to find analogy in other programs
     comment = ''
+    # TODO implement the tags in a metadata file
     vaspOnlyTags = ()
     tagElecBasic = (
-                    "ISTART","LWAVE","IALGO","EDIFF","ENCUT","NBANDS",
-                    "ICHARG","LCHARG","PREC","ALGO","ISPIN","NELM",
-                    "ISMEAR","SIGMA","NELECT","LREAL",'NELMIN',
-                    'MAGMOM','LMAXTAU',
+                    "ISTART","ICHARG","LREAL","EDIFF","ENCUT","NBANDS",
+                    "ISMEAR","SIGMA","PREC","ISPIN","NELM",
+                    "NELECT","LCHARG",'NELMIN',
+                    'MAGMOM','LMAXTAU',"LWAVE","ALGO","IALGO"
                    )
     tagElecXc = (
                     "GGA","LHFCALC","PRECFOCK",'METAGGA',
@@ -60,24 +61,13 @@ class incar(plane_wave_control, xc_control):
         raise incarError("Found tag duplicate in VASP tags. '{}' at Index {}".format(tagAll[__hasDup], __hasDup))
     # Map INCAR tags to tags of base classes
     tagMap2Base = {}
-    __availMap2Pw = plane_wave_control.map2pwtags(*tagAll, progFrom="vasp")
+    __availMap2Pw = planewave_control.map2pwtags(*tagAll, progFrom="vasp")
     __availMap2Xc = xc_control.map2xctags(*tagAll, progFrom="vasp")
     for _m in [__availMap2Pw, __availMap2Xc]:
         for _i, _v in enumerate(_m):
             if _v != None:
                 tagMap2Base.update({tagAll[_i]:_v})
     __vaspTags = {}
-
-    # xc_dict = {
-    #             # 'LDA'    : {'GGA'     : 'CA'} ,
-    #             # 'PBE'    : {'GGA'     : 'PE'} ,
-    #             # 'PBESOL' : {'GGA'     : 'PS'} ,
-    #             # 'RPBE'   : {'GGA'     : 'RP'} ,
-    #             # 'SCAN'   : {'METAGGA' : 'SCAN', 'LASPH' : '.TRUE.'} ,
-    #             # 'PBE0'   : self.tag_PBE0  ,
-    #             # 'HSE06'  : self.tag_HSE06 ,
-    #             # 'HF'     : self.tag_HF
-    #             }
 
     def __init__(self, **incarArgs):
         '''Initialize
@@ -102,13 +92,21 @@ class incar(plane_wave_control, xc_control):
         #     raise AttributeError("Invalid VASP tag: {}. Change nothing.".format(_attr))
         # else:
         # self.parse_tags(**{attr: value})
-            
+
+    def __str__(self):
+        __vals = self.tag_vals(*self.tagAll)
+        __dict = {self.tagAll[_i]:_v for _i, _v in enumerate(__vals) if _v != None}
+        return "{}".format(__dict)
+
+    def __repr__(self):
+        return self.__str__()
+
 
     def parse_tags(self, **keyval):
         if "comment" in keyval:
             self.comment = keyval.pop("comment")
         self.print_log("incar Parsing ", keyval, depth=0, level=3)
-        plane_wave_control.parse_tags(self, "vasp", **keyval)
+        planewave_control.parse_tags(self, "vasp", **keyval)
         xc_control.parse_tags(self, "vasp", **keyval)
         self.__parse_vasptags(**keyval)
         self.print_log("incar Finish parsing.\n", depth=0, level=3)
@@ -133,7 +131,6 @@ class incar(plane_wave_control, xc_control):
     def tag_vals(self, *tags):
         return self.__tag_vals(*tags)
 
-    # TODO implement delete
     def __tag_vals(self, *tags, delete=False):
         assert isinstance(delete, bool)
         self.print_log("In tag_vals (incar)", level=3, depth=0)
@@ -141,10 +138,10 @@ class incar(plane_wave_control, xc_control):
             return []
         __vals = [None,] * len(tags)
         if delete:
-            __pwTagVals = plane_wave_control.pop_tags(self, "vasp", *tags)
+            __pwTagVals = planewave_control.pop_tags(self, "vasp", *tags)
             __xcTagVals = xc_control.pop_tags(self, "vasp", *tags)
         else:
-            __pwTagVals = plane_wave_control.tag_vals(self, "vasp", *tags)
+            __pwTagVals = planewave_control.tag_vals(self, "vasp", *tags)
             __xcTagVals = xc_control.tag_vals(self, "vasp", *tags)
         __vaspTagVals = self.__vasptag_vals(*tags, delete=delete)
         __search = ( __pwTagVals, __xcTagVals, __vaspTagVals)
@@ -204,7 +201,33 @@ class incar(plane_wave_control, xc_control):
         #         _filter2.append(_t)
         # return _filter2
 
-    # TODO test write method
+    def __print(self, f):
+        '''Print the incar tag-value dict to file-type f in the INCAR format
+
+        Args:
+            f (file-type)
+        '''
+        __all = self.tag_vals(*self.tagAll)
+        if self.comment != '':
+            print(self.comment, file=f)
+        for _i, _v in enumerate(__all):
+            if _v != None:
+                if isinstance(_v, (list, tuple)):
+                    print(self.tagAll[_i], "=", *_v, file=f)
+                elif isinstance(_v, dict):
+                    print(self.tagAll[_i], "=", **_v, file=f)
+                elif isinstance(_v, bool):
+                    print({True:".TRUE.", False:".FALSE."}[_v])
+                else:
+                    print(self.tagAll[_i], "=", _v, file=f)
+
+    def print(self):
+        '''Preview the INCAR output
+        '''
+        from sys import stdout
+        self.__print(stdout)
+
+    # TODO test write method, i.e. __print method
     def write(self, pathIncar="INCAR", backup=False, suffix="_bak"):
         '''Write to INCAR file at pathIncar. 
 
@@ -222,20 +245,10 @@ class incar(plane_wave_control, xc_control):
         if os.path.isfile(_name) and backup:
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
-        __all = self.tag_vals(*self.tagAll)
-        with open(_name,'w') as f:
-            if self.comment != '':
-                print(self.comment, file=f)
-            for _i, _v in enumerate(__all):
-                if _v != None:
-                    if isinstance(_v, (list, tuple)):
-                        print(self.tagAll[_i], "=", *_v, file=f)
-                    elif isinstance(_v, dict):
-                        print(self.tagAll[_i], "=", **_v, file=f)
-                    else:
-                        print(self.tagAll[_i], "=", _v, file=f)
+        with open(_name, 'w') as f:
+            self.__print(f)
             
-
+    # Factory methods
     @classmethod
     def analyze_incar_line(cls, incarLine, lineNum=-1, filePath=None):
         '''Analyze one INCAR line
@@ -373,9 +386,19 @@ class incar(plane_wave_control, xc_control):
         return cls(**__incarTags)
         
     @classmethod
-    def minimal_electric(cls, pathIncar=None):
+    def minimal_electric(cls, **kwargs):
         pass
+    # xc_dict = {
+    #             # 'LDA'    : {'GGA'     : 'CA'} ,
+    #             # 'PBE'    : {'GGA'     : 'PE'} ,
+    #             # 'PBESOL' : {'GGA'     : 'PS'} ,
+    #             # 'RPBE'   : {'GGA'     : 'RP'} ,
+    #             # 'SCAN'   : {'METAGGA' : 'SCAN', 'LASPH' : '.TRUE.'} ,
+    #             # 'PBE0'   : self.tag_PBE0  ,
+    #             # 'HSE06'  : self.tag_HSE06 ,
+    #             # 'HF'     : self.tag_HF
+    #             }
 
     @classmethod
-    def minimal_ion_opt(cls, pathIncar=None):
+    def minimal_ion_opt(cls, **kwargs):
         pass

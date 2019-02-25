@@ -8,7 +8,7 @@ class planewaveError(Exception):
     pass
 
 
-class plane_wave_control(verbose, control_map):
+class planewave_control(verbose, control_map):
     '''the base class that manage parameters of plane-wave basis.
 
     parse_tags method for all base class need to specify a progName argument
@@ -102,7 +102,7 @@ class plane_wave_control(verbose, control_map):
         if len(tags) == 0:
             return []
         self.print_log("In __pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
-        _pwtags = plane_wave_control.map2pwtags(*tags, progFrom=progName)
+        _pwtags = planewave_control.map2pwtags(*tags, progFrom=progName)
         # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
         # ? get value from plane_wave tag, even progName is not "n a"
         _vals = list(map(self.__get_one_pwtag, _pwtags))

@@ -2,7 +2,7 @@
 # coding = utf-8
 
 import unittest as ut
-from mykit.core.planewave import plane_wave_control as pwc
+from mykit.core.planewave import planewave_control as pwc
 from mykit.core.planewave import planewaveError
 
 # These test tuples should have the same length
