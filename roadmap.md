@@ -2,21 +2,20 @@
 
 ## Base classes
 
-- [x] `lattice` 
-- [ ] `plane_wave_control`  :wrench:
-- [ ] `xc_control`  :wrench:
+- [x] `lattice`
+    - [ ] Factory methods for common crystals
+- [x] `control_map` for `*_control` base classes
+    - [x] tags mapping
+    - [ ] values mapping
+- [x] `plane_wave_control`
+- [x] `xc_control`
 - [ ] `ion_control`
 - [ ] `pseudopot`
 
 ## VASP
 
-- [ ] `incar`  :wrench:
+- [x] `incar`
 - [ ] `poscar`  :wrench:
 - [ ] `potcar`
 - [ ] `wavecar`
 - [ ] `outcar`
-
-## Future plan
-- [x] `control_map` for `*_control` base classes
-  - [x] tags mapping
-  - [ ] values mapping :wrench:

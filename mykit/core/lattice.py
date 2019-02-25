@@ -73,6 +73,12 @@ class lattice(prec, verbose):
         if isinstance(index, str):
             return self.get_sym_index(index)
 
+    def __str__(self):
+        return "{}\nCell:\n {}\nAtoms: {}\nPositions:\n {}\nUnit: {}\nCoordinates in {}".format(self.comment, self.cell, self.atoms, self.pos, self.unit, self.coordSys)
+    
+    def __repr__(self):
+        return self.__str__()
+
     def __parse_kwargs(self, **kwargs):
         if 'unit' in kwargs:
             self.__unit = kwargs['unit'].lower()
@@ -344,6 +350,23 @@ class lattice(prec, verbose):
             return False
         return True
 
+    @property
+    def recpCellIn2Pi(self):
+        '''Reciprocal lattice vectors in 2Pi unit^-1
+        '''
+        b = []
+        for i in range(3):
+            j = (i + 1) % 3
+            k = (i + 2) % 3
+            b.append(np.cross(self.cell[j,:], self.cell[k,:]))
+        return np.array(b, dtype=self._dtype) / self.vol
+
+    @property
+    def recpCell(self):
+        '''Reciprocal lattice vectors in unit^-1
+        '''
+        return self.recpCellIn2Pi * 2.0E0 * pi
+
     def fix_all(self):
         '''Fix all atoms.
         '''
@@ -431,21 +454,12 @@ class lattice(prec, verbose):
 #    def __calc_latt(self):
 #         '''Calculate lattice information from the input
 #         '''
-#         vol = np.linalg.det(self.a)
-#         self.vol = vol
 
-#         # reciprocal lattice vectors in 2pi
-#         b = []
-#         for i in range(3):
-#             j = (i + 1) % 3
-#             k = (i + 2) % 3
-#             b.append(np.cross(self.a[j], self.a[k]))
 #         b = np.array(b, dtype=self._dtype)
 #         self.b2Pi = np.divide(b, vol)
 #         self.b = np.multiply(b, 2.0 * pi)
-
 #         # length of lattice vectors
-#         self.bLen = np.array([np.linalg.norm(x) for x in self.b], dtype=self._dtype)
+#         _b = np.array([np.linalg.norm(x) for x in self.b], dtype=self._dtype)
 #         self.bLen2Pi = np.array([np.linalg.norm(x) for x in self.b2Pi], dtype=self._dtype)
 #         self.volBZ2Pi = np.linalg.det(self.b2Pi)
 #         self.volBZ = np.linalg.det(b)
@@ -487,6 +501,8 @@ class lattice(prec, verbose):
             alatt (float) : the lattice constant (a)
             unit (str) : the unit system to use
         '''
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Primitive cubic lattice"})
         return cls.__bravis_c(atom, 'P', aLatt=aLatt, **kwargs)
 
     @classmethod
@@ -498,6 +514,8 @@ class lattice(prec, verbose):
             alatt (float) : the lattice constant (a)
             unit (str) : the unit system to use
         '''
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Body-centered cubic lattice"})
         return cls.__bravis_c(atom, 'I', aLatt=aLatt, **kwargs)
 
     @classmethod
@@ -509,6 +527,8 @@ class lattice(prec, verbose):
             alatt (float) : the lattice constant (a)
             unit (str) : the unit system to use
         '''
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Face-centered cubic lattice"})
         return cls.__bravis_c(atom, 'F', aLatt=aLatt, **kwargs)
     
 
@@ -566,7 +586,7 @@ def sym_nat_from_atoms(atoms):
             _natsDict[_at] += 1
         else:
             _syms.append(_at)
-            _natsDict.update({_at: 0})
+            _natsDict.update({_at: 1})
     return _syms, [_natsDict[_at] for _at in _syms]
 
 

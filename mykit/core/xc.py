@@ -14,7 +14,11 @@ class xc_control(verbose, control_map):
 
     __xcTagMaps = {
                     "gga" : {"n a":"gga", "vasp":"GGA"},
-                    "metagga" : {"n a":"metagga", "vasp":"METAGGA"}
+                    "metagga" : {"n a":"metagga", "vasp":"METAGGA"},
+                    "percentGgaCorr": {"n a": "percentGgaCorr", "vasp":"AGGAC"},
+                    "percentGgaExch": {"n a": "percentGgaExch", "vasp":"AGGAX"},
+                    "percentExactExch": {"n a": "percentExactExch", "vasp":"AExX"},
+                    "percentLdaCorr": {"n a": "percentLdaCorr", "vasp":"ALDAC"},
                   }
     __xcValMaps = {}
     __xcTags = {}

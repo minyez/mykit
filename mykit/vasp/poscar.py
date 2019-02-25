@@ -4,6 +4,7 @@
 import numpy as np
 import logging
 import string
+import os
 from mykit.core.lattice import lattice, atoms_from_sym_nat, sym_nat_from_atoms
 
 class poscarError(Exception):
@@ -20,19 +21,28 @@ class poscar(lattice):
     # ? But it may be good to let user deal with it, such as using "Fe1", "Fe2" to distinguish.
     # ? In this case, it should be careful to set POTCAR when recognizing atomic information in POSCAR
 
-    def write(self, toPOSCAR='POSCAR'):
+    def write(self, pathPoscar='POSCAR', backup=False, suffix="_bak"):
         '''Write POSCAR to path ``toPOSCAR``
         '''
         # TODO test it
-        with open(toPOSCAR, 'w') as f:
+        _name = pathPoscar
+        try:
+            assert not os.path.isdir(_name)
+        except AssertionError:
+            raise poscarError("The path to write POSCAR is a directory.")
+        if os.path.isfile(_name) and backup:
+            _bakname = _name + suffix.strip()
+            os.rename(_name, _bakname)
+        with open(_name, 'w') as f:
             _cell, _atoms, _pos = self.get_latt()
             _syms, _nats = sym_nat_from_atoms(_atoms)
             print(self.comment, file=f)
-            print(1.00000, file=f)
+            print("1.00000", file=f)
             for i in range(3):
-                print(_cell[i,:], file=f)
-            print(_syms, file=f)
-            print(_nats, file=f)
+                print("  %11.7f  %11.7f  %11.7f" % (self.cell[i,0], self.cell[i,1], self.cell[i,2]), file=f)
+            if _syms[0] != "A":
+                print(*_syms, file=f)
+            print(*_nats, file=f)
             if self.useSelDyn:
                 print("Selective Dynamics", file=f)
             print({"D": "Direct", "C": "Cart"}[self.coordSys], file=f)
@@ -41,8 +51,12 @@ class poscar(lattice):
                     _dyn = self.sdFlags(ia=i)
                 else:
                     _dyn = []
-                _dynFlag = [{True:"T", False:"F"}[_d] for _d in _dyn] + ['#{}'.format(_atoms[i])]
-                print(self[i], _dynFlag, file=f)
+                if _syms[0] != "A":
+                    _ainfo = ['#{}'.format(_atoms[i])]
+                else:
+                    _ainfo = []
+                _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
+                print("  %11.8f  %11.8f  %11.8f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), *_aflag, file=f)
     
     @classmethod
     def read_from_file(cls, poscarPath="POSCAR"):

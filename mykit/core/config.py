@@ -41,10 +41,14 @@ class global_config:
 
     @classmethod
     def _get_dejson_path(cls):
+        '''Get the path of the JSON configuration file
+        '''
         return cls.__configPathDe
 
     @classmethod
     def _env_var(cls):
+        '''Get the name of the environment variable to set the path of custom configuration file
+        '''
         return cls.__envVar
 
     @classmethod

@@ -88,20 +88,20 @@ class incar(plane_wave_control, xc_control):
         super(incar, self).__init__("vasp", **incarArgs)
         self.parse_tags(**incarArgs)
 
-    def __getattr__(self, attr):
+    # def __getattr__(self, attr):
         # pw and xc tags are not achievable by attribute
-        _attr = attr.upper()
-        if _attr not in self.tagAll:
-            raise AttributeError("Invalid VASP tag: {}".format(_attr))
-        return self.tag_vals(_attr)[0]
+        # _attr = attr.upper()
+        # if _attr not in self.tagAll:
+        #     raise AttributeError("Invalid VASP tag: {}".format(_attr))
+        # return self.tag_vals(attr)[0]
     
-    def __setattr__(self, attr, value):
+    # def __setattr__(self, attr, value):
         # pw and xc tags are not achievable by attribute
-        _attr = attr.upper()
-        if _attr not in self.tagAll:
-            self.print_warn("Invalid VASP tag: {}. Change nothing.".format(_attr),depth=0,level=1)
-        else:
-            self.parse_tags(**{_attr: value})
+        # _attr = attr.upper()
+        # if _attr not in self.tagAll:
+        #     raise AttributeError("Invalid VASP tag: {}. Change nothing.".format(_attr))
+        # else:
+        # self.parse_tags(**{attr: value})
             
 
     def parse_tags(self, **keyval):
@@ -210,16 +210,18 @@ class incar(plane_wave_control, xc_control):
 
         Args:
             pathIncar (str) : the path to write the INCAR file.
-            backup (bool) : when there is file 
+            backup (bool) : when set True and file ``pathIncar`` exists, the original file will
+                be backuped as ``pathIncar``+``suffix``
             suffix (str) : suffix of the backup INCAR file
         '''
         _name = pathIncar
         try:
             assert not os.path.isdir(_name)
         except AssertionError:
-            raise incarError("The path to write file is a directory.")
+            raise incarError("The path to write INCAR is a directory.")
         if os.path.isfile(_name) and backup:
-            _name = _name + suffix.strip()
+            _bakname = _name + suffix.strip()
+            os.rename(_name, _bakname)
         __all = self.tag_vals(*self.tagAll)
         with open(_name,'w') as f:
             if self.comment != '':
