@@ -45,7 +45,7 @@ class poscar(lattice):
                 else:
                     _ainfo = []
                 _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
-                print("%15.9f %15.9f %15.9f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), *_aflag, file=f)
+                print("%15.9f  %15.9f %15.9f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), *_aflag, file=f)
 
     def print(self):
         '''Preview the POSCAR output
