@@ -28,7 +28,7 @@ class poscar(lattice):
             print(self.comment, file=f)
             print("1.00000", file=f)
             for i in range(3):
-                print("  %11.7f  %11.7f  %11.7f" % (self.cell[i,0], self.cell[i,1], self.cell[i,2]), file=f)
+                print("  %12.8f  %12.8f  %12.8f" % (self.cell[i,0], self.cell[i,1], self.cell[i,2]), file=f)
             if _syms[0] != "A":
                 print(*_syms, file=f)
             print(*_nats, file=f)
@@ -45,7 +45,7 @@ class poscar(lattice):
                 else:
                     _ainfo = []
                 _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
-                print("  %11.8f  %11.8f  %11.8f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), *_aflag, file=f)
+                print("%15.9f %15.9f %15.9f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), *_aflag, file=f)
 
     def print(self):
         '''Preview the POSCAR output
