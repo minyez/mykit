@@ -274,12 +274,18 @@ class lattice(prec, verbose):
             self.__pos = self.__pos * scale
 
     # TODO add more atoms
-    def add_atom(self):
-        raise NotImplementedError
+    # def add_atom(self):
+    #     raise NotImplementedError
 
     # TODO move atom
     def __move(self, ia):
         raise NotImplementedError
+
+    def __move_all(self, shift):
+        '''Move all atoms by a shift
+        '''
+        assert np.shape(shift) == (3,)
+        np.add(self.__pos, shift, out=self.__pos)
 
     @property
     def center(self):
@@ -301,9 +307,11 @@ class lattice(prec, verbose):
         # _posSum = np.sum(self.__pos * _dup[:, None], axis=0)
         return _posSum / _n
 
-    # ! Not work now
     def centering(self, axis=0):
         '''Centering the atoms along axes. Mainly use for slab model.
+
+        TODO:
+            For now not work when there is atom at origin along the axis
 
         Args:
             axis (int or iterable of int) : the axes along which the atoms will be centered.
@@ -320,7 +328,7 @@ class lattice(prec, verbose):
             ia = i + 1
             if ia not in _aList:
                 _shift[i] = 0.0
-        self.__pos = np.add(self.__pos, _shift)
+        self.__move_all(_shift)
         #     if self.check_vacuum_pos(zdirt):
         #         self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
         #         continue
@@ -503,6 +511,16 @@ class lattice(prec, verbose):
                     _new.update({_ia: select_dyn_flag_from_axis(axis, relax=True)})
             self.__set_sdFlags(_new)
 
+    def relax_from_top(self, n, axis=3):
+        '''Set all atoms fixed, and relax the n atoms from top along axis
+        '''
+        pass
+
+    def fix_from_center(self, n, axis=3):
+        '''Set all atoms relaxed, and fix the n atoms from the middle along axis
+        '''
+        pass
+
     def __set_sdFlags(self, selectDyn):
         assert isinstance(selectDyn, dict)
         for _k in selectDyn:
@@ -539,19 +557,6 @@ class lattice(prec, verbose):
             for _i in self.__selectDyn:
                 _flag[_i] = self.__selectDyn[_i]
         return _flag
-
-# TODO make reciprocal lattice information to properties
-#    def __calc_latt(self):
-#         '''Calculate lattice information from the input
-#         '''
-
-#         b = np.array(b, dtype=self._dtype)
-#         self.b2Pi = np.divide(b, vol)
-#         self.b = np.multiply(b, 2.0 * pi)
-#         # length of lattice vectors
-#         _b = np.array([np.linalg.norm(x) for x in self.b], dtype=self._dtype)
-#         self.volBZ2Pi = np.linalg.det(self.b2Pi)
-#         self.volBZ = np.linalg.det(b)
 
     # * Factory methods
     @classmethod
@@ -723,7 +728,7 @@ def axis_list(axis):
                     _aList.append(_a)
     return tuple(_aList)
 
-# TODO general this function to mirrors in n-th lattice shell
+
 def periodic_duplicates_in_cell(directCoord):
     '''Return the coordinates and numbers of the duplicates of an atom in a cell due to lattice translation symmetry
 
@@ -733,6 +738,9 @@ def periodic_duplicates_in_cell(directCoord):
     Note:
         The function works only when each component belongs to [0,1)
     
+    TODO:
+        Generalize this function to mirrors in n-th lattice shell
+
     Returns:
         tuple : the coordinates of all the atom duplicates due to transilational symmetry
         int : the number of duplicates

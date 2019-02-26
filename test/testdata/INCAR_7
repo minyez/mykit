@@ -1,0 +1,27 @@
+FeP, slab calculation
+
+ISTART = 1
+ENCUT = 400.0 
+NELMIN = 8      #   do a minimum of ten electronic steps 
+EDIFF  = 1E-5   #   high accuracy for electronic groundstate
+NELM   = 150
+EDIFFG = -0.01  #   small tolerance for ions 
+NSW    = 50    #   20 ionic steps should do
+MAXMIX = 80     #   keep dielectric function between ionic movements, speedup
+
+ISIF = 2
+IBRION =  1     #   use RMM-DIIS algorithm for ions
+NFREE  =  10    #   estimated degrees of freedom of the system
+IDIPOL = 3   # dipole correction in z-axis
+DIPOL = 0.5 0.5 0.5
+LVTOT = .TRUE.
+LVHAR = .TRUE.
+LORBIT = 11
+# NEDOS  = 3000
+ISYM = 0
+
+ISMEAR = 2
+SIGMA = 0.2
+
+GGA = RP
+NPAR  = 4

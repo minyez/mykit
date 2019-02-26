@@ -25,7 +25,7 @@ class incar(planewave_control, xc_control, ion_control):
     tagElecBasic = (
                     "ISTART","ICHARG","LREAL","EDIFF","ENCUT","NBANDS",
                     "ISMEAR","SIGMA","PREC","ISPIN","NELM",
-                    "NELECT","LCHARG",'NELMIN',
+                    "NELECT","LCHARG",'NELMIN','LORBIT',
                     'MAGMOM','LMAXTAU',"LWAVE","ALGO","IALGO"
                    )
     tagElecXc = (
@@ -41,6 +41,7 @@ class incar(planewave_control, xc_control, ion_control):
                  )
     tagIonBasic = (
                     'NSW','IBRION','ISIF','ISYM','EDIFFG','POTIM',
+                    'NFREE',
                   )
     tagIonSlab = (
                     "LDIPOL","DIPOL","IDIPOL",'LVHAR','LVTOT',
@@ -48,13 +49,16 @@ class incar(planewave_control, xc_control, ion_control):
     tagPara = (
                     'NPAR','NCORE','KPAR',
               )
+    tagMixing = (
+                    'MAXMIX','AMIX','BMIX','IMIX',
+                )
     tagNotCateg = (
                     'LMIXTAU','NWRITE','SYSTEM',
-                    'AMIX','BMIX','IMIX','TIME','SMASS',
+                    'TIME','SMASS',
                   )
     __tagNotImple= ()
     tagAll = tagElecBasic + tagElecAdv + tagElecXc + \
-        tagIonBasic + tagIonSlab + tagPara + tagNotCateg
+        tagIonBasic + tagIonSlab + tagPara + tagMixing + tagNotCateg
     # ? Maybe move this duplicate check to unittest
     __hasDup = check_duplicates_in_tag_tuple(tagAll)
     if __hasDup > 0:

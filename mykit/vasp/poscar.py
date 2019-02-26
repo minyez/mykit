@@ -6,6 +6,7 @@ import logging
 import string
 import os
 from mykit.core.lattice import lattice, atoms_from_sym_nat, sym_nat_from_atoms
+from mykit.core.utils import trim_comment
 
 class poscarError(Exception):
     pass
@@ -99,7 +100,7 @@ class poscar(lattice):
             _line = _f.readline().strip()
             if _line[0] in string.ascii_letters:
                 _symTypes = _line.split()
-                _line = _f.readline()
+                _line = _f.readline().strip()
             if _line[0] in string.digits[1:]:
                 _natomsType = [int(_x) for _x in _line.split()]
                 if _symTypes is None:
@@ -107,7 +108,7 @@ class poscar(lattice):
                     _symTypes = [string.ascii_lowercase[_i] for _i,_x in enumerate(_natomsType)]
             else:
                 _f.close()
-                raise poscarError("Bad POSCAR format: {}".format(poscarPath))
+                raise poscarError("Bad POSCAR atomic format: {}".format(poscarPath))
             try:
                 assert len(_symTypes) == len(_natomsType)
             except AssertionError:
@@ -132,12 +133,7 @@ class poscar(lattice):
             for _i in range(_natoms):
                 try:
                     _line = _f.readline().strip()
-                    _words = _line.split()
-                    # remove comment part
-                    for _j, _s in enumerate(_words):
-                        if _s.startswith("#"):
-                            _words = _words[0:_j+1]
-                            break
+                    _words = trim_comment(_line, r'[\#]').split()
                     _pos.append([float(_x) for _x in _words[:3]])
                     if __flagSelDyn:
                         __fixFlag = [__fixDict.get(_words[i]) for i in range(3,6)]

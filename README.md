@@ -1,6 +1,6 @@
 # mykit
 
-Personal toolkit for manuplating input and output files of various electornic structure calculators for periodic systems.
+Personal toolkit for manipulating input and output files of various electornic structure calculators for periodic systems.
 
 *Note: Under extensive refactoring. Limited functionality and faaaaaar from the objectives.*
 
