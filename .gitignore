@@ -4,6 +4,7 @@
 __pycache__
 *.swp
 *.o
+*/.cache
 # ignore the test files
 #POTCAR
 #POSCAR

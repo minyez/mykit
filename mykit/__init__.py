@@ -6,4 +6,4 @@ from mykit import w2k
 from mykit import vasp
 from mykit import abinit
 from mykit import gap
-from mykit import gpaw
+#from mykit import gpaw

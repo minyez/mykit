@@ -6,7 +6,7 @@ import tempfile
 import json
 import os
 import sys
-from shutil import copy2, which
+from shutil import copy2, which, move
 from mykit.core.config import global_config
 
 class check_glocal_config(ut.TestCase):
@@ -24,7 +24,7 @@ class check_glocal_config(ut.TestCase):
         _hasCustom = os.path.isfile(_path)
         if _hasCustom:
             _tf = tempfile.NamedTemporaryFile()
-            os.rename(_path, _tf.name)
+            move(_path, _tf.name)
 
         self.assertEqual(which('mpirun'), global_config.get('mpiExec'))
         self.assertEqual((which('vasp_std'), which('mpirun')), \
