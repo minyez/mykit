@@ -64,7 +64,7 @@ class xc_control(verbose, control_map):
         The tags name depends on the program, i.e. ``progName``.
 
         Note:
-            Tag in ``tags`` that belong to xcTags will get its value instead of None,
+            Tags that belong to xcTagMaps will also get their value instead of None,
             even when progName is not assigned ("n a")
 
         Args:

@@ -4,7 +4,8 @@
 import unittest
 import numpy as np
 from mykit.core.constants import au2ang, ang2au
-from mykit.core.lattice import lattice, latticeError
+from mykit.core.lattice import lattice, latticeError, periodic_duplicates_in_cell, \
+                                axis_list, atoms_from_sym_nat, sym_nat_from_atoms
 
 class simple_cubic_lattice(unittest.TestCase):
 
@@ -240,10 +241,41 @@ class lattice_sort(unittest.TestCase):
                 _latt.pos[:,_axis]))
 
 
-class lattice_element_utils(unittest.TestCase):
-    '''Test the utils to manipulate element lists for ``lattice`` use
+class test_lattice_utils(unittest.TestCase):
+    '''Test the utils for ``lattice`` use
     '''
-    pass
+    
+    def test_periodic_duplates_in_cell(self):
+
+        _dupcs, _n = periodic_duplicates_in_cell([0.2, 0.4, 0.8])
+        self.assertEqual(1, _n)
+        self.assertTupleEqual(([0.2, 0.4, 0.8],), _dupcs)
+        _dupcs, _n = periodic_duplicates_in_cell([0.2, 0.4, 0])
+        self.assertEqual(2, _n)
+        self.assertTupleEqual(([0.2, 0.4, 0], [0.2, 0.4, 1.0]), _dupcs)
+        _dupcs, _n = periodic_duplicates_in_cell([0, 0.4, 0])
+        self.assertEqual(4, _n)
+        self.assertTupleEqual(([0, 0.4, 0], [1.0, 0.4, 0], [0, 0.4, 1.0], [1.0, 0.4, 1.0]), _dupcs)
+        _dupcs, _n = periodic_duplicates_in_cell([0, 0, 0])
+        self.assertEqual(8, _n)
+        self.assertTupleEqual(([0, 0, 0], [1.0, 0, 0], [0, 1.0, 0], [1.0, 1.0, 0], [0, 0, 1.0], [1.0, 0, 1.0], [0, 1.0, 1.0], [1.0, 1.0, 1.0]), _dupcs)
+        self.assertRaises(AssertionError, periodic_duplicates_in_cell, [1.0,0.0,0.0])
+        self.assertRaises(AssertionError, periodic_duplicates_in_cell, [1.1,0.0,0.0])
+    
+    def test_axis_list(self):
+        self.assertSetEqual(set([1,2,3]), set(axis_list(0)))
+        self.assertSetEqual(set([1,]), set(axis_list(1)))
+        self.assertSetEqual(set([1,2]), set(axis_list([1,2])))
+
+    def test_atoms_from_sym_nat(self):
+        _atoms = atoms_from_sym_nat(["C", "Al", "F"], [2, 3, 1])
+        self.assertListEqual(_atoms, ["C", "C", "Al", "Al", "Al", "F"])
+
+    def test_sym_nat_from_atoms(self):
+        _syms, _nats = sym_nat_from_atoms(["C", "Al", "Al", "C", "Al", "F"])
+        self.assertListEqual(_syms, ["C", "Al", "F"])
+        self.assertListEqual(_nats, [2, 3, 1])
+
 
 if __name__ == "__main__":
     unittest.main()
