@@ -11,7 +11,7 @@ from mykit.core.ion import ion_control
 # from mykit.core.program import program
 
 
-class incarError(Exception):
+class IncarError(Exception):
     pass
 
 
@@ -62,11 +62,11 @@ class incar(planewave_control, xc_control, ion_control):
     # ? Maybe move this duplicate check to unittest
     __hasDup = check_duplicates_in_tag_tuple(tagAll)
     if __hasDup > 0:
-        raise incarError("Found tag duplicate in VASP tags. '{}' at Index {}".format(tagAll[__hasDup], __hasDup))
+        raise IncarError("Found tag duplicate in VASP tags. '{}' at Index {}".format(tagAll[__hasDup], __hasDup))
     # Map INCAR tags to tags of base classes
     tagMap2Base = {}
-    __availMap2Pw = planewave_control.map2pwtags(*tagAll, progFrom="vasp")
-    __availMap2Xc = xc_control.map2xctags(*tagAll, progFrom="vasp")
+    __availMap2Pw = planewave_control.map_to_mykit_tags(*tagAll, progFrom="vasp")
+    __availMap2Xc = xc_control.map_to_mykit_tags(*tagAll, progFrom="vasp")
     for _m in [__availMap2Pw, __availMap2Xc]:
         for _i, _v in enumerate(_m):
             if _v != None:
@@ -245,14 +245,13 @@ class incar(planewave_control, xc_control, ion_control):
         try:
             assert not os.path.isdir(_name)
         except AssertionError:
-            raise incarError("The path to write INCAR is a directory.")
+            raise IncarError("The path to write INCAR is a directory.")
         if os.path.isfile(_name) and backup:
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
         with open(_name, 'w') as f:
             self.__print(f)
             
-    # Factory methods
     @classmethod
     def analyze_incar_line(cls, incarLine, lineNum=-1, filePath=None):
         '''Analyze one INCAR line
@@ -277,8 +276,8 @@ class incar(planewave_control, xc_control, ion_control):
                 if '=' not in _l:
                     return {}
         # Here start treat a line that possibly contain INCAR tags
-        # 1. Trim line after # and !
-        _l = trim_comment(_l, r"[\#\!]").strip()
+        # 1. Trim line after #, ! and (
+        _l = trim_comment(_l, r"[\#\!\(]").strip()
         if len(_l) == 0:
             return _kw
         # 2. Split the line by semicolon.
@@ -290,30 +289,30 @@ class incar(planewave_control, xc_control, ion_control):
             kv = _w.split("=")
             # At this stage, this must be 2-member pair as there can be one equality only.
             if len(kv) != 2:
-                raise incarError("Bad tag pair on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                raise IncarError("Bad tag pair on line {}. INCAR path: {}".format(lineNum+1, filePath))
             _k, _v = (_w.strip() for _w in kv)
             _k = _k.upper()
             # Check if tag is valid
             if _k not in cls.tagAll:
-                raise incarError("Unknown INCAR tag on line {}: {}. INCAR path: {}".format(lineNum+1, _k, filePath))
+                raise IncarError("Unknown INCAR tag on line {}: {}. INCAR path: {}".format(lineNum+1, _k, filePath))
             # Special case for SYSTEM key: the value is always string
             if _k == "SYSTEM":
                 _kw.update({_k: _v})
                 continue
             # Take care of the value. Raise for empty value
             if len(_v) == 0:
-                raise incarError("Unknown INCAR tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                raise IncarError("Unknown INCAR tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
             # Bool
             if _v.startswith('.'):
                 if not _v.endswith('.'):
-                    raise incarError("Bad bool tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                    raise IncarError("Bad bool tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
                 _v = _v[1:-1].lower()
                 if _v == 'false':
                     _kw.update({_k:False})
                 elif _v == 'true':
                     _kw.update({_k:True})
                 else:
-                    raise incarError("Bad bool tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                    raise IncarError("Bad bool tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
             else:
                 # TODO this part can be extracted to form an independent string function
                 # check if _v is a list of value
@@ -334,11 +333,11 @@ class incar(planewave_control, xc_control, ion_control):
                             else:
                                 # a single string with * in it, such as MAGMOM
                                 if len(_vList) != 2:
-                                    raise incarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                                    raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
                                 try:
                                     _v = [float(_vList[1]),] * int(_vList[0])
                                 except ValueError:
-                                    raise incarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                                    raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
                     _kw.update({_k:_v})
                 else:
                     newList = []
@@ -364,22 +363,23 @@ class incar(planewave_control, xc_control, ion_control):
                                 else:
                                     # a string with * in it, such as MAGMOM: 48*5.0 16*1.0
                                     if len(_vList) != 2:
-                                        raise incarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                                        raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
                                     try:
                                         _magSeg = [float(_vList[1]),] * int(_vList[0])
                                         newList.extend(_magSeg)
                                     except ValueError:
-                                        raise incarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
+                                        raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
                     _kw.update({_k: newList})
         return _kw
                     
+    # Factory methods
     @classmethod
     def read_from_file(cls, pathIncar="INCAR"):
         '''Generate ``incar`` instance from INCAR file
         '''
         __incarTags = {}
         if not os.path.isfile(pathIncar):
-            raise incarError("Invalid path of INCAR file: {}".format(pathIncar))
+            raise IncarError("Invalid path of INCAR file: {}".format(pathIncar))
         _f = open(pathIncar, 'r')
         _lines = _f.readlines()
         _f.close()

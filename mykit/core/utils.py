@@ -80,6 +80,7 @@ def data_normalization(data, scale=1.0, normByPeak=True):
         return _a / _max
     return _a / _sum 
 
+
 def find_data_extreme(data):
     '''Find the point at which the data reaches extrema
 

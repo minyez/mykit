@@ -24,9 +24,9 @@ class global_config:
     When setting up option in ``.mykit_config.json``, you need only to set the
     option value.
     '''
-    __envVar = "MYKIT_CONFIG"
-    __configPathDe = os.path.expanduser("~/.mykit_config.json")
-    __options = {
+    _envVar = "MYKIT_CONFIG"
+    _configPathDe = os.path.expanduser("~/.mykit_config.json")
+    _options = {
         "vaspStdExec" : [which('vasp_std'), 'Path of `vasp_std` executive'],
         "mpiExec"     : [which('mpirun'), 'the MPI executable to use'],
         "numpyPrec"   : ["64", 'NumPy precision'],
@@ -37,26 +37,26 @@ class global_config:
         "verbLog"     : [1, 'Verbose level of log information'],
         "logIndent"   : [4, 'Spaces to differentiate logs at different depth'],
     }
-    __optKeys = __options.keys()
+    _optKeys = _options.keys()
 
     @classmethod
     def _get_dejson_path(cls):
         '''Get the path of the JSON configuration file
         '''
-        return cls.__configPathDe
+        return cls._configPathDe
 
     @classmethod
-    def _env_var(cls):
+    def env_var(cls):
         '''Get the name of the environment variable to set the path of custom configuration file
         '''
-        return cls.__envVar
+        return cls._envVar
 
     @classmethod
-    def __get_opt(cls, key, doc=False):
+    def _get_opt(cls, key, doc=False):
         assert isinstance(doc, bool)
-        _v = cls.__options.get(key, None)
-        if _v is not None:
-            return _v[int(doc)]
+        v = cls._options.get(key, None)
+        if v is not None:
+            return v[int(doc)]
         return {True: '', False: None}[doc]
 
     @classmethod
@@ -78,27 +78,27 @@ class global_config:
         if len(opts) == 0:
             return {True: '', False: None}[doc]
         try:
-            __path = os.environ[cls._env_var()]
+            path = os.environ[cls.env_var()]
         except KeyError:
-            __path = cls.__configPathDe
-        if os.path.isfile(__path):
-            logging.info("Load custrom from {}".format(__path))
+            path = cls._configPathDe
+        if os.path.isfile(path):
+            logging.info("Load custrom from {}".format(path))
             try:
-                with open(__path, 'r') as _h:
-                    __json = json.load(_h)
-                for key in __json:
-                    if key in cls.__optKeys:
-                        cls.__options[key][0] = __json[key]
+                with open(path, 'r') as h:
+                    _j = json.load(h)
+                for key in _j:
+                    if key in cls._optKeys:
+                        cls._options[key][0] = _j[key]
             except json.JSONDecodeError as _err:
-                logging.warn("Fail to load custrom configuration from {}. Use default".format(__path))
+                logging.warn("Fail to load custrom configuration from {}. Use default".format(path))
                 # Error in decoding the JSON config
                 pass
         if len(opts) == 1:
-            return cls.__get_opt(opts[0], doc=doc)
-        return tuple(map(functools.partial(cls.__get_opt, doc=doc), opts))
+            return cls._get_opt(opts[0], doc=doc)
+        return tuple(map(functools.partial(cls._get_opt, doc=doc), opts))
 
     @classmethod
     def print_opts(cls):
         '''print out all configurable options'''
-        pprint(cls.__options.keys())
+        pprint(cls._options.keys())
 

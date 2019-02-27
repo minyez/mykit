@@ -7,7 +7,7 @@ import unittest as ut
 import json
 import numpy as np
 import logging
-from mykit.vasp.poscar import poscar, poscarError
+from mykit.vasp.poscar import poscar, PoscarError
 from mykit.core.lattice import lattice
 
 class poscar_build_test(ut.TestCase):
@@ -67,7 +67,7 @@ class poscar_build_test(ut.TestCase):
                     _countBad += 1
                     _i = _f.split('_')[2]
                     _path = os.path.join(__poscarDir, _f)
-                    self.assertRaises(poscarError, poscar.read_from_file, _path)
+                    self.assertRaises(PoscarError, poscar.read_from_file, _path)
         print("{} good POSCARs readed ({} verified by JSON file). {} bad POSCARs raised.".format(_countGood, _countVerified, _countBad))
 
 

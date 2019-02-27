@@ -8,7 +8,7 @@ import os
 from mykit.core.lattice import lattice, atoms_from_sym_nat, sym_nat_from_atoms
 from mykit.core.utils import trim_comment
 
-class poscarError(Exception):
+class PoscarError(Exception):
     pass
 
 class poscar(lattice):
@@ -61,7 +61,7 @@ class poscar(lattice):
         try:
             assert not os.path.isdir(_name)
         except AssertionError:
-            raise poscarError("The path to write POSCAR is a directory.")
+            raise PoscarError("The path to write POSCAR is a directory.")
         if os.path.isfile(_name) and backup:
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
@@ -82,7 +82,7 @@ class poscar(lattice):
         try:
             _f = open(poscarPath, 'r')
         except FileNotFoundError as _err:
-            raise poscarError("Fail to open file: {}".format(poscarPath))
+            raise PoscarError("Fail to open file: {}".format(poscarPath))
         else:
             _symTypes = None
             # line 1: comment on system
@@ -95,7 +95,7 @@ class poscar(lattice):
                 _cell = np.array(_cell, dtype=cls._dtype) * _scale
             except ValueError:
                 _f.close()
-                raise poscarError("Bad lattice vector: {}".format(poscarPath))
+                raise PoscarError("Bad lattice vector: {}".format(poscarPath))
             # Next 2 or 1 line(s), depend on whether element symbols are typed or not
             _line = _f.readline().strip()
             if _line[0] in string.ascii_letters:
@@ -108,12 +108,12 @@ class poscar(lattice):
                     _symTypes = [string.ascii_lowercase[_i] for _i,_x in enumerate(_natomsType)]
             else:
                 _f.close()
-                raise poscarError("Bad POSCAR atomic format: {}".format(poscarPath))
+                raise PoscarError("Bad POSCAR atomic format: {}".format(poscarPath))
             try:
                 assert len(_symTypes) == len(_natomsType)
             except AssertionError:
                 _f.close()
-                raise poscarError("Inconsistent input of symbol and numbers of atom: {}".format(poscarPath))
+                raise PoscarError("Inconsistent input of symbol and numbers of atom: {}".format(poscarPath))
             _atoms = atoms_from_sym_nat(_symTypes, _natomsType)
             _natoms = sum(_natomsType)
             # Next 2 or 1 line(s), depend on whether 'selective dynamics line' is typed
@@ -124,7 +124,7 @@ class poscar(lattice):
             if _line[0].upper() in ["C", "K", "D"]:
                 _cs = {"C":"C", "K":"C", "D":"D"}[_line[0].upper()]
             else:
-                raise poscarError("Bad coordinate system: {}".format(poscarPath))
+                raise PoscarError("Bad coordinate system: {}".format(poscarPath))
             # Next _natoms lines: read atomic position and selective dynamics flag
             _pos = []
             _mult = 1.0E0
@@ -145,10 +145,10 @@ class poscar(lattice):
                             __fix.update({_i: __fixFlag})
                 except ValueError:
                     _f.close()
-                    raise poscarError("Bad internal coordinates at atom line {}: {}".format(_i+1, poscarPath))
+                    raise PoscarError("Bad internal coordinates at atom line {}: {}".format(_i+1, poscarPath))
                 except IndexError:
                     _f.close()
-                    raise poscarError("Bad selective dynamics flag at atom line {}: {}".format(_i+1, poscarPath))
+                    raise PoscarError("Bad selective dynamics flag at atom line {}: {}".format(_i+1, poscarPath))
             _pos = np.array(_pos, dtype=cls._dtype) * _mult
             _f.close()
             return cls(_cell, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix, comment=_comment)
@@ -160,7 +160,7 @@ class poscar(lattice):
         try:
             assert isinstance(latt, lattice)
         except AssertionError:
-            raise poscarError("the input is not a lattice instance")
+            raise PoscarError("the input is not a lattice instance")
         __kw = latt.get_kwargs()
         return cls(*latt.get_latt(), **__kw)
 

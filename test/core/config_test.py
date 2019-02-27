@@ -18,7 +18,7 @@ class check_glocal_config(ut.TestCase):
         self.assertEqual((None, None), global_config.get('opt_not_exist1', 'opt_not_exist2'))
 
     def test_defaults(self):
-        os.unsetenv(global_config._env_var())
+        os.unsetenv(global_config.env_var())
         # back up the custom JSON if there is
         _path = global_config._get_dejson_path()
         _hasCustom = os.path.isfile(_path)
@@ -39,7 +39,7 @@ class check_glocal_config(ut.TestCase):
 
     def test_load_custom(self):
         '''test custom configuration file created temporarily'''
-        _envVar = global_config._env_var()
+        _envVar = global_config.env_var()
         _opts = {"vaspStdExec": "vasp"}
 
         _tf = tempfile.NamedTemporaryFile()

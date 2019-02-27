@@ -3,20 +3,20 @@
 
 import unittest as ut
 from mykit.core.planewave import planewave_control as pwc
-from mykit.core.planewave import planewaveError
+from mykit.core.planewave import PlanewaveError
 
 # These test tuples should have the same length
-haveImplePwTags = ("encutPw", "encutPwGw", "restartWave")
-haveImpleVaspMap = ("ENCUT", "ENCUTGW", "ISTART")
-haveImpleQeMap = (None, None, None)
-haveImpleAbiMap = (None, None, None)
+haveImplePwTags = ("encutPw",)
+haveImpleVaspMap = ("ENCUT",)
+haveImpleQeMap = (None,)
+haveImpleAbiMap = (None,)
 
 class test_pwtags(ut.TestCase):
 
     pass
 
     def test_implemented_pwtags(self):
-        implePwTags = pwc.map2pwtags(getAll=True)
+        implePwTags = pwc.map_to_mykit_tags(getAll=True)
         for _t in haveImplePwTags:
             self.assertIn(_t, implePwTags)
 
@@ -30,33 +30,33 @@ class test_tag_mapping(ut.TestCase):
         '''
         for _i,_v in enumerate(haveImplePwTags):
             # single tag
-            self.assertTupleEqual((haveImplePwTags[_i],), pwc.map_tags_in_pw(haveImplePwTags[_i]))
-            self.assertTupleEqual((haveImpleVaspMap[_i],),pwc.map_tags_in_pw(haveImplePwTags[_i], progTo="vasp"))
-            self.assertTupleEqual((haveImpleQeMap[_i],), pwc.map_tags_in_pw(haveImplePwTags[_i], progTo="qe"))
+            self.assertTupleEqual((haveImplePwTags[_i],), pwc.map_tags(haveImplePwTags[_i]))
+            self.assertTupleEqual((haveImpleVaspMap[_i],),pwc.map_tags(haveImplePwTags[_i], progTo="vasp"))
+            self.assertTupleEqual((haveImpleQeMap[_i],), pwc.map_tags(haveImplePwTags[_i], progTo="qe"))
             # multiple tags
-            self.assertTupleEqual(haveImplePwTags[:_i+1], pwc.map_tags_in_pw(*haveImplePwTags[:_i+1]))
-            self.assertTupleEqual(haveImpleVaspMap[:_i+1],pwc.map_tags_in_pw(*haveImplePwTags[:_i+1], progTo="vasp"))
-            self.assertTupleEqual(haveImpleQeMap[:_i+1], pwc.map_tags_in_pw(*haveImplePwTags[:_i+1], progTo="qe"))
+            self.assertTupleEqual(haveImplePwTags[:_i+1], pwc.map_tags(*haveImplePwTags[:_i+1]))
+            self.assertTupleEqual(haveImpleVaspMap[:_i+1],pwc.map_tags(*haveImplePwTags[:_i+1], progTo="vasp"))
+            self.assertTupleEqual(haveImpleQeMap[:_i+1], pwc.map_tags(*haveImplePwTags[:_i+1], progTo="qe"))
 
         # Map to plane_wave tags from tags for particular program. 
         # Should be noticed that the tag list to map from should not have None in it, 
         # otherwise the following test must fail.
-        self.assertTupleEqual(haveImplePwTags, pwc.map_tags_in_pw(*haveImpleVaspMap, progFrom="vasp"))
+        self.assertTupleEqual(haveImplePwTags, pwc.map_tags(*haveImpleVaspMap, progFrom="vasp"))
 
         # Map tags from one program to another.
         # Should be noticed that the tag list to map from should not have None in it, 
         # otherwise the following test must fail.
-        self.assertTupleEqual(haveImpleQeMap, pwc.map_tags_in_pw(*haveImpleVaspMap, progFrom="vasp", progTo="qe"))
+        self.assertTupleEqual(haveImpleQeMap, pwc.map_tags(*haveImpleVaspMap, progFrom="vasp", progTo="qe"))
     
     def test_map2pwtags(self):
         '''Test the map2pwtags classmethod
         '''
-        self.assertTupleEqual(haveImplePwTags, pwc.map2pwtags(*haveImplePwTags, progFrom="n a"))
+        self.assertTupleEqual(haveImplePwTags, pwc.map_to_mykit_tags(*haveImplePwTags, progFrom="mykit"))
         
     def test_map_from_pwtags(self):
         '''Test the map_from_pwtags classmethod
         '''
-        self.assertTupleEqual(haveImpleVaspMap, pwc.map_from_pwtags(*haveImplePwTags, progTo="vasp"))
+        self.assertTupleEqual(haveImplePwTags, pwc.map_from_mykit_tags(*haveImplePwTags, progTo="mykit"))
         
 
 class test_tag_manipulation(ut.TestCase):
@@ -65,26 +65,27 @@ class test_tag_manipulation(ut.TestCase):
     
     def test_initialization(self):
         # empty initialization
-        _pw = pwc("n a")
-        _pw = pwc("n a", encutPw=300, restartWave=0)
-        self.assertListEqual([300, 0], _pw.tag_vals("n a", "encutPw", "restartWave"))
-        self.assertListEqual([300, 0], _pw.tag_vals("vasp", "ENCUT", "restartWave"))
-        self.assertListEqual([300, 0], _pw.tag_vals("vasp", "ENCUT", "ISTART"))
+        _pw = pwc("mykit")
+        _pw = pwc("mykit", encutPw=300)
+        self.assertListEqual([300, None], _pw.tag_vals("mykit", "encutPw", "restartWave"))
+        self.assertListEqual([300, None], _pw.tag_vals("vasp", "ENCUT", "restartWave"))
+        self.assertListEqual([300, None], _pw.tag_vals("vasp", "ENCUT", "ISTART"))
 
     def test_parse_tags(self):
-        _pw = pwc("n a", restartWave=0)
-        self.assertListEqual([0], _pw.tag_vals("n a", "restartWave"))
-        _pw.parse_tags("n a", encutPw=200)
-        self.assertListEqual([200], _pw.tag_vals("n a", "encutPw"))
+        _pw = pwc("mykit", restartWave=0)
+        # Tag that does not exist in planewave_control
+        self.assertListEqual([None], _pw.tag_vals("mykit", "restartWave"))
+        _pw.parse_tags("mykit", encutPw=200)
+        self.assertListEqual([200], _pw.tag_vals("mykit", "encutPw"))
     
     def test_pop_delete_tags(self):
-        _pw = pwc("n a", encutPw=300, restartWave=1)
-        self.assertListEqual([300, 1], _pw.pop_tags("n a", "encutPw", "restartWave"))
-        self.assertListEqual([None, None], _pw.tag_vals("n a", "encutPw", "restartWave"))
-        _pw.parse_tags("n a", encutPw=100)
+        _pw = pwc("mykit", encutPw=300)
+        self.assertListEqual([300,], _pw.pop_tags("mykit", "encutPw"))
+        self.assertListEqual([None,], _pw.tag_vals("mykit", "encutPw"))
+        _pw.parse_tags("mykit", encutPw=100)
         self.assertListEqual([100], _pw.tag_vals("vasp", "ENCUT"))
         _pw.delete_tags("vasp", "ENCUT")
-        self.assertListEqual([None], _pw.tag_vals("n a", "encutPw"))
+        self.assertListEqual([None], _pw.tag_vals("mykit", "encutPw"))
         
 
 if __name__ == "__main__":
