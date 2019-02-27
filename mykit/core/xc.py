@@ -2,7 +2,7 @@
 '''
 '''
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper
+from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict
 
 class XCError(Exception):
     pass
@@ -34,16 +34,17 @@ class xc_control(verbose, prog_mapper):
         if len(xctags) == 0:
             return
         self.print_log(" In _parse_xctags. Parsing: ", xctags, depth=1, level=3)
-        for _origTag, _v in xctags.items():
-            if _origTag == None:
-                continue
-            elif _origTag in self._xcTagMaps:
-                self._xcTags.update({_origTag:_v})
-            else:
-                for _xct, _xcmap in self._xcTagMaps.items():
-                    if _origTag == _xcmap.get(progName, None):
-                        self._xcTags.update({_xct: _v})
-                        break
+        # for _origTag, _v in xctags.items():
+        #     if _origTag == None:
+        #         continue
+        #     elif _origTag in self._xcTagMaps:
+        #         self._xcTags.update({_origTag:_v})
+        #     else:
+        #         for _xct, _xcmap in self._xcTagMaps.items():
+        #             if _origTag == _xcmap.get(progName, None):
+        #                 self._xcTags.update({_xct: _v})
+        #                 break
+        parse_to_tagdict(self._xcTags, self._xcTagMaps, progName, **xctags)
         self.print_log("End _parse_xctags, now xcTags: ", self._xcTags, depth=1, level=3)
         
     def delete_tags(self, progName, *tags):
@@ -55,6 +56,9 @@ class xc_control(verbose, prog_mapper):
     def _pop_xctags(self, progName, *tags):
         _vals = self._xctag_vals(progName, *tags, delete=True)
         return _vals
+
+    def _get_one_mykit_tag(self, pwTagName):
+        return self._get_one_xctag(pwTagName)
 
     def _get_one_xctag(self, xcTagName):
         return self._xcTags.get(xcTagName, None)

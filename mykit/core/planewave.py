@@ -2,7 +2,7 @@
 '''define classes and functions related to plane wave basis setup
 '''
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper
+from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict
 
 class PlanewaveError(Exception):
     pass
@@ -53,19 +53,20 @@ class planewave_control(verbose, prog_mapper):
             return
         self.print_log(" In _parse_pwtags. Parsing {} Tags ".format(progName), pwtags, depth=1, level=3)
         self.print_log("                    pwTags before:", self._pwTags, depth=1, level=3)
-        for _origTag, _v in pwtags.items():
-            if _origTag == None:
-                continue
-            # check plane_wave tags
-            elif _origTag in self._pwTagMaps.keys():
-                self._pwTags.update({_origTag:_v})
-            else:
-            # check program-specific tags
-            # ? Can be optimized
-                for _pwt, _pwmap in self._pwTagMaps.items():
-                    if _origTag == _pwmap.get(progName, None):
-                        self._pwTags.update({_pwt: _v})
-                        break
+        # for _origTag, _v in pwtags.items():
+        #     if _origTag == None:
+        #         continue
+        #     # check plane_wave tags
+        #     elif _origTag in self._pwTagMaps.keys():
+        #         self._pwTags.update({_origTag:_v})
+        #     else:
+        #     # check program-specific tags
+        #     # ? Can be optimized
+        #         for _pwt, _pwmap in self._pwTagMaps.items():
+        #             if _origTag == _pwmap.get(progName, None):
+        #                 self._pwTags.update({_pwt: _v})
+        #                 break
+        parse_to_tagdict(self._pwTags, self._pwTagMaps, progName, **pwtags)
         self.print_log("End _parse_pwtags. pwTags after:", self._pwTags, depth=1, level=3)
 
     def delete_tags(self, progName, *tags):
@@ -77,6 +78,9 @@ class planewave_control(verbose, prog_mapper):
     def _pop_pwtags(self, progName, *tags):
         _vals = self._pwtag_vals(progName, *tags, delete=True)
         return _vals
+
+    def _get_one_mykit_tag(self, pwTagName):
+        return self._get_one_pwtag(pwTagName)
 
     def _get_one_pwtag(self, pwTagName):
         return self._pwTags.get(pwTagName, None)
@@ -103,24 +107,24 @@ class planewave_control(verbose, prog_mapper):
         if len(tags) == 0:
             return []
         self.print_log("In _pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
-        _pwtags = planewave_control.map_to_mykit_tags(*tags, progFrom=progName)
+        pwtags = planewave_control.map_to_mykit_tags(*tags, progFrom=progName)
         # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
         # ? get value from plane_wave tag, even progName is not "mykit"
-        _vals = list(map(self._get_one_pwtag, _pwtags))
+        vals = list(map(self._get_one_mykit_tag, pwtags))
         # No need to get pwtags again, when program is not assigned
         if progName != "mykit":
-            for _i, _v in enumerate(_vals):
+            for _i, _v in enumerate(vals):
                 if _v == None:
                     if tags[_i] in self._pwTags:
-                        _vals[_i] = self._pwTags[tags[_i]]
+                        vals[_i] = self._pwTags[tags[_i]]
         if delete:
-            for _i, _v in enumerate(_pwtags):
+            for _i, _v in enumerate(pwtags):
                 if _v in self._pwTags:
                     del self._pwTags[_v]
                 if tags[_i] in self._pwTags:
                     del self._pwTags[tags[_i]]
-        self.print_log("Found values:", _vals, level=3, depth=3)
-        return _vals
+        self.print_log("Found values:", vals, level=3, depth=3)
+        return vals
 
     @property
     def pwTags(self):
