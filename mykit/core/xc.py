@@ -12,14 +12,15 @@ class xc_control(verbose, prog_mapper):
     '''base class that controls exchange-correlation setup
     '''
 
-    _xcTagMaps = {
-                    "gga" : {"mykit":"gga", "vasp":"GGA"},
-                    "metagga" : {"mykit":"metagga", "vasp":"METAGGA"},
-                    "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
-                    "percentGgaExch": {"mykit": "percentGgaExch", "vasp":"AGGAX"},
-                    "percentExactExch": {"mykit": "percentExactExch", "vasp":"AExX"},
-                    "percentLdaCorr": {"mykit": "percentLdaCorr", "vasp":"ALDAC"},
-                  }
+    _tagMaps = {
+                "gga" : {"mykit":"gga", "vasp":"GGA"},
+                "metagga" : {"mykit":"metagga", "vasp":"METAGGA"},
+                "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
+                "percentGgaExch": {"mykit": "percentGgaExch", "vasp":"AGGAX"},
+                "percentExactExch": {"mykit": "percentExactExch", "vasp":"AExX"},
+                "percentLdaCorr": {"mykit": "percentLdaCorr", "vasp":"ALDAC"},
+               }
+    _xcTagMaps = _tagMaps
     _xcValMaps = {}
     _xcTags = {}
 

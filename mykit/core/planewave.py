@@ -14,18 +14,19 @@ class planewave_control(verbose, prog_mapper):
     parse_tags method for all base class need to specify a progName argument
     '''
 
-    _pwTagMaps = {
-                    "encutPw":{"mykit":"encutPw", "vasp": "ENCUT"},
-                    # "encutPwGw": {"mykit":"encutPwGw", "vasp": "ENCUTGW"},
-                    # "restartWave":{"mykit": "restartWave", "vasp": "ISTART"},
-                    # "restartCharg":{"mykit": "restartCharg", "vasp": "ICHARG"},
-                    # "nscf": {"mykit": "nscf", "vasp": "NELM"},
-                    # "ediff": {"mykit": "ediff", "vasp": "EDIFF"},
-                    # "scfAlgo": {"mykit": "scfAlgo", "vasp": "ALGO"},
-                    # "globalPrec": {"mykit": "globalPrec", "vasp": "PREC"},
-                    # "ifWriteWave": {"mykit": "ifWriteWave", "vasp": "LWAVE"},
-                    # "ifWriteCharg": {"mykit": "ifWriteCharg", "vasp": "LCHARG"},
-                   }
+    _tagMaps = {
+                "encutPw":{"mykit":"encutPw", "vasp": "ENCUT"},
+                # "encutPwGw": {"mykit":"encutPwGw", "vasp": "ENCUTGW"},
+                # "restartWave":{"mykit": "restartWave", "vasp": "ISTART"},
+                # "restartCharg":{"mykit": "restartCharg", "vasp": "ICHARG"},
+                # "nscf": {"mykit": "nscf", "vasp": "NELM"},
+                # "ediff": {"mykit": "ediff", "vasp": "EDIFF"},
+                # "scfAlgo": {"mykit": "scfAlgo", "vasp": "ALGO"},
+                # "globalPrec": {"mykit": "globalPrec", "vasp": "PREC"},
+                # "ifWriteWave": {"mykit": "ifWriteWave", "vasp": "LWAVE"},
+                # "ifWriteCharg": {"mykit": "ifWriteCharg", "vasp": "LCHARG"},
+               }
+    _pwTagMaps = _tagMaps
     _pwValMaps = {}
     _pwTags = {}
 

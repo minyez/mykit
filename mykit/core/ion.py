@@ -9,9 +9,10 @@ class ionError(Exception):
 
 class ion_control(verbose):
 
-    _ionTagMaps = {
-                    "nSteps": {"mykit": "nSteps"}
-                }
+    _tagMaps = {
+                "nSteps": {"mykit": "nSteps"}
+               }
+    _ionTagMaps = _tagMaps
 
     def __init__(self, **iontags):
         pass

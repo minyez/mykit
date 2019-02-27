@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 from mykit.core.log import verbose
 
+class ControllerError(Exception):
+    pass
 
 class prog_mapper(ABC):
     '''Abstract base class for the mapping utility of controller classes.
@@ -13,11 +15,16 @@ class prog_mapper(ABC):
     TODO:
         Values mapping
     '''
+    @property
+    @abstractmethod
+    def _tagMaps(self):
+        return NotImplementedError
+
     @classmethod
     @abstractmethod
     def map_tags(cls, *tags, progFrom="mykit", progTo="mykit", getAll=False):
-        _mapDict = {"sometag": {"mykit": "sometag"}}
-        return tags_mapping(_mapDict, progFrom, progTo, *tags, getAll=getAll)
+        # return tags_mapping(cls._tagMaps, progFrom, progTo, *tags, getAll=False)
+        raise NotImplementedError
 
     @classmethod
     def map_to_mykit_tags(cls, *tags, progFrom="mykit", getAll=False):
@@ -37,19 +44,19 @@ class parser(ABC):
     '''
     @abstractmethod
     def parse_tags(self, *kwargs):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def pop_tags(self, *kwargs):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def delete_tags(self, *kwargs):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def tag_vals(self, *kwargs):
-        pass
+        raise NotImplementedError
 
 
 def tags_mapping(mapDict, progFrom, progTo, *tags, getAll=False):
@@ -61,9 +68,12 @@ def tags_mapping(mapDict, progFrom, progTo, *tags, getAll=False):
     '''
     if len(tags) == 0 and not getAll:
         return tuple()
-    assert isinstance(mapDict, dict)
-    for _v in mapDict.values():
-        assert isinstance(_v, dict)
+    try:
+        assert isinstance(mapDict, dict)
+        for _v in mapDict.values():
+            assert isinstance(_v, dict)
+    except AssertionError:
+        raise ControllerError
     verbose.print_cm_log("Use mapDict:", mapDict, level=4, depth=1)
     verbose.print_cm_log("To map tags:", tags, level=4, depth=1)
     _pF = progFrom

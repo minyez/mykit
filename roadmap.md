@@ -5,7 +5,8 @@
 
 ### `_control` module
 
-Functions for `*_control` classes to deal with tag and value mapping
+Functions and classes to deal with tag and value mapping. 
+They lie the basis for input conversion
   - [x] tags mapping
   - [ ] values mapping
   - [ ] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
@@ -17,7 +18,10 @@ Functions for `*_control` classes to deal with tag and value mapping
 
 ### Input controllers
 
-Map name and value of parameter tags between different simulation programs
+Input controller classes are named as `*_control`, and are subclasses of abstract base
+classes defined in the `_control` module.
+They are metaclasses of the class of program-specific input files, 
+and help map name and value of parameter tags between different simulation programs.
   - [x] `planewave_control`: plane-wave basis
   - [x] `xc_control`: (semi-)local exchange-correlation tags
   - [ ] `ion_control`: ion relaxation
