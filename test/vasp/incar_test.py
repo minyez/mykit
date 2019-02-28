@@ -56,6 +56,23 @@ class test_tag_manipulation(ut.TestCase):
         _ic.delete_tags("gga","ISTART")
         self.assertListEqual([None,]*2, _ic.tag_vals("GGA", "restartWave"))
 
+    def test_getitem(self):
+        _ic = incar(ENCUT=100, ENCUTGW=50, gga="PE", ISTART=1, AEXX=0.1, EDIFF=1.0E-6)
+        self.assertEqual(100, _ic["ENCUT"])
+        self.assertEqual(50, _ic["ENCUTGW"])
+        self.assertEqual("PE", _ic["GGA"])
+        self.assertEqual(1, _ic["ISTART"])
+        self.assertRaises(IncarError, _ic.__getitem__, "gga")
+    
+    def test_setitem(self):
+        _ic = incar()
+        _ic["ENCUT"] = 100
+        self.assertListEqual([100,], _ic.tag_vals("ENCUT"))
+        _ic["GGA"] = "PE"
+        self.assertListEqual(["PE",], _ic.tag_vals("GGA"))
+        self.assertRaises(IncarError, _ic.__setitem__, "gga", "PE")
+
+
 class test_incar_factory(ut.TestCase):
 
     def test_read_from_file(self):
@@ -82,7 +99,7 @@ class test_incar_factory(ut.TestCase):
                     self.assertRaises(IncarError, incar.read_from_file, _path)
         print("{} good INCARs readed ({} verified by JSON file). {} bad INCARs raised.".format(_countGood, _countVerified, _countBad))
 
-
+# TODO JSON verification of INCAR
 def _verify_incar_from_json(tc, ic, pathJson):
     assert isinstance(tc, ut.TestCase)
     assert isinstance(ic, incar)

@@ -25,74 +25,25 @@ class incar(*_incar_controllers):
     '''manage tags and IO of VASP input file INCAR
     '''
     # For VASP tags that is not easily to find analogy in other programs
-    comment = ''
-    # TODO implement the tags in a metadata file
     _metadata = os.path.join(os.path.dirname(__file__), "metadata", "vasptags.json")
     with open(_metadata, 'r') as h:
         _tagdoc = json.load(h)
-    # vaspOnlyTags = ()
-    # tagdocElecBasic = _tagdoc["tagdocElecBasic"]
-    # (
-    #                 "ISTART","ICHARG","LREAL","EDIFF","ENCUT","NBANDS",
-    #                 "ISMEAR","SIGMA","PREC","ISPIN","NELM",
-    #                 "NELECT","LCHARG",'NELMIN','LORBIT',
-    #                 'MAGMOM','LMAXTAU',"LWAVE","ALGO","IALGO"
-    #                )
-    # tagdocElecXc = _tagdoc["tagdocElecXc"]
-    # (
-    #                 "GGA","LHFCALC","PRECFOCK",'METAGGA',
-    #                 'AEXX','AGGAX','AGGAC','ALDAC',
-    #             )
-    # tagdocElecAdv = _tagdoc["tagdocElecAdv"]
-    # (
-    #                 "ENCUTGW","LASPH","LPEAD","LOPTICS","ENCUTGWSOFT",
-    #                 'NKRED','NKREDX','NKREDY','NKREDZ',"NOMEGA",
-    #                 'NGX','NGY','NGZ','NGXF','NGYF','NGZF',
-    #                 'ODDONLY','EVENONLY',"NBANDSGW","OMEGATL",
-    #                 "OMEGAMAX","ANTIRES","NBANDSO","NBANDSV",
-    #              )
-    # tagdocIonBasic = _tagdoc["tagdocIonBasic"]
-    # (
-    #                 'NSW','IBRION','ISIF','ISYM','EDIFFG','POTIM',
-    #                 'NFREE',
-    #               )
-    # tagdocIonSlab = _tagdoc["tagdocIonSlab"]
-    # (
-    #                 "LDIPOL","DIPOL","IDIPOL",'LVHAR','LVTOT',
-    #              )
-    # tagdocPara = _tagdoc["tagdocPara"]
-    # (
-    #                 'NPAR','NCORE','KPAR',
-    #           )
-    # tagdocMixing = _tagdoc["tagdocMixing"]
-    # (
-    #                 'MAXMIX','AMIX','BMIX','IMIX',
-    #             )
-    # tagdocNotCateg = _tagdoc["tagdocNotCateg"]
-    # (
-    #                 'LMIXTAU','NWRITE','SYSTEM',
-    #                 'TIME','SMASS',
-    #               )
-    # _tagNotImple= ()
     tagAll = []
     docAll = []
     for _t in _tagdoc.values():
         tagAll.extend(_t.keys())
         docAll.extend(_t.values())
-    # tagAll = tagdocElecBasic + tagdocElecAdv + tagdocElecXc + \
-    #     tagdocIonBasic + tagdocIonSlab + tagdocPara + tagdocMixing + tagdocNotCateg
     # ? Maybe move this duplicate check to unittest
     _hasDup = check_duplicates_in_tag_tuple(tagAll)
     if _hasDup > 0:
         raise IncarError("Found tag duplicate in VASP tags. '{}' at Index {}".format(tagAll[_hasDup], _hasDup))
     # Map INCAR tags to tags of base classes
-    tagMap2Base = {}
+    incar2mykit = {}
     for _c in _incar_controllers:
         _m = _c.map_to_mykit_tags(*tagAll, progFrom="vasp")
         for _i, _v in enumerate(_m):
             if _v != None:
-                tagMap2Base.update({tagAll[_i]:_v})
-    _vaspTags = {}
+                incar2mykit.update({tagAll[_i]:_v})
 
     def __init__(self, **incarArgs):
         '''Initialize
@@ -100,34 +51,35 @@ class incar(*_incar_controllers):
         First, filter all incarargs to get all pwTags, xcTags, and remove their VASP equivalents,
         and then add those tags not implemented in the plane_wave tag mapping.
         '''
+        self.comment = ''
+        self._vaspTags = {}
         super(incar, self).__init__("vasp", **incarArgs)
         self.parse_tags(**incarArgs)
-
-    # def __getattr__(self, attr):
-        # pw and xc tags are not achievable by attribute
-        # _attr = attr.upper()
-        # if _attr not in self.tagAll:
-        #     raise AttributeError("Invalid VASP tag: {}".format(_attr))
-        # return self.tag_vals(attr)[0]
-    
-    # def __setattr__(self, attr, value):
-        # pw and xc tags are not achievable by attribute
-        # _attr = attr.upper()
-        # if _attr not in self.tagAll:
-        #     raise AttributeError("Invalid VASP tag: {}. Change nothing.".format(_attr))
-        # else:
-        # self.parse_tags(**{attr: value})
 
     def __str__(self):
         _vals = self.tag_vals(*self.tagAll)
         _dict = {self.tagAll[_i]:_v for _i, _v in enumerate(_vals) if _v != None}
         return "{}".format(_dict)
 
+    def __getitem__(self, tag):
+        try:
+            assert tag in self.tagAll
+        except AssertionError:
+            raise IncarError("Invalid tag for INCAR to extract: {}".format(tag))
+        return self._tag_vals(tag)[0]
+
+    def __setitem__(self, tag, val):
+        try:
+            assert tag in self.tagAll
+        except AssertionError:
+            raise IncarError("Invalid tag for INCAR to parse: {}".format(tag))
+        self.parse_tags(**{tag: val})
+
     def __repr__(self):
         return self.__str__()
 
-
     def parse_tags(self, **keyval):
+        print(keyval)
         if "comment" in keyval:
             self.comment = keyval.pop("comment")
         self.print_log("incar Parsing ", keyval, depth=0, level=3)
@@ -214,7 +166,7 @@ class incar(*_incar_controllers):
         # INCAR tags that have common xc and pw tag mapping will be filtered as well
         # ? or filter all xc and pw tags?
         for _k, _v in tagsDict.items():
-            if _k in self.tagMap2Base.values() or _k in self.tagMap2Base.keys():
+            if _k in self.incar2mykit.values() or _k in self.incar2mykit.keys():
                 pass
             elif _k in self.tagAll:
                 _filter1.append(_k)
