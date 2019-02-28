@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 '''define classes and functions related to plane wave basis setup
 '''
+import os
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict
+from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict, build_tag_map_obj
 
 class PlanewaveError(Exception):
     pass
@@ -14,18 +15,22 @@ class planewave_control(verbose, prog_mapper):
     parse_tags method for all base class need to specify a progName argument
     '''
 
-    _tagMaps = {
-                "encutPw":{"mykit":"encutPw", "vasp": "ENCUT"},
-                # "encutPwGw": {"mykit":"encutPwGw", "vasp": "ENCUTGW"},
-                # "restartWave":{"mykit": "restartWave", "vasp": "ISTART"},
-                # "restartCharg":{"mykit": "restartCharg", "vasp": "ICHARG"},
-                # "nscf": {"mykit": "nscf", "vasp": "NELM"},
-                # "ediff": {"mykit": "ediff", "vasp": "EDIFF"},
-                # "scfAlgo": {"mykit": "scfAlgo", "vasp": "ALGO"},
-                # "globalPrec": {"mykit": "globalPrec", "vasp": "PREC"},
-                # "ifWriteWave": {"mykit": "ifWriteWave", "vasp": "LWAVE"},
-                # "ifWriteCharg": {"mykit": "ifWriteCharg", "vasp": "LCHARG"},
-               }
+    # ! Plans of tag mapping of planewave go below
+    # _tagMaps = {
+    #             "encutPw":{"mykit":"encutPw", "vasp": "ENCUT"},
+    #             # "encutPwGw": {"mykit":"encutPwGw", "vasp": "ENCUTGW"},
+    #             # "restartWave":{"mykit": "restartWave", "vasp": "ISTART"},
+    #             # "restartCharg":{"mykit": "restartCharg", "vasp": "ICHARG"},
+    #             # "nscf": {"mykit": "nscf", "vasp": "NELM"},
+    #             # "ediff": {"mykit": "ediff", "vasp": "EDIFF"},
+    #             # "scfAlgo": {"mykit": "scfAlgo", "vasp": "ALGO"},
+    #             # "globalPrec": {"mykit": "globalPrec", "vasp": "PREC"},
+    #             # "ifWriteWave": {"mykit": "ifWriteWave", "vasp": "LWAVE"},
+    #             # "ifWriteCharg": {"mykit": "ifWriteCharg", "vasp": "LCHARG"},
+    #            }
+    _meta = os.path.join(os.path.dirname(__file__), 'planewavemap.json')
+    _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
+    
     _pwTagMaps = _tagMaps
     _pwValMaps = {}
     _pwTags = {}

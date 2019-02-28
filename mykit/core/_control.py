@@ -196,9 +196,38 @@ def extract_from_tagdict(controlClass, tvDict, progName, *tags, delete=False):
 def vals_mapping(m, progFrom, progTo, *val, getAll=False):
     raise NotImplementedError
 
-# TODO reading from metadataFile
-def build_tag_map_obj(metadataFile, basename):
+
+def build_tag_map_obj(metadataFile, basename, filetype):
     '''Build a tag mapping object from a metadata file
     '''
+    if filetype == "json":
+        return _build_tag_map_obj_by_json(metadataFile, basename)
+    else:
+        raise NotImplementedError
+
+
+# TODO reading from JSON
+def _build_tag_map_obj_by_json(jsonFile, basename):
+    '''Build a tag mapping object from a JSON file
+
+    Structure of data file:
+        tag of basename: {"vasp": vasptag, "qe": qetag}
+    '''
+    import json
+
     _tagMaps = {}
+    try:
+        with open(jsonFile, 'r') as f:
+            j = json.load(f)
+    except json.JSONDecodeError:
+        raise ControllerError("Fail to generate tag mapping from JSON file: {}".format(jsonFile))
+    
+    for k, v in j.items():
+        try:
+            assert isinstance(v, dict)
+        except AssertionError:
+            raise ControllerError("Bad dict in key {} of JSON file: {}".format(k, jsonFile))
+        v.update({basename: k})
+        _tagMaps.update({k: v})
+    check_valid_map(_tagMaps, basename=basename)
     return _tagMaps

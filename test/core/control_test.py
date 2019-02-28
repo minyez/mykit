@@ -26,7 +26,7 @@ class test_control_map(ut.TestCase):
         self.assertTupleEqual((None,)*3, _mappedTag) 
     
     def test_check_valid_map(self):
-        self.assertTrue({"a":{}, "b":{}})
+        self.assertTrue(check_valid_map({"a":{}, "b":{}}))
         self.assertTrue(self._mapDict, "l")
     
     def test_parse_to_tagdict(self):

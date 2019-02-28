@@ -1,0 +1,18 @@
+{
+    "gga" : {
+        "vasp":"GGA"
+    },
+    "metagga" : {
+        "vasp":"METAGGA"
+    },
+    "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
+    "percentGgaExch": {
+        "vasp":"AGGAX"
+    },
+    "percentExactExch": {
+        "vasp":"AExX"
+    },
+    "percentLdaCorr": {
+        "vasp":"ALDAC"
+    }
+}

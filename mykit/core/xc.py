@@ -1,8 +1,9 @@
 # coding = utf8
 '''
 '''
+import os
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict
+from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict, build_tag_map_obj
 
 class XCError(Exception):
     pass
@@ -12,14 +13,17 @@ class xc_control(verbose, prog_mapper):
     '''base class that controls exchange-correlation setup
     '''
 
-    _tagMaps = {
-                "gga" : {"mykit":"gga", "vasp":"GGA"},
-                "metagga" : {"mykit":"metagga", "vasp":"METAGGA"},
-                "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
-                "percentGgaExch": {"mykit": "percentGgaExch", "vasp":"AGGAX"},
-                "percentExactExch": {"mykit": "percentExactExch", "vasp":"AExX"},
-                "percentLdaCorr": {"mykit": "percentLdaCorr", "vasp":"ALDAC"},
-               }
+    # ! Plans of tag mapping of xc go below
+    # _tagMaps = {
+    #             "gga" : {"mykit":"gga", "vasp":"GGA"},
+    #             "metagga" : {"mykit":"metagga", "vasp":"METAGGA"},
+    #             "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
+    #             "percentGgaExch": {"mykit": "percentGgaExch", "vasp":"AGGAX"},
+    #             "percentExactExch": {"mykit": "percentExactExch", "vasp":"AExX"},
+    #             "percentLdaCorr": {"mykit": "percentLdaCorr", "vasp":"ALDAC"},
+    #            }
+    _meta = os.path.join(os.path.dirname(__file__), 'xcmap.json')
+    _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _xcTagMaps = _tagMaps
     _xcValMaps = {}
     _xcTags = {}
