@@ -28,7 +28,7 @@ class planewave_control(verbose, prog_mapper):
     #             # "ifWriteWave": {"mykit": "ifWriteWave", "vasp": "LWAVE"},
     #             # "ifWriteCharg": {"mykit": "ifWriteCharg", "vasp": "LCHARG"},
     #            }
-    _meta = os.path.join(os.path.dirname(__file__), 'planewavemap.json')
+    _meta = os.path.join(os.path.dirname(__file__), 'metadata', 'planewavemap.json')
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     
     _pwTagMaps = _tagMaps

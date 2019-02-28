@@ -22,7 +22,7 @@ class xc_control(verbose, prog_mapper):
     #             "percentExactExch": {"mykit": "percentExactExch", "vasp":"AExX"},
     #             "percentLdaCorr": {"mykit": "percentLdaCorr", "vasp":"ALDAC"},
     #            }
-    _meta = os.path.join(os.path.dirname(__file__), 'xcmap.json')
+    _meta = os.path.join(os.path.dirname(__file__), 'metadata', 'xcmap.json')
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _xcTagMaps = _tagMaps
     _xcValMaps = {}
