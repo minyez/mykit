@@ -21,7 +21,7 @@ from mykit.core.numeric import prec
 from mykit.core.constants import pi, au2ang, ang2au
 
 # ==================== classes ====================
-class latticeError(Exception):
+class LatticeError(Exception):
     '''Exception in lattice module
     '''
     pass
@@ -56,7 +56,7 @@ class lattice(prec, verbose):
             self.__cell = np.array(cell, dtype=self._dtype)
             self.__pos = np.array(pos, dtype=self._dtype)
         except ValueError as _err:
-            raise latticeError("Fail to create cell and pos array. Please check.")
+            raise LatticeError("Fail to create cell and pos array. Please check.")
         self.__atoms = [_a.capitalize() for _a in atoms]
         self.__parse_lattkw(**kwargs)
         # check input consistency
@@ -124,12 +124,12 @@ class lattice(prec, verbose):
             assert self.natoms > 0
             assert np.shape(self.__pos) == (self.natoms, 3)
         except AssertionError:
-            raise latticeError("Invalid lattice setup")
+            raise LatticeError("Invalid lattice setup")
         # ? switch automatically, or let the user deal with it
         try:
             assert self.vol > 0
         except AssertionError:
-            raise latticeError("Left-handed system found (vol<0). Switch two vector.")
+            raise LatticeError("Left-handed system found (vol<0). Switch two vector.")
 
     def _switch_two_atom_index(self, iat1, iat2):
         '''switch the index of atoms with index iat1 and iat2
@@ -148,7 +148,7 @@ class lattice(prec, verbose):
             assert iat2 in range(self.natoms)
             assert iat1 != iat2
         except AssertionError:
-            raise latticeError("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
+            raise LatticeError("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
 
         self.__pos[[iat1, iat2]] = self.__pos[[iat2, iat1]]
         self.__atoms[iat1], self.__atoms[iat2] = self.__atoms[iat2], self.__atoms[iat1]
@@ -390,7 +390,7 @@ class lattice(prec, verbose):
                 self.__pos = self.__pos * _conv
             self.__cell = self.__cell * _conv
         else:
-            raise latticeError("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
+            raise LatticeError("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
 
     @property
     def coordSys(self):
@@ -530,7 +530,7 @@ class lattice(prec, verbose):
                 assert len(_flag) == 3
                 assert all([isinstance(_x, bool) for _x in _flag])
             except AssertionError:
-                raise latticeError("Bad flag for selective dynamics")
+                raise LatticeError("Bad flag for selective dynamics")
             else:
                 self.__selectDyn.update({_k: _flag})
 
@@ -566,11 +566,11 @@ class lattice(prec, verbose):
         try:
             assert isinstance(aLatt, (int, float))
         except AssertionError:
-            raise latticeError("alatt should be a number")
+            raise LatticeError("alatt should be a number")
         try:
             assert _type in ["P", "I", "F"]
         except AssertionError:
-            raise latticeError("Invalid cubic Bravis system")
+            raise LatticeError("Invalid cubic Bravis system")
 
         _a = abs(aLatt)
         _cell = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]

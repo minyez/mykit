@@ -1,0 +1,14 @@
+{
+    "nIonStepsMax": {
+        "vasp": "NSW"
+    },
+    "convIon": {
+        "vasp": "EDIFFG"
+    },
+    "ionAlgo": {
+        "vasp": "IBRION"
+    },
+    "stepSize": {
+        "vasp": "POTIM"
+    }
+}

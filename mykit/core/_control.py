@@ -131,12 +131,17 @@ def tags_mapping(mapDict, progFrom, progTo, *tags, getAll=False):
 def parse_to_tagdict(tvDict, tagMaps, progName, **tagvals):
     '''Parse tag values to the dict, according to tagMaps.
 
+    Note:
+        If the mykit tag and its program-specific equivalent are parsed at
+        the same time, the program-specific tag value will be preferred.
+
     Args:
         tvDict (dict) : the dict to parse tag-value pair into
         tagMaps (dict) : the tag mapping object
         progName (str) : the program to which the keywords(tags) in kwargs should belong to
         kwargs : the tag-value to parse into
     '''
+    _parsed_mykit_tag = []
     try:
         assert isinstance(tvDict, dict)
     except AssertionError:
@@ -144,14 +149,16 @@ def parse_to_tagdict(tvDict, tagMaps, progName, **tagvals):
     for _origTag, _v in tagvals.items():
         if _origTag == None:
             continue
-        # check mykit tags
+        # check if mykit tags. Parsed it only when its program-specific tag is not parsed at the same time
         elif _origTag in tagMaps.keys():
-            tvDict.update({_origTag:_v})
+            if _origTag not in _parsed_mykit_tag:
+                tvDict.update({_origTag:_v})
         else:
         # check program-specific tags
         # ? Can be optimized
             for _t, _tmap in tagMaps.items():
                 if _origTag == _tmap.get(progName, None):
+                    _parsed_mykit_tag.append(_t)
                     tvDict.update({_t: _v})
                     break
     

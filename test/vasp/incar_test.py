@@ -35,9 +35,17 @@ class test_tag_manipulation(ut.TestCase):
         _ic.parse_tags(abc=1)
         self.assertListEqual([None], _ic.tag_vals("abc"))
         _ic.parse_tags()
-        # prefer to INCAR tags to mykit tags
-        _ic.parse_tags(gga="PE", GGA="CA")
+        _ic.parse_tags(IBRION=1)
+        self.assertListEqual([1], _ic.tag_vals("IBRION"))
+        self.assertListEqual([1], _ic.tag_vals("ionAlgo"))
+        _ic.parse_tags(ionAlgo=2)
+        self.assertListEqual([2], _ic.tag_vals("IBRION"))
+        
+        # prefer to INCAR tags to mykit tags, even the mykit tag is parsed later
+        _ic.parse_tags(GGA="CA", gga="PE")
         self.assertListEqual(["CA"], _ic.tag_vals("GGA"))
+        _ic.parse_tags(IBRION=3, ionAlgo=4)
+        self.assertListEqual([3], _ic.tag_vals("IBRION"))
 
 
     def test_pop_and_delete_tags(self):

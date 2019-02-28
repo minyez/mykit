@@ -4,7 +4,7 @@
 import unittest
 import numpy as np
 from mykit.core.constants import au2ang, ang2au
-from mykit.core.lattice import lattice, latticeError, periodic_duplicates_in_cell, \
+from mykit.core.lattice import lattice, LatticeError, periodic_duplicates_in_cell, \
                                 axis_list, atoms_from_sym_nat, sym_nat_from_atoms
 
 class simple_cubic_lattice(unittest.TestCase):
@@ -83,11 +83,11 @@ class lattice_raise(unittest.TestCase):
                  [0.0, 0.0, 5.0]]
         _atoms = ["C"]
         _pos = [[0.0, 0.0, 0.0]]
-        self.assertRaises(latticeError, lattice, _cell, _atoms, _pos)
+        self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
         _cell = [[5.0, 0.0],
                  [0.0, 5.0, 0.0],
                  [0.0, 0.0, 5.0]]
-        self.assertRaises(latticeError, lattice, _cell, _atoms, _pos)
+        self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
 
     def test_bad_atoms_pos(self):
         _cell = [[5.0, 0.0, 0.0],
@@ -96,19 +96,19 @@ class lattice_raise(unittest.TestCase):
 
         _atoms = []
         _pos = [[0.0, 0.0, 0.0]]
-        self.assertRaises(latticeError, lattice, _cell, _atoms, _pos)
+        self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
 
         _atoms = ["C"]
         _pos = [0.0, 0.0, 0.0]
-        self.assertRaises(latticeError, lattice, _cell, _atoms, _pos)
+        self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
 
         _atoms = ["C"]
         _pos = [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0]]
-        self.assertRaises(latticeError, lattice, _cell, _atoms, _pos)
+        self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
 
         _atoms = ["C", "C"]
         _pos = [[0.0, 0.0, 0.0]]
-        self.assertRaises(latticeError, lattice, _cell, _atoms, _pos)
+        self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
 
 
 class lattice_factory_method(unittest.TestCase):
