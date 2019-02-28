@@ -12,6 +12,19 @@ class prog_mapper(ABC):
     This ABC is aimed to provide the basic structure of any control class
     that is used to convert common input tags between programs.
 
+    Notes:
+        A `_tagMaps` abstract property is defined and should be overwriten by tag mapping
+        object when defining a new controller class. 
+        However, the class should not directly use it to parse and extract tags,
+        as some program input may need to inherit from several controller classes,
+        then when inheriting, duplicate _tagMaps will lose its reference and cause failure
+        in mapping of tags in some controller.
+
+        It is solved by referring to `_tagMaps` by some other internal variable,
+        e.g. `_xcTagMaps` in `xc_control`, and use it when calling, e.g. mapping functions.
+
+        This issue also appears for methods and property, but not classmethod.
+
     TODO:
         Values mapping
     '''
@@ -62,8 +75,8 @@ class prog_mapper(ABC):
 def check_valid_map(mapDict, basename=None):
     '''Check if a dict is a valid tag mapping object.
 
-    Namely, a tag mapping object is a dict with mykit tag (str) and its mapping dict as key-value pair.
-    When basename is specified, each mapping dict of tag 'm' must include a 'basename': 'm' member
+    Namely, a tag mapping object is a dict with string keyword and a dict as key-value pair.
+    When basename is specified, value (dict) of keyword 'm' must include {'basename': 'm'}
 
     Args:
         mapDict (dict): a tag mapping object
@@ -115,12 +128,12 @@ def tags_mapping(mapDict, progFrom, progTo, *tags, getAll=False):
     return tuple(_d.get(_t, None) for _t in tags)
 
 
-def parse_to_tagdict(tvDict, tagMaps, progName, **kwargs):
-    '''
+def parse_to_tagdict(tvDict, tagMaps, progName, **tagvals):
+    '''Parse tag values to the dict, according to tagMaps.
 
     Args:
         tvDict (dict) : the dict to parse tag-value pair into
-        tagMaps (dict) : the mapping of mykit tags to those in program `progName`
+        tagMaps (dict) : the tag mapping object
         progName (str) : the program to which the keywords(tags) in kwargs should belong to
         kwargs : the tag-value to parse into
     '''
@@ -128,7 +141,7 @@ def parse_to_tagdict(tvDict, tagMaps, progName, **kwargs):
         assert isinstance(tvDict, dict)
     except AssertionError:
         raise ControllerError
-    for _origTag, _v in kwargs.items():
+    for _origTag, _v in tagvals.items():
         if _origTag == None:
             continue
         # check mykit tags
@@ -143,9 +156,48 @@ def parse_to_tagdict(tvDict, tagMaps, progName, **kwargs):
                     break
     
 
-def extract_from_tagdict(tvDict, tagMaps, progFrom, *tag, delete=False):
-    pass
+def extract_from_tagdict(controlClass, tvDict, progName, *tags, delete=False):
+    '''
+
+    It also extract the value of mykit tag name in tags, not only tags of progName
+
+    Args:
+        controlClass (class) : the name of class which is a subclass of prog_mapper.
+        tvDict (dict): the dict to manipulate which contains mykit tag name and value pair
+        progName (str): the name of program to which the tags argument belong.
+        tags (str): the names of tags to request
+        delete (bool)
+    '''
+    assert issubclass(controlClass, prog_mapper)
+    if len(tags) == 0:
+        return []
+    # self.print_log("In _xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
+    mytags = controlClass.map_to_mykit_tags(*tags, progFrom=progName)
+    # self.print_log("_xctags:", _xctags, level=3, depth=2)
+    myvals = list(map(tvDict.get, mytags))
+    # self.print_log("_values:", _vals, level=3, depth=2)
+#     if progName != "mykit":
+    for i, v in enumerate(myvals):
+        if v == None:
+            if tags[i] in tvDict:
+                myvals[i] = tvDict[tags[i]]
+    if delete:
+        for i, v in enumerate(mytags):
+            if v in tvDict:
+                del tvDict[v]
+            # in case there is mykit tag name in tags, delete it as well
+            if tags[i] in tvDict:
+                del tvDict[tags[i]]
+#     self.print_log("Found values:", _vals, level=3, depth=3)
+    return myvals
 
 
 def vals_mapping(m, progFrom, progTo, *val, getAll=False):
     raise NotImplementedError
+
+# TODO reading from metadataFile
+def build_tag_map_obj(metadataFile, basename):
+    '''Build a tag mapping object from a metadata file
+    '''
+    _tagMaps = {}
+    return _tagMaps

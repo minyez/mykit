@@ -2,7 +2,7 @@
 '''
 '''
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict
+from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict
 
 class XCError(Exception):
     pass
@@ -33,19 +33,9 @@ class xc_control(verbose, prog_mapper):
     def _parse_xctags(self, progName, **xctags):
         if len(xctags) == 0:
             return
-        self.print_log(" In _parse_xctags. Parsing: ", xctags, depth=1, level=3)
-        # for _origTag, _v in xctags.items():
-        #     if _origTag == None:
-        #         continue
-        #     elif _origTag in self._xcTagMaps:
-        #         self._xcTags.update({_origTag:_v})
-        #     else:
-        #         for _xct, _xcmap in self._xcTagMaps.items():
-        #             if _origTag == _xcmap.get(progName, None):
-        #                 self._xcTags.update({_xct: _v})
-        #                 break
+        # self.print_log(" In _parse_xctags. Parsing: ", xctags, depth=1, level=3)
         parse_to_tagdict(self._xcTags, self._xcTagMaps, progName, **xctags)
-        self.print_log("End _parse_xctags, now xcTags: ", self._xcTags, depth=1, level=3)
+        # self.print_log("End _parse_xctags, now xcTags: ", self._xcTags, depth=1, level=3)
         
     def delete_tags(self, progName, *tags):
         self._pop_xctags(progName, *tags)
@@ -58,6 +48,8 @@ class xc_control(verbose, prog_mapper):
         return _vals
 
     def _get_one_mykit_tag(self, pwTagName):
+        '''Get the value of one mykit tag (xc). Conform prog_mapper ABC
+        '''
         return self._get_one_xctag(pwTagName)
 
     def _get_one_xctag(self, xcTagName):
@@ -84,24 +76,25 @@ class xc_control(verbose, prog_mapper):
     def _xctag_vals(self, progName, *tags, delete=False):
         if len(tags) == 0:
             return []
-        self.print_log("In _xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
-        _xctags = xc_control.map_to_mykit_tags(*tags, progFrom=progName)
-        # self.print_log("_xctags:", _xctags, level=3, depth=2)
-        _vals = list(map(self._get_one_xctag, _xctags))
-        # self.print_log("_values:", _vals, level=3, depth=2)
-        if progName != "mykit":
-            for _i, _v in enumerate(_vals):
-                if _v == None:
-                    if tags[_i] in self._xcTags:
-                        _vals[_i] = self._xcTags[tags[_i]]
-        if delete:
-            for _i, _v in enumerate(_xctags):
-                if _v in self._xcTags:
-                    del self._xcTags[_v]
-                if tags[_i] in self._xcTags:
-                    del self._xcTags[tags[_i]]
-        self.print_log("Found values:", _vals, level=3, depth=3)
-        return _vals
+        # # self.print_log("In _xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
+        # _xctags = xc_control.map_to_mykit_tags(*tags, progFrom=progName)
+        # # self.print_log("_xctags:", _xctags, level=3, depth=2)
+        # vals = list(map(self._get_one_xctag, _xctags))
+        # # self.print_log("_values:", vals, level=3, depth=2)
+        # if progName != "mykit":
+        #     for _i, _v in enumerate(vals):
+        #         if _v == None:
+        #             if tags[_i] in self._xcTags:
+        #                 vals[_i] = self._xcTags[tags[_i]]
+        # if delete:
+        #     for _i, _v in enumerate(_xctags):
+        #         if _v in self._xcTags:
+        #             del self._xcTags[_v]
+        #         if tags[_i] in self._xcTags:
+        #             del self._xcTags[tags[_i]]
+        vals = extract_from_tagdict(xc_control, self._xcTags, progName, *tags, delete=delete)
+        # self.print_log("Found values:", vals, level=3, depth=3)
+        return vals
 
     @classmethod
     def map_tags(cls, *tags, progFrom="mykit", progTo="mykit", getAll=False):
