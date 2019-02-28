@@ -10,12 +10,17 @@ from mykit.core.xc import xc_control
 from mykit.core.ion import ion_control
 # from mykit.core.program import program
 
+_incar_controllers = (
+    planewave_control, 
+    xc_control, 
+    ion_control,
+    )
 
 class IncarError(Exception):
     pass
 
 
-class incar(planewave_control, xc_control, ion_control):
+class incar(*_incar_controllers):
     '''manage tags and IO of VASP input file INCAR
     '''
     # For VASP tags that is not easily to find analogy in other programs
@@ -65,10 +70,8 @@ class incar(planewave_control, xc_control, ion_control):
         raise IncarError("Found tag duplicate in VASP tags. '{}' at Index {}".format(tagAll[_hasDup], _hasDup))
     # Map INCAR tags to tags of base classes
     tagMap2Base = {}
-    _availMap2Pw = planewave_control.map_to_mykit_tags(*tagAll, progFrom="vasp")
-    _availMap2Xc = xc_control.map_to_mykit_tags(*tagAll, progFrom="vasp")
-    _availMap2Ion = ion_control.map_to_mykit_tags(*tagAll, progFrom="vasp")
-    for _m in [_availMap2Pw, _availMap2Xc, _availMap2Ion]:
+    for _c in _incar_controllers:
+        _m = _c.map_to_mykit_tags(*tagAll, progFrom="vasp")
         for _i, _v in enumerate(_m):
             if _v != None:
                 tagMap2Base.update({tagAll[_i]:_v})
@@ -111,9 +114,8 @@ class incar(planewave_control, xc_control, ion_control):
         if "comment" in keyval:
             self.comment = keyval.pop("comment")
         self.print_log("incar Parsing ", keyval, depth=0, level=3)
-        planewave_control.parse_tags(self, "vasp", **keyval)
-        xc_control.parse_tags(self, "vasp", **keyval)
-        ion_control.parse_tags(self, "vasp", **keyval)
+        for _c in _incar_controllers:
+            _c.parse_tags(self, "vasp", **keyval)
         self._parse_vasptags(**keyval)
         self.print_log("incar Finish parsing.\n", depth=0, level=3)
         # self.print_log("  pwTags",self.pwTags,depth=2,level=3)
@@ -143,16 +145,14 @@ class incar(planewave_control, xc_control, ion_control):
         if len(tags) == 0:
             return []
         vals = [None,] * len(tags)
-        if delete:
-            _pwTagVals = planewave_control.pop_tags(self, "vasp", *tags)
-            _xcTagVals = xc_control.pop_tags(self, "vasp", *tags)
-            _ionTagVals = ion_control.pop_tags(self, "vasp", *tags)
-        else:
-            _pwTagVals = planewave_control.tag_vals(self, "vasp", *tags)
-            _xcTagVals = xc_control.tag_vals(self, "vasp", *tags)
-            _ionTagVals = ion_control.tag_vals(self, "vasp", *tags)
+        _search = []
+        for _c in _incar_controllers:
+            if delete:
+                _search.append(_c.pop_tags(self, "vasp", *tags))
+            else:
+                _search.append(_c.tag_vals(self, "vasp", *tags))
         _vaspTagVals = self._vasptag_vals(*tags, delete=delete)
-        _search = ( _pwTagVals, _xcTagVals, _ionTagVals, _vaspTagVals)
+        _search.append(_vaspTagVals)
         self.print_log("Searching value in ", _search, depth=2, level=2)
         for _i, _v in enumerate(vals):
             if _v is None:

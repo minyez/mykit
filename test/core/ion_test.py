@@ -34,6 +34,16 @@ class test_tag_mapping(ut.TestCase):
             self.assertTupleEqual(haveImpleIonTags[:i+1], ionc.map_tags(*haveImpleIonTags[:i+1]))
             self.assertTupleEqual(haveImpleVaspMap[:i+1], ionc.map_tags(*haveImpleIonTags[:i+1], progTo="vasp"))
             self.assertTupleEqual(haveImpleQeMap[:i+1], ionc.map_tags(*haveImpleIonTags[:i+1], progTo="qe"))
+        
+        self.assertTupleEqual(haveImpleIonTags, ionc.map_tags(*haveImpleVaspMap, progFrom="vasp"))
+        self.assertTupleEqual(haveImpleQeMap, ionc.map_tags(*haveImpleVaspMap, progFrom="vasp", progTo="qe"))
 
 if __name__ == '__main__':
+    maps = (haveImpleIonTags,haveImpleAbiMap, haveImpleQeMap, haveImpleVaspMap)
+    mapItems = tuple(map(len, maps))
+    try:
+        assert all(i == mapItems[0] for i in mapItems)
+    except AssertionError:
+        raise IndexError("Test maps are of different length.")
+
     ut.main()
