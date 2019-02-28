@@ -1,0 +1,94 @@
+{
+    "tagdocElecBasic": {
+        "ISTART": "", 
+        "ICHARG": "",
+        "LREAL": "",
+        "EDIFF": "", 
+        "ENCUT": "", 
+        "NBANDS": "",
+        "ISMEAR": "",
+        "SIGMA": "",
+        "PREC": "",
+        "ISPIN": "",
+        "NELM": "",
+        "NELECT": "",
+        "LCHARG": "",
+        "NELMIN": "",
+        "LORBIT": "",
+        "MAGMOM": "",
+        "LMAXTAU": "",
+        "LWAVE": "",
+        "ALGO": "",
+        "IALGO": ""
+    },
+    "tagdocElecXc": {
+        "GGA": "",
+        "LHFCALC": "",
+        "PRECFOCK": "",
+        "METAGGA": "",
+        "AEXX": "",
+        "AGGAX": "",
+        "AGGAC": "",
+        "ALDAC": ""
+    },
+    "tagdocElecAdv": {
+        "ENCUTGW": "",
+        "LASPH": "",
+        "LPEAD": "",
+        "LOPTICS": "",
+        "ENCUTGWSOFT": "",
+        "NKRED": "",
+        "NKREDX": "",
+        "NKREDY": "",
+        "NKREDZ": "",
+        "NOMEGA": "",
+        "NGX": "",
+        "NGY": "",
+        "NGZ": "",
+        "NGXF": "",
+        "NGYF": "",
+        "NGZF": "",
+        "ODDONLY": "",
+        "EVENONLY": "",
+        "NBANDSGW": "",
+        "OMEGATL": "",
+        "OMEGAMAX": "",
+        "ANTIRES": "",
+        "NBANDSO": "",
+        "NBANDSV": ""
+    },
+    "tagdocIonBasic" : {
+        "NSW": "",
+        "IBRION": "",
+        "ISIF": "",
+        "ISYM": "",
+        "EDIFFG": "",
+        "POTIM": "",
+        "NFREE": ""
+    },
+    "tagdocIonSlab" : {
+        "LDIPOL": "",
+        "DIPOL": "",
+        "IDIPOL": "",
+        "LVHAR": "",
+        "LVTOT": ""
+    },
+    "tagdocPara" : {
+        "NPAR": "",
+        "NCORE": "",
+        "KPAR": ""
+    },
+    "tagdocMixing" : {
+        "MAXMIX": "",
+        "AMIX": "",
+        "BMIX": "",
+        "IMIX": ""
+    },
+    "tagdocNotCateg" : {
+        "LMIXTAU": "",
+        "NWRITE": "",
+        "SYSTEM": "",
+        "TIME": "",
+        "SMASS": ""
+    }
+}

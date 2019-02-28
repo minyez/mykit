@@ -4,6 +4,7 @@
 import copy
 import os
 import re
+import json
 from mykit.core.utils import check_duplicates_in_tag_tuple, trim_comment
 from mykit.core.planewave import planewave_control
 from mykit.core.xc import xc_control
@@ -26,44 +27,60 @@ class incar(*_incar_controllers):
     # For VASP tags that is not easily to find analogy in other programs
     comment = ''
     # TODO implement the tags in a metadata file
-    vaspOnlyTags = ()
-    tagElecBasic = (
-                    "ISTART","ICHARG","LREAL","EDIFF","ENCUT","NBANDS",
-                    "ISMEAR","SIGMA","PREC","ISPIN","NELM",
-                    "NELECT","LCHARG",'NELMIN','LORBIT',
-                    'MAGMOM','LMAXTAU',"LWAVE","ALGO","IALGO"
-                   )
-    tagElecXc = (
-                    "GGA","LHFCALC","PRECFOCK",'METAGGA',
-                    'AEXX','AGGAX','AGGAC','ALDAC',
-                )
-    tagElecAdv = (
-                    "ENCUTGW","LASPH","LPEAD","LOPTICS","ENCUTGWSOFT",
-                    'NKRED','NKREDX','NKREDY','NKREDZ',"NOMEGA",
-                    'NGX','NGY','NGZ','NGXF','NGYF','NGZF',
-                    'ODDONLY','EVENONLY',"NBANDSGW","OMEGATL",
-                    "OMEGAMAX","ANTIRES","NBANDSO","NBANDSV",
-                 )
-    tagIonBasic = (
-                    'NSW','IBRION','ISIF','ISYM','EDIFFG','POTIM',
-                    'NFREE',
-                  )
-    tagIonSlab = (
-                    "LDIPOL","DIPOL","IDIPOL",'LVHAR','LVTOT',
-                 )
-    tagPara = (
-                    'NPAR','NCORE','KPAR',
-              )
-    tagMixing = (
-                    'MAXMIX','AMIX','BMIX','IMIX',
-                )
-    tagNotCateg = (
-                    'LMIXTAU','NWRITE','SYSTEM',
-                    'TIME','SMASS',
-                  )
-    _tagNotImple= ()
-    tagAll = tagElecBasic + tagElecAdv + tagElecXc + \
-        tagIonBasic + tagIonSlab + tagPara + tagMixing + tagNotCateg
+    _metadata = os.path.join(os.path.dirname(__file__), "metadata", "vasptags.json")
+    with open(_metadata, 'r') as h:
+        _tagdoc = json.load(h)
+    # vaspOnlyTags = ()
+    # tagdocElecBasic = _tagdoc["tagdocElecBasic"]
+    # (
+    #                 "ISTART","ICHARG","LREAL","EDIFF","ENCUT","NBANDS",
+    #                 "ISMEAR","SIGMA","PREC","ISPIN","NELM",
+    #                 "NELECT","LCHARG",'NELMIN','LORBIT',
+    #                 'MAGMOM','LMAXTAU',"LWAVE","ALGO","IALGO"
+    #                )
+    # tagdocElecXc = _tagdoc["tagdocElecXc"]
+    # (
+    #                 "GGA","LHFCALC","PRECFOCK",'METAGGA',
+    #                 'AEXX','AGGAX','AGGAC','ALDAC',
+    #             )
+    # tagdocElecAdv = _tagdoc["tagdocElecAdv"]
+    # (
+    #                 "ENCUTGW","LASPH","LPEAD","LOPTICS","ENCUTGWSOFT",
+    #                 'NKRED','NKREDX','NKREDY','NKREDZ',"NOMEGA",
+    #                 'NGX','NGY','NGZ','NGXF','NGYF','NGZF',
+    #                 'ODDONLY','EVENONLY',"NBANDSGW","OMEGATL",
+    #                 "OMEGAMAX","ANTIRES","NBANDSO","NBANDSV",
+    #              )
+    # tagdocIonBasic = _tagdoc["tagdocIonBasic"]
+    # (
+    #                 'NSW','IBRION','ISIF','ISYM','EDIFFG','POTIM',
+    #                 'NFREE',
+    #               )
+    # tagdocIonSlab = _tagdoc["tagdocIonSlab"]
+    # (
+    #                 "LDIPOL","DIPOL","IDIPOL",'LVHAR','LVTOT',
+    #              )
+    # tagdocPara = _tagdoc["tagdocPara"]
+    # (
+    #                 'NPAR','NCORE','KPAR',
+    #           )
+    # tagdocMixing = _tagdoc["tagdocMixing"]
+    # (
+    #                 'MAXMIX','AMIX','BMIX','IMIX',
+    #             )
+    # tagdocNotCateg = _tagdoc["tagdocNotCateg"]
+    # (
+    #                 'LMIXTAU','NWRITE','SYSTEM',
+    #                 'TIME','SMASS',
+    #               )
+    # _tagNotImple= ()
+    tagAll = []
+    docAll = []
+    for _t in _tagdoc.values():
+        tagAll.extend(_t.keys())
+        docAll.extend(_t.values())
+    # tagAll = tagdocElecBasic + tagdocElecAdv + tagdocElecXc + \
+    #     tagdocIonBasic + tagdocIonSlab + tagdocPara + tagdocMixing + tagdocNotCateg
     # ? Maybe move this duplicate check to unittest
     _hasDup = check_duplicates_in_tag_tuple(tagAll)
     if _hasDup > 0:

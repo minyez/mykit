@@ -9,7 +9,7 @@ Functions and classes to deal with tag and value mapping.
 They lie the basis for input conversion
   - [x] tags mapping
   - [ ] values mapping
-  - [ ] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
+  - [x] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
 
 ### `lattice` module
 
@@ -24,11 +24,11 @@ They are metaclasses of the class of program-specific input files,
 and help map name and value of parameter tags between different simulation programs.
   - [x] `planewave_control`: plane-wave basis
   - [x] `xc_control`: (semi-)local exchange-correlation tags
-  - [ ] `ion_control`: ion relaxation
+  - [x] `ion_control`: ion relaxation
   - [ ] `scf_control`: electronic self-consistent loop
-  - [ ] `kpoint_control`: sampling in the reciprocal space
+  - [ ] `kmesh_control`: sampling in the reciprocal space
   - [ ] `lapw_control`
-  - [ ] `mbpt_control` for many-body perturbation calculation tags
+  - [ ] `mbpt_control`: many-body perturbation calculation control
 
 
 ## `vasp`: VASP related
@@ -36,7 +36,7 @@ and help map name and value of parameter tags between different simulation progr
 - `incar`
   - [x] Read, print and write 
   - [ ] Tag explanation
-  - [ ] Move tags into a metadata file
+  - [x] Move tags into a metadata file
 - `poscar` 
   - [x] Read, print and write
 - `potcar`
