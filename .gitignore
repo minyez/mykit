@@ -21,6 +21,7 @@ __pycache__
 .idea/
 .vscode/
 .pytest_cache/
+prototypes/
 
 # ignore private files
 #scsites
