@@ -5,7 +5,9 @@
     "metagga" : {
         "vasp":"METAGGA"
     },
-    "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
+    "percentGgaCorr": {
+        "vasp":"AGGAC"
+    },
     "percentGgaExch": {
         "vasp":"AGGAX"
     },

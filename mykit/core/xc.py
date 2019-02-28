@@ -13,15 +13,7 @@ class xc_control(verbose, prog_mapper):
     '''base class that controls exchange-correlation setup
     '''
 
-    # ! Plans of tag mapping of xc go below
-    # _tagMaps = {
-    #             "gga" : {"mykit":"gga", "vasp":"GGA"},
-    #             "metagga" : {"mykit":"metagga", "vasp":"METAGGA"},
-    #             "percentGgaCorr": {"mykit": "percentGgaCorr", "vasp":"AGGAC"},
-    #             "percentGgaExch": {"mykit": "percentGgaExch", "vasp":"AGGAX"},
-    #             "percentExactExch": {"mykit": "percentExactExch", "vasp":"AExX"},
-    #             "percentLdaCorr": {"mykit": "percentLdaCorr", "vasp":"ALDAC"},
-    #            }
+    # Read tag mapping object from metadata
     _meta = os.path.join(os.path.dirname(__file__), 'metadata', 'xcmap.json')
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _xcTagMaps = _tagMaps
@@ -32,6 +24,15 @@ class xc_control(verbose, prog_mapper):
         self._parse_xctags(progName, **xctags)
 
     def parse_tags(self, progName, **xctags):
+        '''parse mykit and program-specific tags related to XC
+
+        Note:
+            if a program-specific tag and its mykit equivalent
+        exists, the program-specific tag value is preferred.
+
+        Args:
+            progName : the name of program which the tags should belong to.
+        '''
         self._parse_xctags(progName, **xctags)
 
     def _parse_xctags(self, progName, **xctags):

@@ -11,11 +11,9 @@ class PlanewaveError(Exception):
 
 class planewave_control(verbose, prog_mapper):
     '''the base class that manage parameters of plane-wave basis.
-
-    parse_tags method for all base class need to specify a progName argument
     '''
 
-    # ! Plans of tag mapping of planewave go below
+    # ! Plans of tag mapping of planewave go below. May move to document someday
     # _tagMaps = {
     #             "encutPw":{"mykit":"encutPw", "vasp": "ENCUT"},
     #             # "encutPwGw": {"mykit":"encutPwGw", "vasp": "ENCUTGW"},
@@ -28,9 +26,9 @@ class planewave_control(verbose, prog_mapper):
     #             # "ifWriteWave": {"mykit": "ifWriteWave", "vasp": "LWAVE"},
     #             # "ifWriteCharg": {"mykit": "ifWriteCharg", "vasp": "LCHARG"},
     #            }
+    # Read tag mapping object from metadata
     _meta = os.path.join(os.path.dirname(__file__), 'metadata', 'planewavemap.json')
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
-    
     _pwTagMaps = _tagMaps
     _pwValMaps = {}
     _pwTags = {}
@@ -42,14 +40,14 @@ class planewave_control(verbose, prog_mapper):
         #     pass
 
     def parse_tags(self, progName, **pwtags):
-        '''parse plane_wave and program-specific tags to pwTags.
+        '''parse mykit and program-specific tags relatex to plane waves.
 
         Note:
-            if a program-specific tag and its plane_wave correspondent
+            if a program-specific tag and its mykit equivalent
         exists, the program-specific tag value is preferred.
 
         Args:
-            progName : the name of program that is required.
+            progName : the name of program which the tags should belong to.
         '''
         self._parse_pwtags(progName, **pwtags)
 
