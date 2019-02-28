@@ -94,24 +94,8 @@ class planewave_control(verbose, prog_mapper):
         if len(tags) == 0:
             return []
         # self.print_log("In _pwtag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
-        # pwtags = planewave_control.map_to_mykit_tags(*tags, progFrom=progName)
-        # # self.print_log("Extracting plane_wave tags: ", _pwtags, level=3, depth=1)
-        # # ? get value from plane_wave tag, even progName is not "mykit"
-        # vals = list(map(self._get_one_mykit_tag, pwtags))
-        # # No need to get pwtags again, when program is not assigned
-        # if progName != "mykit":
-        #     for _i, _v in enumerate(vals):
-        #         if _v == None:
-        #             if tags[_i] in self._pwTags:
-        #                 vals[_i] = self._pwTags[tags[_i]]
-        # if delete:
-        #     for _i, _v in enumerate(pwtags):
-        #         if _v in self._pwTags:
-        #             del self._pwTags[_v]
-        #         if tags[_i] in self._pwTags:
-        #             del self._pwTags[tags[_i]]
-        # self.print_log("Found values:", vals, level=3, depth=3)
         vals = extract_from_tagdict(planewave_control, self._pwTags, progName, *tags, delete=delete)
+        # self.print_log("Found values:", vals, level=3, depth=3)
         return vals
 
     @property

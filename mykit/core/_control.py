@@ -157,26 +157,28 @@ def parse_to_tagdict(tvDict, tagMaps, progName, **tagvals):
     
 
 def extract_from_tagdict(controlClass, tvDict, progName, *tags, delete=False):
-    '''
+    '''Extract values from dict that stores mykit tag value by tag names of a program
 
-    It also extract the value of mykit tag name in tags, not only tags of progName
+    `controlClass` is required, as its class method map_to_mykit_tags will be used
+    It also extract the value of mykit tag name, not only tags of progName.
 
     Args:
         controlClass (class) : the name of class which is a subclass of prog_mapper.
         tvDict (dict): the dict to manipulate which contains mykit tag name and value pair
         progName (str): the name of program to which the tags argument belong.
         tags (str): the names of tags to request
-        delete (bool)
+        delete (bool): if set True, the mykit tag will be deleted from tvDict
     '''
-    assert issubclass(controlClass, prog_mapper)
+    try:
+        assert issubclass(controlClass, prog_mapper)
+    except:
+        raise ControllerError("{}: Not a controller class, required as subclass of prog_mapper.".format(controlClass))
     if len(tags) == 0:
         return []
-    # self.print_log("In _xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
     mytags = controlClass.map_to_mykit_tags(*tags, progFrom=progName)
-    # self.print_log("_xctags:", _xctags, level=3, depth=2)
+    # verbose.print_cm_log("extract mykit tags: ", _xctags, level=3, depth=2)
     myvals = list(map(tvDict.get, mytags))
-    # self.print_log("_values:", _vals, level=3, depth=2)
-#     if progName != "mykit":
+    # verbose.print_cm_log("      their values: ", _vals, level=3, depth=2)
     for i, v in enumerate(myvals):
         if v == None:
             if tags[i] in tvDict:
@@ -188,7 +190,6 @@ def extract_from_tagdict(controlClass, tvDict, progName, *tags, delete=False):
             # in case there is mykit tag name in tags, delete it as well
             if tags[i] in tvDict:
                 del tvDict[tags[i]]
-#     self.print_log("Found values:", _vals, level=3, depth=3)
     return myvals
 
 

@@ -76,22 +76,7 @@ class xc_control(verbose, prog_mapper):
     def _xctag_vals(self, progName, *tags, delete=False):
         if len(tags) == 0:
             return []
-        # # self.print_log("In _xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
-        # _xctags = xc_control.map_to_mykit_tags(*tags, progFrom=progName)
-        # # self.print_log("_xctags:", _xctags, level=3, depth=2)
-        # vals = list(map(self._get_one_xctag, _xctags))
-        # # self.print_log("_values:", vals, level=3, depth=2)
-        # if progName != "mykit":
-        #     for _i, _v in enumerate(vals):
-        #         if _v == None:
-        #             if tags[_i] in self._xcTags:
-        #                 vals[_i] = self._xcTags[tags[_i]]
-        # if delete:
-        #     for _i, _v in enumerate(_xctags):
-        #         if _v in self._xcTags:
-        #             del self._xcTags[_v]
-        #         if tags[_i] in self._xcTags:
-        #             del self._xcTags[tags[_i]]
+        # self.print_log("In _xctag_vals, search {} tags of {}: ".format(len(tags), progName), tags, level=3, depth=1)
         vals = extract_from_tagdict(xc_control, self._xcTags, progName, *tags, delete=delete)
         # self.print_log("Found values:", vals, level=3, depth=3)
         return vals
