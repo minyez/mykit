@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
 # ====================================================
@@ -8,7 +8,6 @@
 #       Contact : stevezhang@pku.edu.cn
 # ====================================================
 
-from __future__ import print_function
 import os,re
 import subprocess as sp
 
@@ -34,30 +33,6 @@ def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
     if not fout is None: ofile.close()
     if not ferr is None: efile.close()
 
-# ====================== PRINT WARNING ======================
-
-def common_print_warn(warn_str, func_level=0, verbose=True):
-    '''
-    Print warning with a specific level for the calling function
-    '''
-    if isinstance(verbose, bool):
-        common_print_verbose_bool("  "*(func_level+1) + '- WARNING: ' + warn_str, verbose)
-
-# ====================== PRINT BASED ON VERBOSE ======================
-
-def common_print_verbose_bool(verb_str, verbose_level):
-
-    '''
-    Print the string according to verbose_level (True/False)
-    '''
-    assert isinstance(verbose_level, bool)
-    if not verbose_level:
-        pass
-    else:
-        print(verb_str)
-
-
-# ====================== CREATE DIRECTORY ======================
 
 def common_io_checkdir(dirname=None,create=True):
     '''
@@ -132,19 +107,3 @@ def common_ss_conv(string, i, conv2, sep=None):
         return conv2(str_list[i])
     except ValueError:
         return conv2(float(str_list[i]))
-
-def common_split_rm_comment(string, sep=None):
-
-    str_tmp = string.strip()
-    if sep is not None:
-        str_list = re.split(r'[%s]'%sep, str_tmp)
-    else:
-        str_list = str_tmp.split()
-
-    if len(str_list) != 0:
-        for i in range(len(str_list)):
-            if str_list[i].strip().startswith('#'):
-                str_list = str_list[:i]
-                break
-    return str_list
-

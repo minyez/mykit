@@ -10,6 +10,7 @@ They lie the basis for input conversion
   - [x] tags mapping
   - [ ] values mapping
   - [x] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
+  - [x] abstract base class to define the basic behavior of controller
 
 ### `lattice` module
 
@@ -18,8 +19,7 @@ They lie the basis for input conversion
 
 ### Input controllers
 
-Input controller classes are named as `*_control`, and are subclasses of abstract base
-classes defined in the `_control` module.
+Input controller classes are named as `*_control`, and are subclasses of abstract base class `prog_mapper` defined in the `_control` module.
 They are metaclasses of the class of program-specific input files, 
 and help map name and value of parameter tags between different simulation programs.
   - [x] `planewave_control`: plane-wave basis
@@ -27,6 +27,7 @@ and help map name and value of parameter tags between different simulation progr
   - [x] `ion_control`: ion relaxation
   - [ ] `scf_control`: electronic self-consistent loop
   - [ ] `kmesh_control`: sampling in the reciprocal space
+    - [ ] decide the names of necessary tags
   - [ ] `lapw_control`
   - [ ] `mbpt_control`: many-body perturbation calculation control
 
@@ -40,6 +41,8 @@ and help map name and value of parameter tags between different simulation progr
 - `poscar` 
   - [x] Read, print and write
 - `potcar`
+- `kpoints`
+  - [ ] Decide the way to parse tags.
 - `potcar_search` for easily searching POTCAR
 - `wavecar`
 - `outcar`

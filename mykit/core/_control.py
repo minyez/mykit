@@ -213,7 +213,6 @@ def build_tag_map_obj(metadataFile, basename, filetype):
         raise NotImplementedError
 
 
-# TODO reading from JSON
 def _build_tag_map_obj_by_json(jsonFile, basename):
     '''Build a tag mapping object from a JSON file
 

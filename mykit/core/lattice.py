@@ -296,16 +296,15 @@ class lattice(prec, verbose):
         _n = 0
         for i in range(self.natoms):
             _dupcs, _dn = periodic_duplicates_in_cell(self.__pos[i, :])
-            _n += _dn
             for _dupc in _dupcs:
-                np.add(_posSum, _dupc, _posSum)
+                np.add(_posSum, _dupc/float(_dn), _posSum)
         # _posSum = np.sum(self.__pos, axis=0)
         # check periodic duplicate, by recognizing number of zeros in pos.
         # _dup = 3 - np.count_nonzero(self.__pos, axis=1)
         # _dup = np.power(2, _dup)
         # _n = np.sum(_dup)
         # _posSum = np.sum(self.__pos * _dup[:, None], axis=0)
-        return _posSum / _n
+        return _posSum / self.natoms
 
     def centering(self, axis=0):
         '''Centering the atoms along axes. Mainly use for slab model.
@@ -317,8 +316,8 @@ class lattice(prec, verbose):
             axis (int or iterable of int) : the axes along which the atoms will be centered.
         '''
         _aList = axis_list(axis)
-        _wasDirect = self.coordSys == "D"
-        if not _wasDirect:
+        _wasCart = self.coordSys == "C"
+        if _wasCart:
             self.coordSys = "D"
         # get the geometric center of all atoms
         _center = self.center
@@ -339,7 +338,7 @@ class lattice(prec, verbose):
         #         shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
         #         self.action_shift(shift,zdirt)
         # self.__print(" Complete centering.")
-        if not _wasDirect:
+        if _wasCart:
             self.coordSys = "C"
 
     @property
@@ -402,6 +401,8 @@ class lattice(prec, verbose):
         _conv = _convDict.get(_s)
         if _conv is not None:
             self.__pos = np.matmul(self.__pos, _conv)
+        else:
+            raise LatticeError("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
 
     @property
     def atomTypes(self):
@@ -697,6 +698,7 @@ def select_dyn_flag_from_axis(axis, relax=False):
     for _a in _aList:
         _flag[_a-1] = not _flag[_a-1]
     return _flag
+
 
 def axis_list(axis):
     '''Generate axis indices from ``axis``
