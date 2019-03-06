@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 '''Define the class for manipulating POSCAR, the VASP lattice input
 '''
-import numpy as np
 import logging
-import string
 import os
-from mykit.core.lattice import lattice, atoms_from_sym_nat, sym_nat_from_atoms
+import string
+
+import numpy as np
+
+from mykit.core.lattice import atoms_from_sym_nat, lattice, sym_nat_from_atoms
 from mykit.core.utils import trim_comment
+
 
 class PoscarError(Exception):
     pass
@@ -167,4 +170,3 @@ class poscar(lattice):
         return cls(*latt.get_latt(), **__kw)
 
     # TODO inherit factory methods from ``lattice`` for space group and Bravis cell creation
-    

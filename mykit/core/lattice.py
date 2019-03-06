@@ -13,12 +13,15 @@ The ``lattice`` class and its subclasses accept the following kwargs when being 
       empty ``dict``
     - comment (str): message about the lattice
 '''
-import numpy as np
 # import spglib
 from numbers import Real
+
+import numpy as np
+
+from mykit.core.constants import ang2au, au2ang, pi
 from mykit.core.log import verbose
 from mykit.core.numeric import prec
-from mykit.core.constants import pi, au2ang, ang2au
+
 
 # ==================== classes ====================
 class LatticeError(Exception):

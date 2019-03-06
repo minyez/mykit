@@ -2,9 +2,11 @@
 '''Module that defines classes and functions for Brillouin zone sampling
 '''
 import os
-from mykit.core._control import tags_mapping, prog_mapper, \
-    parse_to_tagdict, extract_from_tagdict, build_tag_map_obj
+
+from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
+                                 parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
+
 
 class KmeshError(Exception):
     pass
@@ -67,4 +69,3 @@ class kmesh_control(verbose, prog_mapper):
         _pF = progFrom.lower()
         _pT = progTo.lower()
         return tags_mapping(cls._kmeshTagMaps, _pF, _pF, *tags, getAll=getAll)
-
