@@ -1,34 +1,33 @@
 # coding=utf-8
 '''Module that defines math and physical constants to use
+
+Constants from scipy.constants, 2019-03-07
 '''
 #pylint: disable=bad-whitespace
 
-import scipy.constants as scc
-
-pi = scc.pi
+pi = 3.141592653589793
 # fine stucture constant
-fsca = scc.alpha
+fsca = 0.0072973525664
 # Avogadro constant, in mol^-1
-nav = scc.N_A
+nav = 6.022140857e+23
 # Planck constant, in J s
-h = scc.h
-hbar = scc.hbar
+h = 6.62607004e-34
+hbar = 1.0545718001391127e-34
 # Planck constant, in eV s
-hInEv = scc.physical_constants['Planck constant in eV s'][0]
-hbarInEv = scc.physical_constants['Planck constant over 2 pi in eV s'][0]
+hInEv = 4.135667662e-15
+hbarInEv = 6.582119514e-16
 # mass of electron, in kg
-me = scc.m_e
+me = 9.10938356e-31
 # elementary charge, in C
-e = scc.e
+e = 1.6021766208e-19
 # absolute g factor of electron
-gf = scc.physical_constants['electron g factor'][0] * -1.0
+gf = 2.00231930436182
 # speed of light in vacuum, in meter
-cLight = scc.c
+cLight = 2.99792458e8
 # Boltzman constant, in J K^-1
-kb = scc.k
-
+kb = 1.38064852e-23
 # Bohr radius, in meter
-au = scc.physical_constants['Bohr radius'][0]
+au = 5.2917721067e-11
 
 # ==================================================
 # Length conversion
@@ -36,7 +35,7 @@ au2ang  = au * 1.0E10
 ang2au  = 1.0 / au2ang
 # Energy conversion
 ev2kcal = 23.060548
-ha2ev   = scc.physical_constants['Hartree energy in eV'][0]
+ha2ev   = 27.21138602
 eV2ha   = 1.0 / ha2ev
 ry2ev   = ha2ev / 2.0
 ev2ry   = 1.0 / ry2ev
@@ -45,4 +44,5 @@ ev2kj   = ev2j / 1000.0
 ev2k    = e / kb
 # kJ/mol to eV/f.u.
 kjPerMol2evPerFu = 1000 /(ev2j * nav)
-
+# eV/A^3 to GPa
+evPerAcub2gpa = e * 1e21

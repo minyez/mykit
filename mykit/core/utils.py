@@ -31,19 +31,18 @@ def trim_comment(string, commMark):
     _search = re.search(commMark, string)
     if _search != None:
         return string[:_search.start()]
-    else:
-        return string
+    return string
 
 
-def check_duplicates_in_tag_tuple(tuple):
+def check_duplicates_in_tag_tuple(tagtuple):
     '''Check if there is duplicate in a tag tuple, case sensitive
     
     Args:
         tagTuple (tuple) : the tag tuple to check
     '''
     _dup = -1
-    for _i, _k in enumerate(tuple):
-        if _k in tuple[:_i]:
+    for _i, _k in enumerate(tagtuple):
+        if _k in tagtuple[:_i]:
             _dup = _i
             break
     return _dup
@@ -93,3 +92,20 @@ def find_data_extreme(data):
         and second the coordinate where it reaches the extreme
     '''
     pass
+
+
+def find_vol_dirs(path='.'):
+    '''Find names of directories corresponding to calculation with lattice of different volumes
+    
+    The searching pattern is "V_x.xx" where x is 0-9
+    '''
+    pat = r'^V_\d.\d+'
+    _dirs = []
+    for _d in os.listdir(path):
+        if re.match(pat, _d):
+            _dirs.append(_d)
+    def __sort_vol(dirstr):
+        return float(dirstr.split('_')[1])
+    _dirs = sorted(_dirs, key=__sort_vol)
+    return _dirs
+
