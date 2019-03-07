@@ -385,12 +385,15 @@ class lattice(prec, verbose):
     @unit.setter
     def unit(self, u):
         _u = u.lower()
+        if _u == self.__unit:
+            return
         _convDict = {"ang": au2ang, "au": ang2au}
         _conv = _convDict.get(_u)
         if _conv is not None:
             if self.__coordSys == "C":
                 self.__pos = self.__pos * _conv
             self.__cell = self.__cell * _conv
+            self.__unit = _u
         else:
             raise LatticeError("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
 
