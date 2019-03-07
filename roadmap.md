@@ -22,15 +22,18 @@ They lie the basis for input conversion
 Input controller classes are named as `*_control`, and are subclasses of abstract base class `prog_mapper` defined in the `_control` module.
 They are metaclasses of the class of program-specific input files, 
 and help map name and value of parameter tags between different simulation programs.
-  - [x] `planewave_control`: plane-wave basis
-  - [x] `xc_control`: (semi-)local exchange-correlation tags
-  - [x] `ion_control`: ion relaxation
-  - [ ] `scf_control`: electronic self-consistent loop
-  - [ ] `kmesh_control`: sampling in the reciprocal space
-    - [ ] decide the names of necessary tags
-  - [ ] `lapw_control`
-  - [ ] `mbpt_control`: many-body perturbation calculation control
+- [x] `planewave_control`: plane-wave basis
+- [x] `xc_control`: (semi-)local exchange-correlation tags
+- [x] `ion_control`: ion relaxation
+- [ ] `scf_control`: electronic self-consistent loop
+- [x] `kmesh_control`: sampling in the reciprocal space
+  - [x] decide the names of necessary tags
+- [ ] `lapw_control`
+- [ ] `mbpt_control`: many-body perturbation calculation control
 
+### `kmesh` module
+
+- [ ] Factory methods for kpath
 
 ## `vasp`: VASP related
 
@@ -42,7 +45,7 @@ and help map name and value of parameter tags between different simulation progr
   - [x] Read, print and write
 - `potcar`
 - `kpoints`
-  - [ ] Decide the way to parse tags.
+  - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
 - `potcar_search` for easily searching POTCAR
 - `wavecar`
 - `outcar`

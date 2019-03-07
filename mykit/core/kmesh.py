@@ -62,6 +62,14 @@ class kmesh_control(verbose, prog_mapper):
     def kmeshTags(self):
         return self._kmeshTags
 
+    @property
+    def kmode(self):
+        return self._kmeshTags.get("kmode")
+
+    @property
+    def kgrid(self):
+        return self._kmeshTags.get("kgrid")
+
     @classmethod
     def map_tags(cls, *tags, progFrom="mykit", progTo="mykit", getAll=False):
         '''

@@ -15,23 +15,25 @@ class KpointsError(Exception):
 # ! kmesh_control instance is used as an attribute,
 # ! since vasp does not have any tag for it
 class kpoints(verbose):
-    '''class for manipulation KPOINTS file.
+    '''class for manipulation KPOINTS, IBZKPT files
+
+    At least one of kgrid, kdense, kpath, kpoints
+    should be specified.
 
     Note:
-        Only automatic generation is supported.
-        And it does not support modification of arguments
-
-    TODO:
-        Line mode
+        When auto mode check is triggered (kmode=None),
+        the priority to determine the mode is:
+            kpoints > kpath > kgrid > kdense
 
     Args:
         comment (str): the comment for KPOINTS
-        kgrid (3-member list): the number of grid on each 
+        kgrid (3-member list): the number of grid on each axis
         kdense (integer): the density of k grid point
             If set to non-zero value and kmode is "G", "M" or "A", the kmode will automatically be set as "A".
             If kmode is set as "L" and kpath specified, it is the number of kpoints along two special points.
         kshift (3-member list): shift off center
         kmode ("G", "M", "A", "L"): the mode of KPOINTS
+            None: use explicit kpoints format
             "G": Gamma-centered
             "M": Monkhorse-Pack
             "A": fully automatic, i.e. the grid will be decided by kdense
@@ -41,85 +43,97 @@ class kpoints(verbose):
             If specified, the explict mode will be triggered.
     '''
 
-    def __init__(self, comment=None, kgrid=None, kdense=0, kshift=None, kmode="G", kpath=None, kpoints=None):
+    def __init__(self, comment=None, kmode=None, kgrid=None, kdense=0, kshift=None, kpath=None, kpoints=None):
         try:
             assert kdense >= 0
         except AssertionError:
-            raise KpointsError("Invalid kpoint input for kdense/grids")
+            raise KpointsError("kdense must not be negative")
+
         self.comment = comment
-        self._relatePoscar = None
-        _kmode = kmode.upper()
+        # self._relatePoscar = None
+        _kmode = kmode
+        if isinstance(_kmode, str):
+            _kmode = _kmode.upper()
         try:
-            assert _kmode in ["G", "M", "L", "A"]
+            assert _kmode in [None, "G", "M", "L", "A"]
         except AssertionError:
             raise KpointsError("Unknown KPOINTS mode: {}".format(_kmode))
-        # raise when no usable parameter is input
-        if not (kgrid or kdense or kpath or kpoints):
-            raise KpointsError("Enter at least one of kgrid, kdense, kpath and kpoints")
-        # TODO: Move the following part to script
-        # Search for POSCAR to print help infomation when kdense is specified
-        # if kdense != None:
-        #     from mykit.vasp.poscar import poscar, PoscarError
-        #     try:
-        #         self._poscar = poscar.read_from_file("POSCAR")
-        #         _blen = self._poscar.blen
-        #         self.print_log("Reciprocal vector length %8.5f %8.5f %8.5f" % _blen, level=1)
-        #     except PoscarError:
-        #         pass
-        
-        # Consistency check
-        if _kmode == "L" and (kdense == 0 or kpath == None):
-            raise KpointsError("kpath should be specified and kdense > 0 for line mode")
+
+        # Automatic mode check when kmode is not specified
+        if _kmode == None:
+            if kpoints != None:
+                pass
+            elif kpath != None:
+                _kmode = "L"
+            elif kgrid != None:
+                _kmode = "G"
+            elif kdense > 0:
+                # self.print_warn("Length(kdense) set for non-line mode. Switch to \"A\" mode.", level=1)
+                _kmode = "A"
+            else:
+                raise KpointsError("Enter at least one of kgrid, kdense, kpath and kpoints")
+        # Consistency check for each mode
+        if _kmode == "L":
+            if kdense == 0:
+                raise KpointsError("kdense > 0 for line mode")
+            if kpath == None:
+                raise KpointsError("kpath should be specified for line mode")
         if _kmode == "A" and kdense == 0:
             raise KpointsError("Fully automatic mode needs positive kdense (e.g. 30)")
         if _kmode in ["G", "M"] and kgrid == None:
             raise KpointsError("kgrid should be specified for Gamma or MP mode")
-        if kdense > 0 and _kmode != "L":
-            _kmode = "A"
-        if kpath != None:
-            _kmode = "L"
-        self._control = kmesh_control("mykit", kgrid=kgrid, kdense=kdense, \
+
+        self._control = kmesh_control("vasp", kgrid=kgrid, kdense=kdense, \
             kshift=kshift, kpath=kpath, kpoints=kpoints, kmode=_kmode)
 
+    @property
+    def mode(self):
+        return self._control.kmode
+
     def __print(self, fp):
-        '''
+        '''Print the kmesh in KPOINTS format to file handler
 
         Args:
-            fp (file)
+            fp (file): the file handler
         '''
         if not self.comment:
             # TODO: automatic add comment about kpath in line mode. Or determine it in script
             print("KPOINTS generated by mykit", file=fp)
         else:
             print(self.comment, file=fp)
-        _explictKs = self._control.tag_vals("mykit", "kpoints")[0]
+        _explictKs = self._control.tag_vals("vasp", "kpoints")[0]
         if _explictKs != None:
-            # raise NotImplementedError("Explicit mode not implemented.")
             print(len(_explictKs), file=fp)
             print("Reciprocal", file=fp)
             for _i, kp in enumerate(_explictKs):
-                print("%8.5f %8.5f %8.5f %d" % kp, file=fp)
+                try:
+                    print("%20.14f %20.14f %20.14f %14d" % kp, file=fp)
+                except TypeError:
+                    raise KpointsError("Bad explicit kpoints format: {}, index {}".format(kp, _i))
         else:
             _modeDict = {"G": "Gamma", "M": "Monkhorse-Pack", "L": "Line", "A": "Auto"}
-            _kdense = self._control.tag_vals("mykit", "kdense")[0]
-            _mode = self._control.tag_vals("mykit", "kmode")[0]
+            _kdense = self._control.tag_vals("vasp", "kdense")[0]
+            _mode = self._control.tag_vals("vasp", "kmode")[0]
             if _mode == "L":
                 print(int(_kdense), file=fp)
             else:
                 print(0, file=fp)
             print(_modeDict[_mode], file=fp)
             if _mode in ["G", "M"]:
-                _kg, _ks = self._control.tag_vals("mykit", "kgrid", "kshift")
-                print(*_kg, file=fp)
+                _kg, _ks = self._control.tag_vals("vasp", "kgrid", "kshift")
+                try:
+                    print("%3d %3d %3d" % _kg, file=fp)
+                except TypeError:
+                    raise KpointsError("Bad kgrid format for G/M mode: {}".format(_kg))
                 if _ks == None:
                     print(0, 0, 0, file=fp)
                 else:
-                    print(*_ks, file=fp)
+                    print("%3d %3d %3d" % _ks, file=fp)
             elif _mode == "A":
                 print(int(_kdense), file=fp)
             elif _mode == "L":
                 print("Reciprocal", file=fp)
-                _kpath = self._control.tag_vals("mykit", "kpath")[0]
+                _kpath = self._control.tag_vals("vasp", "kpath")[0]
                 _nSpeK = len(_kpath)
                 if _nSpeK == 1:
                     raise KpointsError("At least two special points are needed to define kpath")
@@ -131,7 +145,6 @@ class kpoints(verbose):
             else:
                 raise KpointsError("Unknown KPOINTS mode: {}".format(_mode))
         
-
     def print(self):
         '''Preview the KPOINTS output
         '''
@@ -153,5 +166,12 @@ class kpoints(verbose):
             self.__print(f)
 
     @classmethod
-    def read_from_file(cls, pathKpoints="KPOINTS"):
+    def read_from_kpoints(cls, pathKpoints="KPOINTS"):
         pass
+
+    @classmethod
+    def read_from_ibzkpt(cls, pathKpoints="IBZKPT"):
+        pass
+
+    # * Factory methods to write kpath of particular crystal
+    # * Name with kpath_(bravis)

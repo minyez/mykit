@@ -2,13 +2,15 @@
 '''this module implements the ``incar`` class that manages the VASP input file INCAR
 '''
 import copy
+import json
 import os
 import re
-import json
-from mykit.core.utils import check_duplicates_in_tag_tuple, trim_comment
-from mykit.core.planewave import planewave_control
-from mykit.core.xc import xc_control
+
 from mykit.core.ion import ion_control
+from mykit.core.planewave import planewave_control
+from mykit.core.utils import check_duplicates_in_tag_tuple, trim_comment
+from mykit.core.xc import xc_control
+
 # from mykit.core.program import program
 
 _incar_controllers = (
@@ -25,7 +27,7 @@ class incar(*_incar_controllers):
     '''manage tags and IO of VASP input file INCAR
     '''
     # For VASP tags that is not easily to find analogy in other programs
-    _metadata = os.path.join(os.path.dirname(__file__), "metadata", "vasptags.json")
+    _metadata = os.path.join(os.path.dirname(__file__), "metadata", "incartags.json")
     with open(_metadata, 'r') as h:
         _tagdoc = json.load(h)
     tagAll = []
@@ -79,7 +81,7 @@ class incar(*_incar_controllers):
         return self.__str__()
 
     def parse_tags(self, **keyval):
-        print(keyval)
+        # print(keyval)
         if "comment" in keyval:
             self.comment = keyval.pop("comment")
         self.print_log("incar Parsing ", keyval, depth=0, level=3)
@@ -97,7 +99,7 @@ class incar(*_incar_controllers):
             __tagFiltered = self._filter_tags_incar_not_mykit(*tags.keys())
         for _k in __tagFiltered:
             self._vaspTags.update({_k:tags[_k]})
-        self.print_log("End _parse_vasptags. vaspTags: ", self._vaspTags, depth=1, level=3)
+        # self.print_log("End _parse_vasptags. vaspTags: ", self._vaspTags, depth=1, level=3)
 
     def pop_tags(self, *tags):
         return self._tag_vals(*tags, delete=True)
@@ -122,7 +124,7 @@ class incar(*_incar_controllers):
                 _search.append(_c.tag_vals(self, "vasp", *tags))
         _vaspTagVals = self._vasptag_vals(*tags, delete=delete)
         _search.append(_vaspTagVals)
-        self.print_log("Searching value in ", _search, depth=2, level=2)
+        # self.print_log("Searching value in ", _search, depth=2, level=2)
         for _i, _v in enumerate(vals):
             if _v is None:
                 for _sList in _search:
@@ -135,7 +137,7 @@ class incar(*_incar_controllers):
         _vals = []
         if len(tags) == 0:
             return _vals
-        self.print_log("In _vasptag_vals, search {} tags of VASP: ".format(len(tags)), tags, level=3, depth=1)
+        # self.print_log("In _vasptag_vals, search {} tags of VASP: ".format(len(tags)), tags, level=3, depth=1)
         _vals = list(map(self._vaspTags.get, tags))
         if delete:
             for _t in tags:

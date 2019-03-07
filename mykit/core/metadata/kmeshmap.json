@@ -1,8 +1,20 @@
 {
-    "kgrid": {},
-    "kshift": {},
-    "kdense": {},
-    "kmode": {},
-    "kpath": {},
-    "kpoints": {}
+    "kgrid": {
+        "vasp": "kgrid"
+    },
+    "kshift": {
+        "vasp": "kshift"
+    },
+    "kdense": {
+        "vasp": "kdense"
+    },
+    "kmode": {
+        "vasp": "kmodr"
+    },
+    "kpath": {
+        "vasp": "kpath"
+    },
+    "kpoints": {
+        "vasp": "kpoints"
+    }
 }
