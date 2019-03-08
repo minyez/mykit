@@ -122,13 +122,16 @@ class kpoints(verbose):
             if _mode in ["G", "M"]:
                 _kg, _ks = self._control.tag_vals("vasp", "kgrid", "kshift")
                 try:
-                    print("%3d %3d %3d" % _kg, file=fp)
-                except TypeError:
+                    print("{:3d} {:3d} {:3d}".format(*_kg), file=fp)
+                except (TypeError, IndexError):
                     raise KpointsError("Bad kgrid format for G/M mode: {}".format(_kg))
                 if _ks == None:
                     print(0, 0, 0, file=fp)
                 else:
-                    print("%3d %3d %3d" % _ks, file=fp)
+                    try:
+                        print("{:3d} {:3d} {:3d}".format(*_ks), file=fp)
+                    except (TypeError, IndexError):
+                        raise KpointsError("Bad kshift format for G/M mode: {}".format(_ks))
             elif _mode == "A":
                 print(int(_kdense), file=fp)
             elif _mode == "L":

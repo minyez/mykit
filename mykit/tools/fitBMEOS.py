@@ -6,7 +6,7 @@ The data file should be prepared forehand, and two formats are supported.
     1. volume ratio, volume, energy (default)
     2. volume, energy
 
-To use the second format, add option '--ncol 2'
+To use the second format, add option '--ncols 2'
 '''
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter

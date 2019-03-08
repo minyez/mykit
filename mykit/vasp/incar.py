@@ -69,8 +69,6 @@ class incar(*_incar_controllers):
         for tv in zip(self.tagAll, __alltv):
             if tv[1] != None:
                 _ret.append(tv)
-        if self.comment != None:
-            _ret.append(("comment", self.comment))
         return dict(_ret)
 
     def __str__(self):
@@ -196,16 +194,16 @@ class incar(*_incar_controllers):
         if self.comment != '':
             print(self.comment, file=f)
         # for _i, _v in enumerate(__all):
-        for _i, _v in self.tags.items():
-            if _v != None:
-                if isinstance(_v, (list, tuple)):
-                    print(self.tagAll[_i], "=", *_v, file=f)
-                elif isinstance(_v, dict):
-                    print(self.tagAll[_i], "=", **_v, file=f)
-                elif isinstance(_v, bool):
-                    print({True:".TRUE.", False:".FALSE."}[_v])
+        for k, v in self.tags.items():
+            if v != None:
+                if isinstance(v, (list, tuple)):
+                    print(k, "=", *v, file=f)
+                elif isinstance(v, dict):
+                    print(k, "=", **v, file=f)
+                elif isinstance(v, bool):
+                    print(k, "=", {True:".TRUE.", False:".FALSE."}[v], file=f)
                 else:
-                    print(self.tagAll[_i], "=", _v, file=f)
+                    print(k, "=", v, file=f)
 
     def print(self):
         '''Preview the INCAR output
@@ -393,8 +391,9 @@ class incar(*_incar_controllers):
             "ICHARG": 2,
             }
         _scftags.update(kwargs)
-        _xctags = _get_xc_tags_from_xcname(xc)
-        _scftags.update(_xctags)
+        if xc != None:
+            _xctags = _get_xc_tags_from_xcname(xc)
+            _scftags.update(_xctags)
         _paratags = _get_para_tags_from_nproc(nproc)
         return cls(**_scftags)
 

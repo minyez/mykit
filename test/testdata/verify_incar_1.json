@@ -1,5 +1,4 @@
 {
-    "comment": "#Si_dft_exc",
     "SYSTEM": "Si",
     "PREC": "Normal",
     "ENCUT": 250.0,
