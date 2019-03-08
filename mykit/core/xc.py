@@ -2,8 +2,11 @@
 '''
 '''
 import os
+
+from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
+                                 parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict, build_tag_map_obj
+
 
 class XCError(Exception):
     pass
@@ -18,9 +21,9 @@ class xc_control(verbose, prog_mapper):
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _xcTagMaps = _tagMaps
     _xcValMaps = {}
-    _xcTags = {}
 
     def __init__(self, progName, **xctags):
+        self._xcTags = {}
         self._parse_xctags(progName, **xctags)
 
     def parse_tags(self, progName, **xctags):

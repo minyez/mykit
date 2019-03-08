@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
+import logging
 import os
 import re
 import unittest as ut
-import json
+
 import numpy as np
-import logging
-from mykit.vasp.poscar import poscar, PoscarError
+
 from mykit.core.lattice import lattice
+from mykit.vasp.poscar import PoscarError, poscar
+
 
 class poscar_build_test(ut.TestCase):
     
@@ -81,7 +84,7 @@ def _verify_poscar_by_json(tc, pc, pathJson):
 
     _cellPos, _atomsPos, _posPos = pc.get_latt()
     _kwargsPos = pc.get_kwargs()
-    verifyMsg = "Verification failed: {}".format(pathJson)
+    verifyMsg = "POSCAR verification failed: {}".format(pathJson)
     if "cell" in _vDict:
         tc.assertTrue(np.array_equal(pc.cell, np.array(_vDict["cell"], dtype=pc._dtype)), msg=verifyMsg)
     if "sdFlags" in _vDict:

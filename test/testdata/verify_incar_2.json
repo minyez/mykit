@@ -1,0 +1,18 @@
+{
+    "comment": "#Si_gw",
+    "SYSTEM": "Si",
+    "PREC": "Normal",
+    "ENCUT": 250.0,
+    "ALGO": "GW0",
+    "ISMEAR": 0,
+    "SIGMA": 0.01,
+    "ENCUTGW": 150,
+    "NELM": 1,
+    "NOMEGA": 50,
+    "OMEGATL": 280,
+    "KPAR": 2,
+    "NBANDS": 128,
+    "NBANDSGW": 12,
+    "LWAVE": true,
+    "PRECFOCK": "Normal"
+}

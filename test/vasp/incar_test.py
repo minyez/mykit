@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # coding = utf-8
 
+import json
 import os
 import re
 import unittest as ut
-import json
-from mykit.vasp.incar import incar, IncarError
+
+from mykit.vasp.incar import (IncarError, _get_para_tags_from_nproc,
+                              _get_xc_tags_from_xcname, incar)
+
 
 class test_direct_set(ut.TestCase):
 
@@ -76,6 +79,7 @@ class test_tag_manipulation(ut.TestCase):
 class test_incar_factory(ut.TestCase):
 
     def test_read_from_file(self):
+        _incar = None
         _countGood = 0
         _countBad = 0
         _countVerified = 0
@@ -89,6 +93,7 @@ class test_incar_factory(ut.TestCase):
                     _incar = incar.read_from_file(_path)
                     _verifyJson = os.path.join(__incarDir, 'verify_incar_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
+                        print(_incar)
                         _vs = _verify_incar_from_json(self, _incar, _verifyJson)
                         if _vs:
                             _countVerified += 1
@@ -99,13 +104,44 @@ class test_incar_factory(ut.TestCase):
                     self.assertRaises(IncarError, incar.read_from_file, _path)
         print("{} good INCARs readed ({} verified by JSON file). {} bad INCARs raised.".format(_countGood, _countVerified, _countBad))
 
-# TODO JSON verification of INCAR
+
+class test_tag_functions(ut.TestCase):
+
+    def test_get_xc_tags(self):
+
+        xctags = _get_xc_tags_from_xcname("lda")
+        self.assertDictEqual(xctags, {"GGA": "CA"})
+        xctags = _get_xc_tags_from_xcname("pbe")
+        self.assertDictEqual(xctags, {"GGA": "PE"})
+        xctags = _get_xc_tags_from_xcname("PBE0")
+        self.assertDictEqual(xctags, \
+            {"GGA": "PE", "ALGO": "ALL", "LHFCALC": True, "TIME": 0.4, "PRECFOCK": "Normal"})
+        xctags = _get_xc_tags_from_xcname("HSE06")
+        self.assertDictEqual(xctags, \
+            {"GGA": "PE", "ALGO": "ALL", "LHFCALC": True, "TIME": 0.4, "PRECFOCK": "Normal", "HFSCREEN": 0.2})
+        xctags = _get_xc_tags_from_xcname("HF")
+        self.assertDictEqual(xctags, \
+            {"GGA": "PE", "ALGO": "ALL", "LHFCALC": True, "TIME": 0.4, "PRECFOCK": "Normal", "AEXX": 1.0})
+        self.assertRaisesRegex(IncarError, r"XC name is not supported: *", _get_xc_tags_from_xcname, "non-xc", ignore_error=False)
+
+    def test_get_para_tags(self):
+
+        paratags = _get_para_tags_from_nproc(1)
+        self.assertDictEqual(paratags, {})
+        paratags = _get_para_tags_from_nproc(4)
+        self.assertDictEqual(paratags, {"NPAR": 2, "KPAR": 2})
+        paratags = _get_para_tags_from_nproc(27)
+        self.assertDictEqual(paratags, {"NPAR": 9, "KPAR": 3})
+        
+
 def _verify_incar_from_json(tc, ic, pathJson):
     assert isinstance(tc, ut.TestCase)
     assert isinstance(ic, incar)
     with open(pathJson, 'r') as f:
         _vDict = json.load(f)
-    return False
+    verifyMsg = "INCAR verification failed: {}".format(pathJson)
+    tc.assertDictEqual(_vDict, ic.tags, msg=verifyMsg)
+    return True
 
 
 if __name__ == '__main__':

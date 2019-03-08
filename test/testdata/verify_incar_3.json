@@ -1,0 +1,15 @@
+{
+    "comment": "#Si_dft_exc",
+    "SYSTEM": "Si",
+    "PREC": "Normal",
+    "ENCUT": 250.0,
+    "ALGO": "EXACT",
+    "ISMEAR": 0,
+    "SIGMA": 0.01,
+    "NELM": 1,
+    "KPAR": 2,
+    "NBANDS": 128,
+    "LOPTICS": true,
+    "LPEAD": true,
+    "OMEGAMAX": 40
+}

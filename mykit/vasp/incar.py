@@ -55,13 +55,26 @@ class incar(*_incar_controllers):
         '''
         self.comment = ''
         self._vaspTags = {}
-        super(incar, self).__init__("vasp", **incarArgs)
+        for _c in _incar_controllers:
+            _c.__init__(self, "vasp", **incarArgs)
+        # super(incar, self).__init__("vasp", **incarArgs)
         self.parse_tags(**incarArgs)
 
+    @property
+    def tags(self):
+        '''get all parsed tags
+        '''
+        _ret = []
+        __alltv = self.tag_vals(*self.tagAll)
+        for tv in zip(self.tagAll, __alltv):
+            if tv[1] != None:
+                _ret.append(tv)
+        if self.comment != None:
+            _ret.append(("comment", self.comment))
+        return dict(_ret)
+
     def __str__(self):
-        _vals = self.tag_vals(*self.tagAll)
-        _dict = {self.tagAll[_i]:_v for _i, _v in enumerate(_vals) if _v != None}
-        return "{}".format(_dict)
+        return "{}".format(self.tags)
 
     def __getitem__(self, tag):
         try:
@@ -144,7 +157,6 @@ class incar(*_incar_controllers):
                 self._vaspTags.pop(_t, None)
         return _vals
 
-    # @classmethod
     def _filter_tags_incar_not_mykit(self, *tags):
         '''Get VASP tags that are implemented in incar and have no correspondents in base class tags.
         
@@ -180,10 +192,11 @@ class incar(*_incar_controllers):
         Args:
             f (file-type)
         '''
-        __all = self.tag_vals(*self.tagAll)
+        # __all = self.tag_vals(*self.tagAll)
         if self.comment != '':
             print(self.comment, file=f)
-        for _i, _v in enumerate(__all):
+        # for _i, _v in enumerate(__all):
+        for _i, _v in self.tags.items():
             if _v != None:
                 if isinstance(_v, (list, tuple)):
                     print(self.tagAll[_i], "=", *_v, file=f)
@@ -359,19 +372,94 @@ class incar(*_incar_controllers):
         return cls(**__incarTags)
         
     @classmethod
-    def minimal_electric(cls, **kwargs):
-        pass
-    # xc_dict = {
-    #             # 'LDA'    : {'GGA'     : 'CA'} ,
-    #             # 'PBE'    : {'GGA'     : 'PE'} ,
-    #             # 'PBESOL' : {'GGA'     : 'PS'} ,
-    #             # 'RPBE'   : {'GGA'     : 'RP'} ,
-    #             # 'SCAN'   : {'METAGGA' : 'SCAN', 'LASPH' : '.TRUE.'} ,
-    #             # 'PBE0'   : self.tag_PBE0  ,
-    #             # 'HSE06'  : self.tag_HSE06 ,
-    #             # 'HF'     : self.tag_HF
-    #             }
+    def minimal_scf(cls, xc=None, nproc=1, **kwargs):
+        '''Create an ``incar`` instance with minimal reasonable tags for SCF
+
+        Args:
+            xc (str)
+            nproc (int): number of processors to use
+            kwargs: other tags you want to set manually.
+                 It is not recommended as it will overwrite the default tags, and
+                 in this case you may consider other factory methods.
+
+        Returns:
+            incar object
+        '''
+        _scftags = {
+            "LREAL": False,
+            "EDIFF": 1e-6,
+            "PREC": "Normal",
+            "ISTART": 0,
+            "ICHARG": 2,
+            }
+        _scftags.update(kwargs)
+        _xctags = _get_xc_tags_from_xcname(xc)
+        _scftags.update(_xctags)
+        _paratags = _get_para_tags_from_nproc(nproc)
+        return cls(**_scftags)
 
     @classmethod
     def minimal_ion_opt(cls, **kwargs):
         pass
+
+
+def _get_xc_tags_from_xcname(xc, ignore_error=True):
+    '''Get necessary VASP tags for running calculation of ``xc`` functional
+
+    Currently support xc name
+
+        local: LDA, PBE, PBEsol, RPBE
+        meta-GGA: SCAN
+        hybrid: PBE0, HSE06, HF
+
+    Args:
+        xc (str) : the name of exchange-correlation functional, case-insensitive.
+        ignore_error (bool): if raise ``IncarError`` when the xc name is not supported.
+            If set False and ``xc`` is not supported, an empty dict will be returned.
+        
+    Returns:
+        dict
+    '''
+    _tag_PBE0 = (("GGA", "PE"), ("ALGO", "ALL"), ("LHFCALC", True), ("TIME", 0.4), ("PRECFOCK", "Normal"))
+    _tags = {
+        "LDA": {"GGA": "CA"}, 
+        "PBE": {"GGA": "PE"},
+        "PBESOL": {"GGA": "PE"},
+        "RPBE": {"GGA": "RP"},
+        "SCAN": {"METAGGA": "SCAN", "LASPH": True}, 
+        "PBE0": dict(_tag_PBE0),
+        "HSE06": dict(_tag_PBE0 + (("HFSCREEN", 0.2),)),
+        "HF": dict(_tag_PBE0 + (("AEXX", 1.0),)),
+        }
+    _xc = xc.upper()
+    if ignore_error:
+        return _tags.get(_xc, {})
+    else:
+        raise IncarError("XC name is not supported: {}".format(xc))
+
+
+def _get_para_tags_from_nproc(nproc):
+    '''Get the value of parallelization related tags from number of processors.
+
+    The returned dict will include two keys, KPAR and NPAR, if ``nproc`` is not prime.
+    Their product equals ``nproc``. NPAR will be no smaller than KPAR.
+    Otherwise, i.e. ``nproc`` is prime, an empty dict will be returned.
+
+    Args:
+        nproc (int): number of processors to use
+
+    Returns:
+        dict
+    '''
+    from math import sqrt
+    assert isinstance(nproc, int)
+    assert nproc > 0
+    _paratags = {}
+    if nproc > 1:
+        _kpar = int(sqrt(nproc))
+        while _kpar > 1:
+            if nproc%_kpar == 0:
+                _paratags.update({"KPAR": _kpar, "NPAR": int(nproc/_kpar)})
+                break
+            _kpar -= 1
+    return _paratags

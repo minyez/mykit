@@ -1,8 +1,11 @@
 # coding = utf-8
 
 import os
-from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict, build_tag_map_obj
+
+from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
+                                 parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
+
 
 class IonError(Exception):
     pass
@@ -14,9 +17,9 @@ class ion_control(verbose, prog_mapper):
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _ionTagMaps = _tagMaps
     _ionValMaps = {}
-    _ionTags = {}
 
     def __init__(self, progName, **iontags):
+        self._ionTags = {}
         self._parse_iontags(progName, **iontags)
     
     def parse_tags(self, progName, **iontags):
@@ -57,4 +60,3 @@ class ion_control(verbose, prog_mapper):
     @classmethod
     def map_tags(cls, *tags, progFrom="mykit", progTo="mykit", getAll=False):
         return tags_mapping(cls._ionTagMaps, progFrom, progTo, *tags, getAll=getAll)
-    

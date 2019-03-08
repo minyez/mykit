@@ -2,8 +2,11 @@
 '''define classes and functions related to plane wave basis setup
 '''
 import os
+
+from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
+                                 parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
-from mykit.core._control import tags_mapping, prog_mapper, parse_to_tagdict, extract_from_tagdict, build_tag_map_obj
+
 
 class PlanewaveError(Exception):
     pass
@@ -31,9 +34,9 @@ class planewave_control(verbose, prog_mapper):
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _pwTagMaps = _tagMaps
     _pwValMaps = {}
-    _pwTags = {}
 
     def __init__(self, progName, **pwargs):
+        self._pwTags = {}
         # if len(pwargs) > 0:
         self._parse_pwtags(progName, **pwargs)
         # else:

@@ -1,0 +1,6 @@
+{
+    "comment": "test write",
+    "ISTART": 1,
+    "ENCUT": 500,
+    "PREC": "Normal"
+}

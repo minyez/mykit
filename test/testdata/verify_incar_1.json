@@ -1,0 +1,10 @@
+{
+    "comment": "#Si_dft_exc",
+    "SYSTEM": "Si",
+    "PREC": "Normal",
+    "ENCUT": 250.0,
+    "ISMEAR": 0,
+    "SIGMA": 0.01,
+    "KPAR": 2,
+    "EDIFF": 1.0e-8
+}

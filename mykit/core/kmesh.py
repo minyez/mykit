@@ -18,9 +18,9 @@ class kmesh_control(verbose, prog_mapper):
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")
     _kmeshTagMaps = _tagMaps
     _kmeshValMaps = {}
-    _kmeshTags = {}
 
     def __init__(self, progName, **kmargs):
+        self._kmeshTags = {}
         self._parse_kmeshtags(progName, **kmargs)
     
     def parse_tags(self, progName, **kmtags):

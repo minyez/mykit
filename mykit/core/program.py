@@ -6,7 +6,6 @@ class programError(Exception):
 
 class program:
 
-    __progName = "n a"
 
     def __init__(self, program, **kwargs):
         self.__progName = program.lower()
