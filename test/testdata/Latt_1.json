@@ -6,6 +6,9 @@
         "1": [true, true, true],
         "0": [true, true, true]
     },
+    "unit": "ang",
     "coordSys" : "D",
-    "atoms": ["C", "C"]
+    "atoms": ["C", "C"],
+    "pos": [[0.50, 0.50, 0.50],
+            [0.75, 0.75, 0.75]]
 }

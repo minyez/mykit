@@ -567,6 +567,32 @@ class lattice(prec, verbose):
 
     # * Factory methods
     @classmethod
+    def read_from_json(cls, pathJson):
+        '''Initialize a ``lattice`` instance from a JSON file
+
+        TODO:
+            unit test
+        '''
+        import json
+        import os
+        if pathJson is None or not os.path.isfile(pathJson):
+            raise LatticeError("JSON file not found: {}".format(pathJson))
+        with open(pathJson, 'r') as h:
+            try:
+                _j = json.load(h)
+            except json.JSONDecodeError:
+                raise LatticeError("invalid JSON file for lattice: {}".format(pathJson))
+        
+        _argList = ["cell", "atoms", "pos"]
+        _args = []
+        for _i, arg in enumerate(_argList):
+            v = _j.pop(arg, None)
+            if v is None:
+                raise LatticeError("invalid JSON file for lattice: {}. No {}".format(pathJson, arg))
+            _args.append(v)
+        return cls(*_args, **_j)
+
+    @classmethod
     def __bravis_c(cls, atom, typeLatt, aLatt=1.0, **kwargs):
 
         _type = typeLatt.upper()

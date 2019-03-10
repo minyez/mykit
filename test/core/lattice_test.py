@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import unittest
-import numpy as np
-from mykit.core.constants import au2ang, ang2au
-from mykit.core.lattice import lattice, LatticeError, periodic_duplicates_in_cell, \
-                                axis_list, atoms_from_sym_nat, sym_nat_from_atoms
+import unittest as ut
 
-class simple_cubic_lattice(unittest.TestCase):
+import numpy as np
+
+from mykit.core.constants import ang2au, au2ang
+from mykit.core.lattice import (LatticeError, atoms_from_sym_nat, axis_list,
+                                lattice, periodic_duplicates_in_cell,
+                                sym_nat_from_atoms)
+
+
+class simple_cubic_lattice(ut.TestCase):
 
     _a = 5.0
     _cell = [[_a, 0.0, 0.0],
@@ -75,8 +79,7 @@ class simple_cubic_lattice(unittest.TestCase):
         self.assertEqual(self._latt[0][0], self._frac)
 
         
-
-class lattice_raise(unittest.TestCase):
+class lattice_raise(ut.TestCase):
     
     def test_bad_cell(self):
         _cell = [[5.0, 0.0, 0.0],
@@ -111,7 +114,7 @@ class lattice_raise(unittest.TestCase):
         self.assertRaises(LatticeError, lattice, _cell, _atoms, _pos)
 
 
-class lattice_factory_method(unittest.TestCase):
+class lattice_factory_method(ut.TestCase):
     '''Test the class methods to generate commonly used lattice structure'''
 
     def test_bravis_cubic(self):
@@ -124,7 +127,48 @@ class lattice_factory_method(unittest.TestCase):
         _fcc = lattice.bravis_cF("C", aLatt=5.0)
         self.assertEqual(4, len(_fcc))
 
-class lattice_select_dynamics(unittest.TestCase):
+    def test_read_from_json(self):
+        import os
+        import tempfile
+        import json
+
+        self.assertRaisesRegex(LatticeError, "JSON file not found: None", \
+            lattice.read_from_json, None)
+        self.assertRaisesRegex(LatticeError, "JSON file not found: /abcdefg.json", \
+            lattice.read_from_json, "/abcdefg.json")
+        # raise for invalid json
+        _tf = tempfile.NamedTemporaryFile()
+        with open(_tf.name, 'w') as h:
+            json.dump({}, h)
+        self.assertRaisesRegex(LatticeError, "invalid JSON file for lattice: {}".format(_tf.name), \
+            lattice.read_from_json, _tf.name)
+
+        _dict = {"cell": [[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]]}
+        with open(_tf.name, 'w') as h:
+            json.dump(_dict, h)
+        self.assertRaisesRegex(LatticeError, "invalid JSON file for lattice: {}. No {}".format(_tf.name, "atoms"), \
+            lattice.read_from_json, _tf.name)
+
+        _dict = {
+            "cell": [[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]], 
+            "atoms": ["C"],
+            }
+        with open(_tf.name, 'w') as h:
+            json.dump(_dict, h)
+        self.assertRaisesRegex(LatticeError, "invalid JSON file for lattice: {}. No {}".format(_tf.name, "pos"), \
+            lattice.read_from_json, _tf.name)
+        _tf.close()
+        # test one file in testdata, Latt_1.json is tested here
+        _path = os.path.join(os.path.dirname(__file__), '..', 'testdata', 'Latt_1.json')
+        _latt = lattice.read_from_json(_path)
+        self.assertEqual(_latt.unit, "ang")
+        self.assertEqual(_latt.coordSys, "D")
+        self.assertEqual(_latt.natoms, 2)
+        self.assertListEqual(_latt.atoms, ["C", "C"])
+
+
+
+class lattice_select_dynamics(ut.TestCase):
     '''Test the functionality of selective dynamics
     '''
     def test_fix_all(self):
@@ -162,7 +206,7 @@ class lattice_select_dynamics(unittest.TestCase):
         _pc.set_relax(3, axis=[2, 3])
         self.assertListEqual([False,True,True], _pc.sdFlags(3))
 
-class lattice_sort(unittest.TestCase):
+class lattice_sort(ut.TestCase):
     '''Test the sorting functionality of lattice
     '''
 
@@ -241,7 +285,7 @@ class lattice_sort(unittest.TestCase):
                 _latt.pos[:,_axis]))
 
 
-class test_lattice_utils(unittest.TestCase):
+class test_lattice_utils(ut.TestCase):
     '''Test the utils for ``lattice`` use
     '''
     
@@ -278,5 +322,4 @@ class test_lattice_utils(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
-    
+    ut.main()

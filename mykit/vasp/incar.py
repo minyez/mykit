@@ -369,41 +369,75 @@ class incar(*_incar_controllers):
         return cls(**__incarTags)
         
     @classmethod
-    def minimal_scf(cls, xc=None, nproc=1, **kwargs):
-        '''Create an ``incar`` instance with minimal reasonable tags for SCF
+    def minimal_incar(cls, task, xc=None, nproc=1, **kwargs):
+        '''Create an ``incar`` instance with minimal reasonable tags for particular task
 
         Args:
-            xc (str)
+            task (str): the type of task, "band", "dos", "scf", "opt"
+            xc (str): the type of xc.
             nproc (int): number of processors to use
             kwargs: other tags you want to set manually.
-                 It is not recommended as it will overwrite the default tags, and
-                 in this case you may consider other factory methods.
+                Note that this will overwrite built-in defaults.
 
         Returns:
             incar object
         '''
-        _scftags = {
-            "LREAL": False,
-            "EDIFF": 1e-6,
-            "PREC": "Normal",
-            "ISTART": 0,
-            "ICHARG": 2,
-            "LMAXMIX": 6,
+        _taskDict = {
+                "scf": (_get_minimal_scf_tags,),
+                "opt": (_get_minimal_scf_tags, _get_minimal_ion_opt_tags, ),
+                "band": (_get_minimal_scf_tags, _get_minimal_band_dos_tags, ),
+                "dos": (_get_minimal_scf_tags, _get_minimal_band_dos_tags, ),
             }
-        _scftags.update(kwargs)
+        minimals = _taskDict.get(task, None)
+        if minimals is None:
+            raise IncarError("Task name not supported: {}. Should be in {}".format(task, _taskDict.keys()))
+
+        _tags = {}
+        for minimal in minimals:
+            _tags.update(minimal())
         if xc != None:
             _xctags = _get_xc_tags_from_xcname(xc)
-            _scftags.update(_xctags)
+            _tags.update(_xctags)
         _paratags = _get_para_tags_from_nproc(nproc)
-        _scftags.update(_paratags)
-        return cls(**_scftags)
-
-    @classmethod
-    def minimal_ion_opt(cls, **kwargs):
-        pass
+        _tags.update(_paratags)
+        _tags.update(kwargs)
+        return cls(**_tags)
 
 
-def _get_xc_tags_from_xcname(xc, ignore_error=True):
+def _get_minimal_scf_tags():
+    _scftags = {
+        "LREAL": False,
+        "EDIFF": 1e-6,
+        "PREC": "Normal",
+        "LMAXMIX": 6,
+        }
+    return _scftags
+
+
+def _get_minimal_band_dos_tags():
+    _bandtags = {
+        "ICHARG": 11,
+        "LORBIT": 11,
+    }
+    return _bandtags
+
+
+def _get_minimal_ion_opt_tags():
+    _iontags = {
+        "IBRION": 1,
+        "EDIFFG": -0.01,
+        "ISIF": 3,
+        "NSW": 40,
+        "MAXMIX": 80,
+    }
+    return _iontags
+
+
+def _get_minimal_gw_tags():
+    raise NotImplementedError
+
+
+def _get_xc_tags_from_xcname(xc=None, ignore_error=True):
     '''Get necessary VASP tags for running calculation of ``xc`` functional
 
     Currently support xc name

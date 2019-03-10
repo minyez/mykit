@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-'''Prepare simple INCAR file and k-points (Need POSCAR)
+'''Prepare simple input files for a particular task.
+
+If POSCAR exists, POTCAR and k-points will also be generated.
 '''
 
 import os
@@ -9,6 +11,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from mykit.vasp.incar import incar
 from mykit.vasp.kpoints import kpoints
 from mykit.vasp.poscar import poscar
+from mykit.vasp.potcar import potcar_search
 
 
 def pv_simple_input():
@@ -27,6 +30,8 @@ def pv_simple_input():
         help="K-mesh density control, i.e. a*k. Negative for not generating KPOINTS")
     parser.add_argument("--spin", dest='ispin', type=int, default=1, \
         help="Spin-polarization. 1 for nsp and 2 for sp.")
+    parser.add_argument("--task", dest="task", type=str, default="scf", \
+        help="type of task for the input. Default scf (TODO)")
 
     opts  = parser.parse_args()
     klen  = opts.klen
@@ -46,9 +51,12 @@ def pv_simple_input():
         nks = [int(klen/x) for x in pos.alen]
         kp = kpoints(kmode="G", kgrid=nks)
         kp.write()
+        pts = potcar_search(*pos.atomTypes)
+        pts.export(xc=opts.xc)
 
     # write INCAR
-    ic = incar.minimal_scf(xc=opts.xc, nproc=opts.nproc, ISPIN=opts.ispin, ENCUT=opts.encut, comment="Simple input by mykit")
+    ic = incar.minimal_incar(opts.task, xc=opts.xc, nproc=opts.nproc, \
+        ISPIN=opts.ispin, ENCUT=opts.encut, comment="Simple {} input by mykit".format(opts.task))
     ic.write()
 
 

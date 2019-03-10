@@ -34,7 +34,7 @@ class potcar_search(verbose):
             raise PotcarError("should have at least one element")
         
         self._usegw = usegw
-        self._names = tuple(names)
+        self._names = names
 
     @property
     def names(self):
@@ -65,7 +65,10 @@ class potcar_search(verbose):
         Args:
             xc (str): name of xc, case insensitive.
         '''
-        _xc = xc.upper()
+        if xc is None:
+            _xc = "PBE"
+        else:
+            _xc = xc.upper()
         try:
             assert _xc in self._homePaw
         except AssertionError:
