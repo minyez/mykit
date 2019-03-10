@@ -25,11 +25,11 @@ class poscar(lattice):
     # ? But it may be good to let user deal with it, such as using "Fe1", "Fe2" to distinguish.
     # ? In this case, it should be careful to set POTCAR when recognizing atomic information in POSCAR
 
-    def __print(self, fp):
+    def __print(self, fp, scale=1.0):
             _cell, _atoms, _pos = self.get_latt()
             _syms, _nats = sym_nat_from_atoms(_atoms)
             print(self.comment, file=fp)
-            print("1.00000", file=fp)
+            print("{:8.6f}".format(scale), file=fp)
             for i in range(3):
                 print("  %12.8f  %12.8f  %12.8f" \
                     % (self.cell[i,0], self.cell[i,1], self.cell[i,2]), file=fp)
@@ -58,7 +58,7 @@ class poscar(lattice):
         from sys import stdout
         self.__print(stdout)
 
-    def write(self, pathPoscar='POSCAR', backup=False, suffix="_bak"):
+    def write(self, pathPoscar='POSCAR', scale=1.0, backup=False, suffix="_bak"):
         '''Write POSCAR to path 
         '''
         # TODO test it
@@ -71,7 +71,7 @@ class poscar(lattice):
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
         with open(_name, 'w') as f:
-            self.__print(f)
+            self.__print(f, scale=scale)
     
     @classmethod
     def read_from_file(cls, pathPoscar="POSCAR"):

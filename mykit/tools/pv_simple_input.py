@@ -21,7 +21,7 @@ def pv_simple_input():
         help="Planewave cutoff. 0 will set largest ENMAX")
     parser.add_argument("-n", dest='nproc', type=int, default=1, \
         help="Number of processors ")
-    parser.add_argument("-x", dest='tag_xc', type=str, default=None, \
+    parser.add_argument("-x", dest='xc', type=str, default=None, \
         help="type of XC functional for input orbitals, None for LEXCH in POTCAR")
     parser.add_argument("-l", dest='klen', type=int, default=0, \
         help="K-mesh density control, i.e. a*k. Negative for not generating KPOINTS")
@@ -48,7 +48,7 @@ def pv_simple_input():
         kp.write()
 
     # write INCAR
-    ic = incar.minimal_scf(xc=opts.tag_xc, nproc=opts.nproc, ISPIN=opts.ispin, ENCUT=opts.encut, comment="Simple input by mykit")
+    ic = incar.minimal_scf(xc=opts.xc, nproc=opts.nproc, ISPIN=opts.ispin, ENCUT=opts.encut, comment="Simple input by mykit")
     ic.write()
 
 

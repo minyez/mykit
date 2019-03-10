@@ -4,11 +4,14 @@
 
 from mykit.core.config import global_config
 
+config = global_config()
+npPrec = config.get('numpyPrec')
+
 #pylint: disable=too-few-public-methods
 class prec:
     '''Metaclass to define the precision of numerical calculation and threshold
     '''
-    _dtype = 'float'+str(global_config.get('numpyPrec')).strip()
+    _dtype = 'float'+str(npPrec).strip()
     # _order = 'C'
     _symprec = 1.0E-5
 

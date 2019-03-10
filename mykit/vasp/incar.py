@@ -51,13 +51,12 @@ class incar(*_incar_controllers):
         '''Initialize
 
         First, filter all incarargs to get all pwTags, xcTags, and remove their VASP equivalents,
-        and then add those tags not implemented in the plane_wave tag mapping.
+        and then add those tags not implemented in the controller tag mapping.
         '''
         self.comment = ''
         self._vaspTags = {}
         for _c in _incar_controllers:
             _c.__init__(self, "vasp", **incarArgs)
-        # super(incar, self).__init__("vasp", **incarArgs)
         self.parse_tags(**incarArgs)
 
     @property
@@ -352,7 +351,7 @@ class incar(*_incar_controllers):
                     _kw.update({_k: newList})
         return _kw
                     
-    # Factory methods
+    # * Factory methods
     @classmethod
     def read_from_file(cls, pathIncar="INCAR"):
         '''Generate ``incar`` instance from INCAR file
@@ -389,12 +388,14 @@ class incar(*_incar_controllers):
             "PREC": "Normal",
             "ISTART": 0,
             "ICHARG": 2,
+            "LMAXMIX": 6,
             }
         _scftags.update(kwargs)
         if xc != None:
             _xctags = _get_xc_tags_from_xcname(xc)
             _scftags.update(_xctags)
         _paratags = _get_para_tags_from_nproc(nproc)
+        _scftags.update(_paratags)
         return cls(**_scftags)
 
     @classmethod

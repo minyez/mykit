@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import unittest as ut
-import tempfile
 import json
 import os
 import sys
-from shutil import copy2, which, move
-from mykit.core.config import global_config
+import tempfile
+import unittest as ut
+from shutil import copy2, move, which
+
+from mykit.core.config import ConfigError, global_config
+
 
 class check_glocal_config(ut.TestCase):
 
     def test_non_existent_option(self):
-        self.assertEqual(None, global_config.get())
-        self.assertEqual('', global_config.get(doc=True))
-        self.assertEqual(None, global_config.get('opt_not_exist1'))
-        self.assertEqual((None, None), global_config.get('opt_not_exist1', 'opt_not_exist2'))
+        
+        os.unsetenv(global_config.env_var())
+        _c = global_config()
+        self.assertEqual(None, _c.get())
+        self.assertEqual('', global_config.get_doc('opt_not_exist1'))
+        self.assertRaisesRegex(ConfigError, r"Unknown option: opt_not_exist1", _c.get, 'opt_not_exist1')
+        self.assertRaisesRegex(ConfigError, r"Unknown option: *", _c.get, 'opt_not_exist1', 'opt_not_exist2')
 
     def test_defaults(self):
-        os.unsetenv(global_config.env_var())
         # back up the custom JSON if there is
         _path = global_config._get_dejson_path()
         _hasCustom = os.path.isfile(_path)
@@ -26,11 +30,12 @@ class check_glocal_config(ut.TestCase):
             _tf = tempfile.NamedTemporaryFile()
             move(_path, _tf.name)
 
-        self.assertEqual(which('mpirun'), global_config.get('mpiExec'))
+        _c = global_config()
+        self.assertEqual(which('mpirun'), _c.get('mpiExec'))
         self.assertEqual((which('vasp_std'), which('mpirun')), \
-            global_config.get('vaspStdExec','mpiExec'))
-        self.assertEqual(global_config.get('mpiExec', doc=True), "the MPI executable to use")
-        self.assertEqual(global_config.get('mpiExec', 'vaspStdExec', doc=True), \
+            _c.get('vaspStdExec','mpiExec'))
+        self.assertEqual(_c.get('mpiExec', doc=True), "the MPI executable to use")
+        self.assertEqual(_c.get('mpiExec', 'vaspStdExec', doc=True), \
             ("the MPI executable to use", "Path of `vasp_std` executive"))
 
         if _hasCustom:
@@ -39,21 +44,27 @@ class check_glocal_config(ut.TestCase):
 
     def test_load_custom(self):
         '''test custom configuration file created temporarily'''
-        _envVar = global_config.env_var()
-        _opts = {"vaspStdExec": "vasp"}
+        _opts = {"vaspStdExec": "vasp", "vaspPawPbe": "/Users/pbe", "vaspPawLda": "/Users/lda"}
 
         _tf = tempfile.NamedTemporaryFile()
         with open(_tf.name, 'w') as _f:
-            json.dump(_opts, _f, indent=2)
+            json.dump(_opts, _f)
+        # print(_tf.name)
+        os.environ[global_config.env_var()] = _tf.name
 
-        os.environ[_envVar] = _tf.name
-        self.assertEqual("vasp", global_config.get('vaspStdExec'))
-        self.assertEqual(global_config.get('vaspStdExec', doc=True), "Path of `vasp_std` executive")
+        _c = global_config()
+        # os.unsetenv(global_config.env_var())
+        del os.environ[global_config.env_var()]
+        # print(os.environ[global_config.env_var()])
+        # global_config.print_opts()
+        self.assertEqual(_c.get('vaspStdExec', doc=True), "Path of `vasp_std` executive")
+        self.assertEqual("vasp", _c.get('vaspStdExec'))
+        self.assertTupleEqual(("/Users/pbe", "/Users/lda"), _c.get('vaspPawPbe', 'vaspPawLda'))
         # doc string should not be touch
         _tf.close()
 
-    def test_print(self):
-        global_config.print_opts
+    # def test_print(self):
+    #     global_config.print_opts
 
 if __name__ == "__main__":
     ut.main()

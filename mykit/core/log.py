@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 '''Defined functions for printing mykit information
 '''
-from mykit.core.config import global_config
 import sys
+
+from mykit.core.config import global_config
+
 
 class verbose:
     '''Class that controls the level of information print.
@@ -19,8 +21,9 @@ class verbose:
     Level set higher than the above number in configure file is not necessary.
     Level set higher than the above number by calling property will be ignored.
     '''
-
-    _verbWarn, _verbLog, _indent = global_config.get('verbWarn', 'verbLog', 'logIndent')
+    config = global_config()
+    _verbWarn, _verbLog, _indent = config.get('verbWarn', 'verbLog', 'logIndent')
+    del config
     _indent = ' ' * _indent
     _prefix = {"log": '', "warn": ' WARNING!!!'}
     # range of verbose level
@@ -88,4 +91,3 @@ class verbose:
         _strPref = cls._indent * depth + cls._prefix["warn"]
         if level <= cls._verbWarn:
             print(_strPref, *strs, file=file)
-     
