@@ -17,13 +17,13 @@ class test_potcar_search(ut.TestCase):
         # raise first for no element input
         self.assertRaisesRegex(PotcarError, r"should have at least one element", potcar_search)
         pts = potcar_search("C")
-        self.assertListEqual(["C"], pts.names)
+        self.assertTupleEqual(("C",), pts.names)
         pts = potcar_search("C", "H", "O")
-        self.assertListEqual(["C", "H", "O"], pts.names)
+        self.assertTupleEqual(("C", "H", "O"), pts.names)
         pts = potcar_search("C", usegw=True)
-        self.assertListEqual(["C_GW"], pts.names)
+        self.assertTupleEqual(("C_GW",), pts.names)
         pts = potcar_search("C_GW", "H", usegw=True)
-        self.assertListEqual(["C_GW", "H_GW"], pts.names)
+        self.assertTupleEqual(("C_GW", "H_GW"), pts.names)
 
     def test_xcdir_not_found_when_export(self):
         from mykit.core.config import global_config
@@ -48,7 +48,7 @@ class test_potcar_search(ut.TestCase):
 
         try:
             # raise for unknown XC name
-            self.assertRaisesRegex(PotcarError, r"Support PBE\(PE\) and LDA\(CA\) only", \
+            self.assertRaisesRegex(PotcarError, r"XC type not supported: *", \
                 pts.export, xc="PW91")
             # raise for paw directory not found
             self.assertRaisesRegex(PotcarError, r"PBE PAW home directory does not exist: *", \
@@ -69,6 +69,12 @@ class test_potcar_search(ut.TestCase):
             if _hasCustom:
                 copy2(_tf.name, _path)
                 _tf.close()
+
+    def test_change_names(self):
+        pts = potcar_search("C")
+        self.assertTupleEqual(pts.names, ("C",))
+        pts.names = ("P", "C_GW")
+        self.assertTupleEqual(("P", "C_GW"), pts.names)
 
 
 if __name__ == '__main__':
