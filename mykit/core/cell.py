@@ -80,12 +80,23 @@ class Cell(prec, verbose):
             return self.get_sym_index(index)
 
     def __str__(self):
-        return "{}\nLattice:\n {}\nAtoms: {}\nPositions:\n {}\nUnit: {}\nCoordinates in {}".format(self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
+        return "{}\nLattice:\n {}\nAtoms: {}\nPositions:\n {}\nUnit: {}\nCoordinates in {}".format(\
+            self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
     
     def __repr__(self):
         return self.__str__()
 
     def __parse_cellkw(self, **kwargs):
+        # accept_kw = ['unit', 'coordSys', 'allRelax', 'selectDyn']
+        # for kw, v in kwargs.items():
+        #     if kw in accept_kw:
+        #         if kw == 'unit':
+        #             self.__setattr__("__"+kw, v.lower())
+        #             continue
+        #         if kw == 'coordSys':
+        #             self.__setattr__("__"+kw, v.upper())
+        #             continue
+        #         self.__setattr__("__"+kw, v)
         if 'unit' in kwargs:
             self.__unit = kwargs['unit'].lower()
         if 'coordSys' in kwargs:
@@ -276,10 +287,6 @@ class Cell(prec, verbose):
         self.__latt = self.__latt * scale
         if self.__coordSys == "C":
             self.__pos = self.__pos * scale
-
-    # TODO add more atoms
-    # def add_atom(self):
-    #     raise NotImplementedError
 
     # TODO move atom
     def __move(self, ia):
@@ -682,7 +689,28 @@ class Cell(prec, verbose):
         if not "comment" in kwargs:
             kwargs.update({"comment": "Face-centered cubic lattice"})
         return cls.__bravis_c(atom, 'F', aLatt=aLatt, **kwargs)
-    
+
+    @classmethod
+    def zincblende(cls, atom1, atom2, aLatt=1.0, **kwargs):
+        '''Generate a standardized zincblende lattice.
+
+        ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
+        '''
+        _a = abs(aLatt)
+        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+        _atoms = [atom1,]*4 + [atom2,]*4
+        _pos = [[0.0, 0.0, 0.0],
+                [0.0, 0.5, 0.5],
+                [0.5, 0.0, 0.5],
+                [0.5, 0.5, 0.0],
+                [0.25, 0.25, 0.25],
+                [0.25, 0.75, 0.75],
+                [0.75, 0.25, 0.75],
+                [0.75, 0.75, 0.25]]
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Zincblende"})
+        return cls(_latt, _atoms, _pos, **kwargs)
+
 
 def atoms_from_sym_nat(syms, nats):
     '''Generate ``atom`` list for ``Cell`` initilization from list of atomic symbols and number of atoms

@@ -2,8 +2,10 @@
 '''class and functions related to crystal symmetry
 '''
 
+from collections import OrderedDict
+
 import numpy as np
-import spglib as spg
+import spglib
 
 from mykit.core.cell import Cell
 from mykit.core.numeric import prec
@@ -33,11 +35,17 @@ class Symmetry(prec):
             
         # convert to direct coordinate system
         self._cell = cell
-        _spaceg = spg.get_spacegroup(self._cell.get_spglib_input(), \
+        _spg = spglib.get_spacegroup(self._cell.get_spglib_input(), \
             symprec=self._symprec).split()
-        self._spgSym = _spaceg[0]
-        self._spgId = int(_spaceg[1][1:-1])
-    
+        self._spgSym = _spg[0]
+        self._spgId = int(_spg[1][1:-1])
+
+    @property
+    def operations(self):
+        '''Symmetry operations. See spglib get_symmetry docstring
+        '''
+        return spglib.get_symmetry(self._cell, symprec=self._symprec)
+
     @property
     def spgSym(self):
         return self._spgSym
@@ -47,17 +55,36 @@ class Symmetry(prec):
         return self._spgId
 
     def ibzkpt(self, kgrid, shift=None):
-        '''Return the irreducible k-points corresponding to mesh
+        '''Return the irreducible k-points (IBZK) corresponding to mesh
 
         Args:
             kgrid (int array): the kpoint grid
+        
+        Returns:
+            Two arrays, with n the number of IBZK
+            (n,3) the fractional coordinate of IBZK in reciprocal lattice vectors
+            (n,) the un-normalized weight of each IBZK
         '''
-        try:
-            assert np.shape(kgrid) == (3,)
-            assert str(np.array(kgrid).dtype).startswith('int')
-        except:
-            raise SymmetryError("Invalid kgrid input: {}".format(kgrid))
-        _mapping, _grid = spg.get_ir_reciprocal_mesh(kgrid, self._cell, is_shift=shift)
+        # * leave the type check to spglib
+        # try:
+        #     assert np.shape(kgrid) == (3,)
+        #     assert str(np.array(kgrid).dtype).startswith('int')
+        # except AssertionError:
+        #     raise SymmetryError("Invalid kgrid input: {}".format(kgrid))
+        _kgrid = np.array(kgrid)
+        _mapping, _grid = spglib.get_ir_reciprocal_mesh(_kgrid, \
+            self._cell.get_spglib_input(), is_shift=shift)
+   
+        # All k-points and mapping to ir-grid points
+        ind_ibzk = list(set(_mapping))
+        ibzk = []
+        for i in ind_ibzk:
+            ibzk.append(_grid[i, :]/_kgrid)
+        ibzk = np.array(ibzk, dtype=self._dtype)
+        weight = OrderedDict.fromkeys(ind_ibzk, 0)
+        for _i, v in enumerate(_mapping):
+            weight[v] += 1
+        return ibzk, np.array(list(weight.values()))
         
     def get_primitive(self):
         '''Return the primitive cell of the input cell.
@@ -71,27 +98,56 @@ class Symmetry(prec):
 
         Returns:
             None, if the primitive cell is not found. True, if the original cell is already
-            pritmitive, otherwise False.
+            primititive, otherwise False.
 
-            Cell or its subclass instance, depending on the ``latt`` at instantialization
+            Cell or its subclass instance, depending on the ``cell`` at instantialization
         '''
         _flag = None
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
-        _latt, _pos, _indice = spg.find_primitive(self._cell.get_spglib_input(), \
+        _primCell = spglib.find_primitive(self._cell.get_spglib_input(), \
             symprec=self._symprec)
-        _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
-        _primCell = _type(_latt, _atoms, _pos, \
-            unit=self._cell.unit, coordSys=self._cell.coordSys)
         if _primCell != None:
+            _latt, _pos, _indice = _primCell
+            _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
+            _newCell = _type(_latt, _atoms, _pos, \
+                unit=self._cell.unit, coordSys=self._cell.coordSys)
             # determine if the original cell is primitive
-            if _primCell.vol == self._cell.vol:
+            if _newCell.vol == self._cell.vol:
                 _flag = True
             else:
                 _flag = False
-            # the space group does not change when converting to primitive cell
-            self._cell = _primCell
-        return _flag, self._cell
+        else:
+            _newCell = self._cell
+        return _flag, _newCell
+
+    def get_standard(self, primitive=False):
+        '''Return the standardized cell from the original cell
+
+        Args:
+            primitive (bool): if set True, the standard primitive cell will be returned
+        
+        Returns:
+            None, if the standard cell is not found. True, if the original cell is already
+            standard, otherwise False. (TODO)
+
+            Cell or its subclass instance, depending on the ``cell`` at instantialization
+        '''
+        assert isinstance(primitive, bool)
+        _flag = None
+        _type = type(self._cell)
+        _typeMap = self._cell.typeMapping
+        _stdCell = spglib.standardize_cell(self._cell.get_spglib_input(), \
+            to_primitive=primitive, symprec=self._symprec)
+        if _stdCell != None:
+            _latt, _pos, _indice = _stdCell
+            _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
+            _newCell = _type(_latt, _atoms, _pos, \
+                unit=self._cell.unit, coordSys=self._cell.coordSys)
+            # TODO: determine if the original cell is already standardized
+        else:
+            _newCell = self._cell
+        return _flag, _newCell
 
 
 # pylint: disable=bad-whitespace
