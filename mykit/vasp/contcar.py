@@ -2,12 +2,12 @@
 '''
 '''
 
-from mykit.core.lattice import lattice
+from mykit.core.cell import Cell
 
 
 class contcarError(Exception):
     pass
 
 
-class contcar(lattice):
+class contcar(Cell):
     pass

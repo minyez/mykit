@@ -5,7 +5,7 @@
 import numpy as np
 import spglib as spg
 
-from mykit.core.lattice import lattice
+from mykit.core.cell import Cell
 from mykit.core.numeric import prec
 
 
@@ -17,23 +17,23 @@ class symmetry(prec):
     '''the class for symmetry information of crystal, powered by spglib
 
     Args:
-        latt (lattice or its subclasses)
+        cell (Cell or its subclasses)
     '''
     
-    def __init__(self, latt):
+    def __init__(self, cell):
 
         try:
-            assert isinstance(latt, lattice)
+            assert isinstance(cell, Cell)
         except AssertionError:
-            raise SymmetryError("The input should be instance of lattice or its subclass.")
+            raise SymmetryError("The input should be instance of Cell or its subclass.")
         try:
-            assert latt.unit == "D"
+            assert cell.unit == "D"
         except AssertionError:
             raise SymmetryError("The coordiante system should be direct. Cartisian found.")
             
         # convert to direct coordinate system
-        self._lattice = latt
-        self.spaceGroup = spg.get_spacegroup(self._lattice.get_spglib_input(), \
+        self._cell = cell
+        self.spaceGroup = spg.get_spacegroup(self._cell.get_spglib_input(), \
             symprec=self._symprec)
     
     def ibzkpt(self, kgrid, shift=None):
@@ -47,13 +47,13 @@ class symmetry(prec):
             assert str(np.array(kgrid).dtype).startswith('int')
         except:
             raise SymmetryError("Invalid kgrid input: {}".format(kgrid))
-        _mapping, _grid = spg.get_ir_reciprocal_mesh(kgrid, self._lattice, is_shift=shift)
+        _mapping, _grid = spg.get_ir_reciprocal_mesh(kgrid, self._cell, is_shift=shift)
         
     
     def get_primitive(self):
-        '''Return the primitive cell of the input lattice.
+        '''Return the primitive cell of the input cell.
 
-        If primitive cell is not found, the original lattice is returned
+        If primitive cell is not found, the original cell is returned
 
         Note:
             kwargs, except ``unit`` and ``coordSys`` are lost, when the primitive cell
@@ -64,22 +64,22 @@ class symmetry(prec):
             None, if the primitive cell is not found. True, if the original cell is already
             pritmitive, otherwise False.
 
-            lattice or its subclass instance, depending on the ``latt`` at instantialization
+            Cell or its subclass instance, depending on the ``latt`` at instantialization
         '''
         _flag = None
-        _type = type(self._lattice)
-        _typeMap = self._lattice.typeMapping
-        _cell, _pos, _indice = spg.find_primitive(self._lattice.get_spglib_input(), \
+        _type = type(self._cell)
+        _typeMap = self._cell.typeMapping
+        _latt, _pos, _indice = spg.find_primitive(self._cell.get_spglib_input(), \
             symprec=self._symprec)
         _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
-        _primLatt = _type(_cell, _atoms, _pos, \
-            unit=self._lattice.unit, coordSys=self._lattice.coordSys)
-        if _primLatt != None:
-            # determine if the original lattice is primitive
-            if _primLatt.vol == self._lattice.vol:
+        _primCell = _type(_latt, _atoms, _pos, \
+            unit=self._cell.unit, coordSys=self._cell.coordSys)
+        if _primCell != None:
+            # determine if the original cell is primitive
+            if _primCell.vol == self._cell.vol:
                 _flag = True
             else:
                 _flag = False
             # the space group does not change when converting to primitive cell
-            self._lattice = _primLatt
-        return _flag, self._lattice
+            self._cell = _primCell
+        return _flag, self._cell

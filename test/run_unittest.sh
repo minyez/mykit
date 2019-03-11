@@ -20,7 +20,7 @@ run_one_unittest() {
 }
 
 coreTestDir="core"
-coreTests=(config_test.py lattice_test.py log_test.py utils_test.py planewave_test.py xc_test.py control_test.py)
+coreTests=(config_test.py cell_test.py log_test.py utils_test.py planewave_test.py xc_test.py control_test.py)
 vaspTestDir="vasp"
 vaspTests=(poscar_test.py incar_test.py kpoints_test.py)
 

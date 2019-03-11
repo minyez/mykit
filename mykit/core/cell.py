@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''Module that defines classes for lattice manipulation and symmtetry operation
+'''Module that defines classes for crystal cell manipulation and symmtetry operation
 
-The ``lattice`` class and its subclasses accept the following kwargs when being instantialized:
+The ``cell`` class and its subclasses accept the following kwargs when being instantialized:
 
     - unit (str): The unit system  to use, either "ang" (default) or "au".
     - coordSys (str): Coordinate system for the internal positions, 
@@ -11,7 +11,7 @@ The ``lattice`` class and its subclasses accept the following kwargs when being 
     - selectDyn (dict) : a dictionary with key-value pair as ``int: [bool, bool, bool]``, which controls
       the selective dynamic option for atom with the particular index (starting from 0). Default is an
       empty ``dict``
-    - comment (str): message about the lattice
+    - comment (str): message about the cell
 '''
 from collections import OrderedDict
 # import spglib
@@ -25,44 +25,44 @@ from mykit.core.numeric import prec
 
 
 # ==================== classes ====================
-class LatticeError(Exception):
-    '''Exception in lattice module
+class CellError(Exception):
+    '''Exception in cell module
     '''
     pass
 
 
-class lattice(prec, verbose):
-    '''Lattice structure class
+class Cell(prec, verbose):
+    '''Cell structure class
 
     Args:
-        cell (array-like) : The lattice vectors
+        latt (array-like) : The lattice vectors
         atoms (list of str) : The list of strings of type for each atom corresponding to the member in pos
         pos (array-like) : The internal coordinates of atoms
 
     Note:
-        Various kwargs are acceptable for ``lattice`` and its subclasses. Check ``lattice`` module docstring.
+        Various kwargs are acceptable for ``Cell`` and its subclasses. Check ``cell`` module docstring.
     
     Examples:
-    >>> lattice([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
-    <mykit.core.lattice.lattice>
+    >>> Cell([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
+    <mykit.core.cell.Cell>
     '''
-    def __init__(self, cell, atoms, pos, **kwargs):
+    def __init__(self, latt, atoms, pos, **kwargs):
 
         # if kwargs:
             # super(lattice, self).__init__(**kwargs)
-        self.comment= 'Default lattice class'
+        self.comment= 'Default Cell class'
         self.__allRelax = True
         self.__selectDyn = {}
         self.__unit = 'ang'
         self.__coordSys = 'D'
 
         try:
-            self.__cell = np.array(cell, dtype=self._dtype)
+            self.__latt = np.array(latt, dtype=self._dtype)
             self.__pos = np.array(pos, dtype=self._dtype)
         except ValueError as _err:
-            raise LatticeError("Fail to create cell and pos array. Please check.")
+            raise CellError("Fail to create cell and pos array. Please check.")
         self.__atoms = [_a.capitalize() for _a in atoms]
-        self.__parse_lattkw(**kwargs)
+        self.__parse_cellkw(**kwargs)
         # check input consistency
         self.__check_consistency()
         # move all atoms into the lattice (0,0,0)
@@ -80,12 +80,12 @@ class lattice(prec, verbose):
             return self.get_sym_index(index)
 
     def __str__(self):
-        return "{}\nCell:\n {}\nAtoms: {}\nPositions:\n {}\nUnit: {}\nCoordinates in {}".format(self.comment, self.cell, self.atoms, self.pos, self.unit, self.coordSys)
+        return "{}\nLattice:\n {}\nAtoms: {}\nPositions:\n {}\nUnit: {}\nCoordinates in {}".format(self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
     
     def __repr__(self):
         return self.__str__()
 
-    def __parse_lattkw(self, **kwargs):
+    def __parse_cellkw(self, **kwargs):
         if 'unit' in kwargs:
             self.__unit = kwargs['unit'].lower()
         if 'coordSys' in kwargs:
@@ -97,19 +97,19 @@ class lattice(prec, verbose):
         if "comment" in kwargs:
             self.comment = kwargs["comment"]
 
-    def get_latt(self):
+    def get_cell(self):
         '''Purge out the cell, atoms and pos.
         
-        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``lattice`` and its subclasses.
+        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``Cell`` and its subclasses.
         They can also be used to build sysmetry operations with spglib utilities.
         '''
-        return self.__cell, self.__atoms, self.__pos
+        return self.__latt, self.__atoms, self.__pos
 
     def get_kwargs(self):
-        '''return all kwargs useful to constract program-dependent lattice input from ``lattice`` instance
+        '''return all kwargs useful to constract program-dependent cell input from ``Cell`` instance
 
         Returns :
-            dictionary that can be parsed to ``create_from_lattice`` class method.
+            dictionary that can be parsed to ``create_from_cell`` class method.
         '''
         _d = {
                 "unit" : self.__unit, 
@@ -124,16 +124,16 @@ class lattice(prec, verbose):
         try:
             assert self.__coordSys in ["C", "D"]
             assert self.__unit in ["ang", "au"]
-            assert np.shape(self.__cell) == (3, 3)
+            assert np.shape(self.__latt) == (3, 3)
             assert self.natoms > 0
             assert np.shape(self.__pos) == (self.natoms, 3)
         except AssertionError:
-            raise LatticeError("Invalid lattice setup")
+            raise CellError("Invalid cell setup")
         # ? switch automatically, or let the user deal with it
         try:
             assert self.vol > 0
         except AssertionError:
-            raise LatticeError("Left-handed system found (vol<0). Switch two vector.")
+            raise CellError("Left-handed system found (vol<0). Switch two vector.")
 
     def _switch_two_atom_index(self, iat1, iat2):
         '''switch the index of atoms with index iat1 and iat2
@@ -145,14 +145,14 @@ class lattice(prec, verbose):
         - ``selectDyn`` (DONE)
 
         Note that this method is mainly for sorting use, and does NOT change 
-        the geometry of the lattice at all.
+        the geometry of the cell at all.
         '''
         try:
             assert iat1 in range(self.natoms)
             assert iat2 in range(self.natoms)
             assert iat1 != iat2
         except AssertionError:
-            raise LatticeError("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
+            raise CellError("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
 
         self.__pos[[iat1, iat2]] = self.__pos[[iat2, iat1]]
         self.__atoms[iat1], self.__atoms[iat2] = self.__atoms[iat2], self.__atoms[iat1]
@@ -182,7 +182,7 @@ class lattice(prec, verbose):
     def get_sym_index(self, csymbol):
         '''Get the indices of atoms with element symbol ``csymbol``
 
-        Note that this is equivalent to ``latt[csymbol]``, given ``lattice`` instance latt.
+        Note that this is equivalent to ``latt[csymbol]``, given ``Cell`` instance latt.
 
         Args:
             csymbol (str) : chemical-symbol-like identifier
@@ -270,10 +270,10 @@ class lattice(prec, verbose):
 
     # * Cell manipulation
     def scale(self, scale):
-        '''Scale the lattice, i.e. increase the lattice cell by ``scale`` time
+        '''Scale the lattice, i.e. increase the lattice by ``scale`` time
         '''
         assert isinstance(scale, Real)
-        self.__cell = self.__cell * scale
+        self.__latt = self.__latt * scale
         if self.__coordSys == "C":
             self.__pos = self.__pos * scale
 
@@ -347,30 +347,30 @@ class lattice(prec, verbose):
 
     @property
     def a(self):
-        return self.__cell
+        return self.__latt
 
     @property
     def alen(self):
-        return np.array([np.linalg.norm(x) for x in self.__cell], dtype=self._dtype)
+        return np.array([np.linalg.norm(x) for x in self.__latt], dtype=self._dtype)
 
     @property
     def lattConsts(self):
-        '''Lattice constant of the lattice, i.e., a, b, c, alpha, beta, gamma (In degree)
+        '''Lattice constant of the cell, i.e., a, b, c, alpha, beta, gamma (In degree)
         '''
         _alen = self.alen
         _angle = []
         for i in range(3):
             j = (i+1)%3
             k = (i+2)%3
-            _cos = np.dot(self.__cell[j], self.__cell[k])/_alen[j]/_alen[k]
+            _cos = np.dot(self.__latt[j], self.__latt[k])/_alen[j]/_alen[k]
             _angle.append(np.arccos(_cos))
         # convert to degree
         _angle = np.array(_angle, dtype=self._dtype) / pi * 180.0
         return (*_alen, *_angle)
 
     @property
-    def cell(self):
-        return self.__cell
+    def latt(self):
+        return self.__latt
 
     @property
     def atoms(self):
@@ -393,10 +393,10 @@ class lattice(prec, verbose):
         if _conv is not None:
             if self.__coordSys == "C":
                 self.__pos = self.__pos * _conv
-            self.__cell = self.__cell * _conv
+            self.__latt = self.__latt * _conv
             self.__unit = _u
         else:
-            raise LatticeError("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
+            raise CellError("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
 
     @property
     def coordSys(self):
@@ -404,16 +404,16 @@ class lattice(prec, verbose):
     @coordSys.setter
     def coordSys(self, s):
         _s = s.upper()
-        _convDict = {"C": self.__cell, "D": np.linalg.inv(self.__cell)}
+        _convDict = {"C": self.__latt, "D": np.linalg.inv(self.__latt)}
         _conv = _convDict.get(_s)
         if _conv is not None:
             self.__pos = np.matmul(self.__pos, _conv)
         else:
-            raise LatticeError("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
+            raise CellError("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
 
     @property
     def atomTypes(self):
-        '''All atom types in the lattice
+        '''All atom types in the cell
         '''
         # _list = []
         # for _a in self.__atoms:
@@ -445,7 +445,7 @@ class lattice(prec, verbose):
 
     @property
     def vol(self):
-        return np.linalg.det(self.__cell)
+        return np.linalg.det(self.__latt)
     
     @property
     def natoms(self):
@@ -458,31 +458,31 @@ class lattice(prec, verbose):
         return True
 
     @property
-    def recpCellIn2Pi(self):
+    def recpLattIn2Pi(self):
         '''Reciprocal lattice vectors in 2Pi unit^-1
         '''
         b = []
         for i in range(3):
             j = (i + 1) % 3
             k = (i + 2) % 3
-            b.append(np.cross(self.cell[j,:], self.cell[k,:]))
+            b.append(np.cross(self.latt[j,:], self.latt[k,:]))
         return np.array(b, dtype=self._dtype) / self.vol
 
     @property
     def bIn2Pi(self):
-        return self.recpCellIn2Pi
+        return self.recpLattIn2Pi
 
     @property
-    def recpCell(self):
+    def recpLatt(self):
         '''Reciprocal lattice vectors in unit^-1
         '''
-        return self.recpCellIn2Pi * 2.0E0 * pi
+        return self.recpLattIn2Pi * 2.0E0 * pi
     
     @property
     def b(self):
         '''Alias of reciprocal lattice vector
         '''
-        return self.recpCell
+        return self.recpLatt
 
     @property
     def blen(self):
@@ -554,7 +554,7 @@ class lattice(prec, verbose):
                 assert len(_flag) == 3
                 assert all([isinstance(_x, bool) for _x in _flag])
             except AssertionError:
-                raise LatticeError("Bad flag for selective dynamics")
+                raise CellError("Bad flag for selective dynamics")
             else:
                 self.__selectDyn.update({_k: _flag})
 
@@ -588,12 +588,12 @@ class lattice(prec, verbose):
         Returns:
             cell (3, 3), pos (n, 3), index of atom type (n), with n = self.natoms
         '''
-        return self.cell, self.pos, self.typeIndex
+        return self.latt, self.pos, self.typeIndex
 
     # * Factory methods
     @classmethod
     def read_from_json(cls, pathJson):
-        '''Initialize a ``lattice`` instance from a JSON file
+        '''Initialize a ``cell`` instance from a JSON file
 
         TODO:
             unit test
@@ -601,19 +601,19 @@ class lattice(prec, verbose):
         import json
         import os
         if pathJson is None or not os.path.isfile(pathJson):
-            raise LatticeError("JSON file not found: {}".format(pathJson))
+            raise CellError("JSON file not found: {}".format(pathJson))
         with open(pathJson, 'r') as h:
             try:
                 _j = json.load(h)
             except json.JSONDecodeError:
-                raise LatticeError("invalid JSON file for lattice: {}".format(pathJson))
+                raise CellError("invalid JSON file for cell: {}".format(pathJson))
         
-        _argList = ["cell", "atoms", "pos"]
+        _argList = ["latt", "atoms", "pos"]
         _args = []
         for _i, arg in enumerate(_argList):
             v = _j.pop(arg, None)
             if v is None:
-                raise LatticeError("invalid JSON file for lattice: {}. No {}".format(pathJson, arg))
+                raise CellError("invalid JSON file for cell: {}. No {}".format(pathJson, arg))
             _args.append(v)
         return cls(*_args, **_j)
 
@@ -624,14 +624,14 @@ class lattice(prec, verbose):
         try:
             assert isinstance(aLatt, (int, float))
         except AssertionError:
-            raise LatticeError("alatt should be a number")
+            raise CellError("alatt should be a number")
         try:
             assert _type in ["P", "I", "F"]
         except AssertionError:
-            raise LatticeError("Invalid cubic Bravis system")
+            raise CellError("Invalid cubic Bravis system")
 
         _a = abs(aLatt)
-        _cell = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+        _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
         if _type == "P":
             _atoms =[atom]
             _pos = [[0.0,0.0,0.0]]
@@ -642,7 +642,7 @@ class lattice(prec, verbose):
             _atoms =[atom, atom, atom, atom]
             _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
 
-        return cls(_cell, _atoms, _pos, **kwargs)
+        return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
     def bravis_cP(cls, atom, aLatt=1.0, **kwargs):
@@ -684,25 +684,15 @@ class lattice(prec, verbose):
         return cls.__bravis_c(atom, 'F', aLatt=aLatt, **kwargs)
     
 
-# class symmetry(prec):
-#     '''Class to obtain symmetry of a lattice
-
-#     Args:
-#         latt (lattice): the :class:`lattice` instance for symmetry search
-#     '''
-#     def __init__(self, latt):
-#         pass
-
-
 def atoms_from_sym_nat(syms, nats):
-    '''Generate ``atom`` list for ``lattice`` initilization from list of atomic symbols and number of atoms
+    '''Generate ``atom`` list for ``Cell`` initilization from list of atomic symbols and number of atoms
 
     Args :
         syms (list of str) : atomic symbols
         nats (list of int) : number of atoms for each symbol
 
     Returns :
-        a list of str, containing symbol of each atom in the lattice
+        a list of str, containing symbol of each atom in the cell
     
     Examples:
     >>> atoms_from_sym_nat(["C", "Al", "F"], [2, 3, 1])
@@ -721,7 +711,7 @@ def sym_nat_from_atoms(atoms):
     The order of appearence of the element is conserved in the output.
 
     Args :
-        atoms (list of str) : symbols of each atom in the lattice
+        atoms (list of str) : symbols of each atom in the cell
 
     Returns :
         list of str : atomic symbols

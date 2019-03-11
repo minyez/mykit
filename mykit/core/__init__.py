@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from mykit.core import (constants, eos, kmesh, lattice, planewave, symmetry,
+from mykit.core import (cell, constants, eos, kmesh, planewave, symmetry,
                         utils, xc)
 
 # from mykit.core import bandstructure

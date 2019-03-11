@@ -9,42 +9,42 @@ import unittest as ut
 
 import numpy as np
 
-from mykit.core.lattice import lattice
+from mykit.core.cell import Cell
 from mykit.vasp.poscar import PoscarError, poscar
 
 
 class poscar_build_test(ut.TestCase):
     
     def test_init_from_cell_atoms_pos(self):
-        _latt = lattice.bravis_cP("C", aLatt=5.0)
-        _poscar = poscar(*_latt.get_latt(), coordSys=_latt.coordSys, unit=_latt.unit)
-        _cell = _poscar.get_latt()[0]
-        self.assertAlmostEqual(_cell[0,0], 5.0)
+        _cell = Cell.bravis_cP("C", aLatt=5.0)
+        _poscar = poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
+        _latt = _poscar.get_cell()[0]
+        self.assertAlmostEqual(_latt[0,0], 5.0)
         self.assertEqual(len(_poscar), 1)
 
-        _latt = lattice.bravis_cI("C", aLatt=5.0, unit="au")
-        _poscar = poscar(*_latt.get_latt(), coordSys=_latt.coordSys, unit=_latt.unit)
+        _cell = Cell.bravis_cI("C", aLatt=5.0, unit="au")
+        _poscar = poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
         self.assertEqual(_poscar.unit, "au")
         self.assertEqual(len(_poscar), 2)
 
-        _latt = lattice.bravis_cF("C", aLatt=5.0, coordSys="C")
-        _poscar = poscar(*_latt.get_latt(), coordSys=_latt.coordSys, unit=_latt.unit)
+        _cell = Cell.bravis_cF("C", aLatt=5.0, coordSys="C")
+        _poscar = poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
         self.assertEqual(_poscar.coordSys, "C")
         self.assertEqual(len(_poscar), 4)
 
-    def test_init_from_lattice(self):
-        _latt = lattice.bravis_cP("C", aLatt=5.0)
-        _poscar = poscar.create_from_lattice(_latt)
-        self.assertAlmostEqual(_poscar.get_latt()[0][0,0], 5.0)
+    def test_init_from_cellice(self):
+        _cell = Cell.bravis_cP("C", aLatt=5.0)
+        _poscar = poscar.create_from_cell(_cell)
+        self.assertAlmostEqual(_poscar.get_cell()[0][0,0], 5.0)
         self.assertEqual(len(_poscar), 1)
 
-        _latt = lattice.bravis_cI("C", aLatt=5.0, unit="au")
-        _poscar = poscar.create_from_lattice(_latt)
+        _cell = Cell.bravis_cI("C", aLatt=5.0, unit="au")
+        _poscar = poscar.create_from_cell(_cell)
         self.assertEqual(_poscar.unit, "au")
         self.assertEqual(len(_poscar), 2)
         
-        _latt = lattice.bravis_cF("C", aLatt=5.0, coordSys="C")
-        _poscar = poscar.create_from_lattice(_latt)
+        _cell = Cell.bravis_cF("C", aLatt=5.0, coordSys="C")
+        _poscar = poscar.create_from_cell(_cell)
         self.assertEqual(_poscar.coordSys, "C")
         self.assertEqual(len(_poscar), 4)
 
@@ -61,7 +61,7 @@ class poscar_build_test(ut.TestCase):
                     _i = _f.split('_')[1]
                     _path = os.path.join(__poscarDir, _f)
                     _poscar = poscar.read_from_file(_path)
-                    _verifyJson = os.path.join(__poscarDir, 'Latt_'+_i+'.json')
+                    _verifyJson = os.path.join(__poscarDir, 'Cell_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
                         _vs = _verify_poscar_by_json(self, _poscar, _verifyJson)
                         if _vs:
@@ -82,11 +82,11 @@ def _verify_poscar_by_json(tc, pc, pathJson):
     with open(pathJson, 'r') as f:
         _vDict = json.load(f)
 
-    _cellPos, _atomsPos, _posPos = pc.get_latt()
+    _lattPos, _atomsPos, _posPos = pc.get_cell()
     _kwargsPos = pc.get_kwargs()
     verifyMsg = "POSCAR verification failed: {}".format(pathJson)
-    if "cell" in _vDict:
-        tc.assertTrue(np.array_equal(pc.cell, np.array(_vDict["cell"], dtype=pc._dtype)), msg=verifyMsg)
+    if "latt" in _vDict:
+        tc.assertTrue(np.array_equal(pc.latt, np.array(_vDict["latt"], dtype=pc._dtype)), msg=verifyMsg)
     if "sdFlags" in _vDict:
         _sdfDict = _vDict["sdFlags"]
         # print(_sdfDict.keys())

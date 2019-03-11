@@ -7,14 +7,14 @@ import string
 
 import numpy as np
 
-from mykit.core.lattice import atoms_from_sym_nat, lattice, sym_nat_from_atoms
+from mykit.core.cell import Cell, atoms_from_sym_nat, sym_nat_from_atoms
 from mykit.core.utils import trim_comment
 
 
 class PoscarError(Exception):
     pass
 
-class poscar(lattice):
+class poscar(Cell):
     '''The class to manipulate POSCAR, the VASP lattice input file.
     '''
 
@@ -26,13 +26,13 @@ class poscar(lattice):
     # ? In this case, it should be careful to set POTCAR when recognizing atomic information in POSCAR
 
     def __print(self, fp, scale=1.0):
-            _cell, _atoms, _pos = self.get_latt()
+            _latt, _atoms, _pos = self.get_cell()
             _syms, _nats = sym_nat_from_atoms(_atoms)
             print(self.comment, file=fp)
             print("{:8.6f}".format(scale), file=fp)
             for i in range(3):
                 print("  %12.8f  %12.8f  %12.8f" \
-                    % (self.cell[i,0], self.cell[i,1], self.cell[i,2]), file=fp)
+                    % (self.latt[i,0], self.latt[i,1], self.latt[i,2]), file=fp)
             if _syms[0] != "A":
                 print(*_syms, file=fp)
             print(*_nats, file=fp)
@@ -95,9 +95,9 @@ class poscar(lattice):
             # line 2: scale
             _scale = float(_f.readline().strip())
             # line 3-5: lattice vector
-            _cell = [_f.readline().split() for i in range(3)]
+            _latt = [_f.readline().split() for i in range(3)]
             try:
-                _cell = np.array(_cell, dtype=cls._dtype) * _scale
+                _latt = np.array(_latt, dtype=cls._dtype) * _scale
             except ValueError:
                 _f.close()
                 raise PoscarError("Bad lattice vector: {}".format(pathPoscar))
@@ -156,17 +156,17 @@ class poscar(lattice):
                     raise PoscarError("Bad selective dynamics flag at atom line {}: {}".format(_i+1, pathPoscar))
             _pos = np.array(_pos, dtype=cls._dtype) * _mult
             _f.close()
-            return cls(_cell, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix, comment=_comment)
+            return cls(_latt, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix, comment=_comment)
 
     @classmethod
-    def create_from_lattice(cls, latt):
-        '''Create POSCAR from ``lattice`` instance ``latt``.
+    def create_from_cell(cls, cell):
+        '''Create POSCAR from ``Cell`` instance ``cell``.
         '''
         try:
-            assert isinstance(latt, lattice)
+            assert isinstance(cell, Cell)
         except AssertionError:
             raise PoscarError("the input is not a lattice instance")
-        __kw = latt.get_kwargs()
-        return cls(*latt.get_latt(), **__kw)
+        __kw = cell.get_kwargs()
+        return cls(*cell.get_cell(), **__kw)
 
-    # TODO inherit factory methods from ``lattice`` for space group and Bravis cell creation
+    # TODO inherit factory methods from ``Cell`` for space group and Bravis cell creation

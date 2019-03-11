@@ -12,9 +12,9 @@ They lie the basis for input conversion
   - [x] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
   - [x] abstract base class to define the basic behavior of controller
 
-### `lattice` module
+### `cell` module
 
-- `lattice` base class: creation of periodic systems
+- `Cell` base class: creation of periodic systems
   - [ ] Factory methods for common crystals
 
 ### Input controllers
