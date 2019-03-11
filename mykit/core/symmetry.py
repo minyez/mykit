@@ -2,6 +2,8 @@
 '''class and functions related to crystal symmetry
 '''
 
+import json
+import os
 from collections import OrderedDict
 
 import numpy as np
@@ -44,7 +46,8 @@ class Symmetry(prec):
     def operations(self):
         '''Symmetry operations. See spglib get_symmetry docstring
         '''
-        return spglib.get_symmetry(self._cell, symprec=self._symprec)
+        _ops = spglib.get_symmetry(self._cell, symprec=self._symprec)
+        return [(r, t) for r, t in zip(_ops["rotations"], _ops["translations"])]
 
     @property
     def spgSym(self):
@@ -128,13 +131,9 @@ class Symmetry(prec):
             primitive (bool): if set True, the standard primitive cell will be returned
         
         Returns:
-            None, if the standard cell is not found. True, if the original cell is already
-            standard, otherwise False. (TODO)
-
             Cell or its subclass instance, depending on the ``cell`` at instantialization
         '''
         assert isinstance(primitive, bool)
-        _flag = None
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
         _stdCell = spglib.standardize_cell(self._cell.get_spglib_input(), \
@@ -144,10 +143,9 @@ class Symmetry(prec):
             _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
             _newCell = _type(_latt, _atoms, _pos, \
                 unit=self._cell.unit, coordSys=self._cell.coordSys)
-            # TODO: determine if the original cell is already standardized
         else:
             _newCell = self._cell
-        return _flag, _newCell
+        return _newCell
 
 
 # pylint: disable=bad-whitespace
@@ -207,10 +205,60 @@ class space_group:
         assert len(symbols) == 230
     except AssertionError:
         raise SymmetryError("Bad space group table. Contact developer.")
+    
+    @staticmethod
+    def k_trans_mat_from_prim_to_conv(id):
+        '''Convert k-point coordinate in reciprocal lattice of primitive cell to that of conventional cell
+
+        The transormation matrix is retrived from Bilbao server.
+        The k-point coordinate in primitive cell, (u,v,w), is converted to conventional cell (p,q,n) by
+        the matrix A as
+
+        (p,q,n)^T = A x (u,v,w)^T
+
+        i.e. both coordinate are treated as a column vector
+
+        Note:
+            For space group 38,39,40,41, tranformation matrix to conventional basis C2mm is used
+
+        Args:
+            id (int): the id of space group, 1~230
+
+        Returns:
+            array: (3,3)
+        '''
+        try:
+            assert isinstance(id, int)
+        except AssertionError:
+            raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+        identity = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
+        _dict = {
+            (5,8,9,12,15):
+                   np.array([[ 1.0,-1.0, 0.0],
+                             [ 1.0, 1.0, 0.0],
+                             [ 0.0, 0.0, 1.0]]), # u-v, u+v, w
+            (20,21,35,36,37,38,39,40,41):
+                   np.array([[ 1.0, 1.0, 0.0],
+                             [-1.0, 1.0, 0.0],
+                             [ 0.0, 0.0, 1.0]]), # u+v, -u+v, w
+            (22,42,43):
+                   np.array([[-1.0, 1.0, 1.0],
+                             [ 1.0,-1.0, 1.0],
+                             [ 1.0, 1.0,-1.0]]), # -u+v+w, u-v+w, u+v-w
+            (23,24,44,):
+                   np.array([[ 0.0, 1.0, 1.0],
+                             [ 1.0, 0.0, 1.0],
+                             [ 1.0, 1.0, 0.0]]), # v+w, u+w, u+v
+        }
+        for k, v in _dict.items():
+            if id in k:
+                return v
+        return identity
+
 
 
     @classmethod
-    def get_index(cls, symbol):
+    def get_spg_index(cls, symbol):
         '''Get the index in ITC from the symbol of space group of symbol
 
         Args:
@@ -225,7 +273,7 @@ class space_group:
         return _id
     
     @classmethod
-    def get_symbol(cls, id):
+    def get_spg_symbol(cls, id):
         '''Get the symbol of space group with index ``id`` in ITC
 
         Args:
@@ -239,3 +287,14 @@ class space_group:
         except AssertionError:
             raise SymmetryError("Invalid space group id (1~230): {}".format(id))
         return cls.symbols[id-1]
+
+
+class special_kpoints:
+    '''class for special kpoints of space groups
+    '''
+    _meta = os.path.join(os.path.dirname(__file__), 'metadata', "special_kpoints.json")
+    with open(_meta, 'r') as h:
+        _j = json.load(h)
+
+    def __init__(self, id):
+        pass

@@ -601,9 +601,6 @@ class Cell(prec, verbose):
     @classmethod
     def read_from_json(cls, pathJson):
         '''Initialize a ``cell`` instance from a JSON file
-
-        TODO:
-            unit test
         '''
         import json
         import os

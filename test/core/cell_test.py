@@ -137,7 +137,6 @@ class cell_factory_method(ut.TestCase):
         self.assertEqual(1, len(_pfcc))
         self.assertAlmostEqual(5.0*np.sqrt(0.5), _pfcc.alen[0])
 
-
     def test_read_from_json(self):
         import os
         import tempfile
@@ -176,7 +175,6 @@ class cell_factory_method(ut.TestCase):
         self.assertEqual(_cell.coordSys, "D")
         self.assertEqual(_cell.natoms, 2)
         self.assertListEqual(_cell.atoms, ["C", "C"])
-
 
 
 class cell_select_dynamics(ut.TestCase):
