@@ -625,88 +625,94 @@ class Cell(prec, verbose):
         return cls(*_args, **_j)
 
     @classmethod
-    def __bravis_c(cls, atom, typeLatt, aLatt=1.0, **kwargs):
-
-        _type = typeLatt.upper()
-        try:
-            assert isinstance(aLatt, (int, float))
-        except AssertionError:
-            raise CellError("alatt should be a number")
-        try:
-            assert _type in ["P", "I", "F"]
-        except AssertionError:
-            raise CellError("Invalid cubic Bravis system")
-
-        _a = abs(aLatt)
-        _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
-        if _type == "P":
-            _atoms =[atom]
-            _pos = [[0.0,0.0,0.0]]
-        if _type == "I":
-            _atoms =[atom, atom]
-            _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
-        if _type == "F":
-            _atoms =[atom, atom, atom, atom]
-            _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
-
-        return cls(_latt, _atoms, _pos, **kwargs)
-
-    @classmethod
     def bravis_cP(cls, atom, aLatt=1.0, **kwargs):
         '''Generate a primitive cubic Bravis lattice
 
         Args:
             atom (str) : the chemical symbol of atom
             alatt (float) : the lattice constant (a)
-            unit (str) : the unit system to use
         '''
+        _a = abs(aLatt)
+        _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+        _atoms =[atom]
+        _pos = [[0.0,0.0,0.0]]
         if not "comment" in kwargs:
             kwargs.update({"comment": "Primitive cubic lattice"})
-        return cls.__bravis_c(atom, 'P', aLatt=aLatt, **kwargs)
+        return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def bravis_cI(cls, atom, aLatt=1.0, **kwargs):
+    def bravis_cI(cls, atom, aLatt=1.0, primitive=False, **kwargs):
         '''Generate a body-centered cubic Bravis lattice
 
         Args:
             atom (str) : the chemical symbol of atom
             alatt (float) : the lattice constant (a)
-            unit (str) : the unit system to use
+            primitive (bool) : if set True, the primitive cell will be generated
         '''
+        _a = abs(aLatt)
+        if primitive:
+            _latt = [[-_a/2.0,_a/2.0,_a/2.0],[_a/2.0,-_a/2.0,_a/2.0],[_a/2.0,_a/2.0,-_a/2.0]]
+            _atoms =[atom]
+            _pos = [[0.0,0.0,0.0]]
+        else:
+            _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+            _atoms =[atom,]*2
+            _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
         if not "comment" in kwargs:
             kwargs.update({"comment": "Body-centered cubic lattice"})
-        return cls.__bravis_c(atom, 'I', aLatt=aLatt, **kwargs)
+        return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def bravis_cF(cls, atom, aLatt=1.0, **kwargs):
+    def bravis_cF(cls, atom, aLatt=1.0, primitive=False, **kwargs):
         '''Generate a face-centered cubic Bravis lattice
 
         Args:
             atom (str) : the chemical symbol of atom
             alatt (float) : the lattice constant (a)
-            unit (str) : the unit system to use
+            primitive (bool) : if set True, the primitive cell will be generated
         '''
+        _a = abs(aLatt)
+        if primitive:
+            _latt = [[0.0,_a/2.0,_a/2.0],[_a/2.0,0.0,_a/2.0],[_a/2.0,_a/2.0,0.0]]
+            _atoms =[atom]
+            _pos = [[0.0,0.0,0.0]]
+        else:
+            _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+            _atoms =[atom,]*4
+            _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
         if not "comment" in kwargs:
             kwargs.update({"comment": "Face-centered cubic lattice"})
-        return cls.__bravis_c(atom, 'F', aLatt=aLatt, **kwargs)
+        return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def zincblende(cls, atom1, atom2, aLatt=1.0, **kwargs):
+    def zincblende(cls, atom1, atom2, aLatt=1.0, primitive=False, **kwargs):
         '''Generate a standardized zincblende lattice.
 
         ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
+
+        Args:
+            atom1 (str): symbol of atom at vertex
+            atom2 (str): symbol of atom at tetrahedron interstitial
+            aLatt (float): the lattice constant of the conventional cell.
+            primitive (bool): if set True, the primitive cell will be generated.
         '''
         _a = abs(aLatt)
-        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
-        _atoms = [atom1,]*4 + [atom2,]*4
-        _pos = [[0.0, 0.0, 0.0],
-                [0.0, 0.5, 0.5],
-                [0.5, 0.0, 0.5],
-                [0.5, 0.5, 0.0],
-                [0.25, 0.25, 0.25],
-                [0.25, 0.75, 0.75],
-                [0.75, 0.25, 0.75],
-                [0.75, 0.75, 0.25]]
+        if primitive:
+            _latt = [[0.0, _a/2.0, _a/2.0], [_a/2.0, 0.0, _a/2.0], [_a/2.0, _a/2.0, 0.0]]
+            _atoms = [atom1, atom2]
+            _pos = [[0.0, 0.0, 0.0],
+                    [0.25, 0.25, 0.25]]
+        else:
+            _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+            _atoms = [atom1,]*4 + [atom2,]*4
+            _pos = [[0.0, 0.0, 0.0],
+                    [0.0, 0.5, 0.5],
+                    [0.5, 0.0, 0.5],
+                    [0.5, 0.5, 0.0],
+                    [0.25, 0.25, 0.25],
+                    [0.25, 0.75, 0.75],
+                    [0.75, 0.25, 0.75],
+                    [0.75, 0.75, 0.25]]
         if not "comment" in kwargs:
             kwargs.update({"comment": "Zincblende"})
         return cls(_latt, _atoms, _pos, **kwargs)

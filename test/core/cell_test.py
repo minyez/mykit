@@ -124,11 +124,19 @@ class cell_factory_method(ut.TestCase):
         _pc = Cell.bravis_cP("C", aLatt=5.0, coordSys="D")
         self.assertEqual(1, len(_pc))
         self.assertEqual("D", _pc.coordSys)
-        _bcc = Cell.bravis_cI("C", aLatt=5.0, unit="au")
+        _bcc = Cell.bravis_cI("C", aLatt=5.0, primitive=False, unit="au")
         self.assertEqual("au", _bcc.unit)
         self.assertEqual(2, len(_bcc))
-        _fcc = Cell.bravis_cF("C", aLatt=5.0)
+        _fcc = Cell.bravis_cF("C", aLatt=5.0, primitive=False)
         self.assertEqual(4, len(_fcc))
+        # primitive cell
+        _pbcc = Cell.bravis_cI("C", aLatt=5.0, primitive=True)
+        self.assertEqual(1, len(_pbcc))
+        self.assertAlmostEqual(5.0*np.sqrt(3.0)/2.0, _pbcc.alen[0])
+        _pfcc = Cell.bravis_cF("C", aLatt=5.0, primitive=True)
+        self.assertEqual(1, len(_pfcc))
+        self.assertAlmostEqual(5.0*np.sqrt(0.5), _pfcc.alen[0])
+
 
     def test_read_from_json(self):
         import os
