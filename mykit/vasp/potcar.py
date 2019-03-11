@@ -18,7 +18,7 @@ class potcar_search(verbose):
     '''Class for locating POTCAR.
 
     Args:
-        names (str): the name of POTCARs to search
+        names (str): the names of elements to search
         usegw (bool): if set True, only POTCARs with GW suffix will be searched or exported
     '''
 
@@ -68,6 +68,10 @@ class potcar_search(verbose):
         if xc is None:
             _xc = "PBE"
         else:
+            try:
+                assert isinstance(xc, str)
+            except AssertionError:
+                raise PotcarError("XC should be string type")
             _xc = xc.upper()
         try:
             assert _xc in self._homePaw
@@ -79,7 +83,7 @@ class potcar_search(verbose):
         return _home
 
     def search(self, xc="PBE"):
-        '''Search 
+        '''Search the PAW xc directory for available POTCARs for specified element names
 
         Args:
             xc (str): name of xc, case insensitive.
@@ -92,7 +96,6 @@ class potcar_search(verbose):
         _dict = {}
         for name in self._names:
             _d = {}
-            # self.print_log("Searching {} in {}".format(name, _home), depth=0, level=0)
             for i in os.listdir(_home):
                 if fnmatch(i, name) or fnmatch(i, name+"_*"):
                     if not i.endswith("_GW") and self._usegw:
@@ -101,14 +104,11 @@ class potcar_search(verbose):
                     enmax = get_enmax(_path)
                     enmin = get_enmin(_path)
                     _d.update({i: (enmin, enmax)})
-                    # self.print_log("- {:10s} {:8.2f}~{:8.2f}".format(i, enmin, enmax), \
-                    #     depth=1, level=0)
             _dict.update({name: _d})
         return _home, _dict
         
-
     def export(self, xc="PBE", pathPotcar='POTCAR'):
-        '''Concentate POTCAR of element names to ``pathPotcar``
+        '''Concentate POTCARs of element names to ``pathPotcar``
 
         Args:
             xc (str): name of xc, case insensitive.
@@ -118,7 +118,6 @@ class potcar_search(verbose):
             str, the searching directory
         '''
         _home = self._get_xc_home(xc)
-
         # ! The following exception is not unittest documented
         _files = []
         for _i, name in enumerate(self.names):
@@ -133,12 +132,14 @@ class potcar_search(verbose):
                         h_o.write(line)
         return _home
 
+
 def get_enmax(pathPotcar):
-    '''Get ENMAX
+    '''Get ENMAX of a POTCAR
     '''
     return float(sp.check_output(['grep', 'ENMAX', pathPotcar]).split()[2][:-1])
 
+
 def get_enmin(pathPotcar):
-    '''Get ENMIN
+    '''Get ENMIN of a POTCAR
     '''
     return float(sp.check_output(['grep', 'ENMIN', pathPotcar]).split()[5])

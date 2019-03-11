@@ -13,6 +13,7 @@ The ``lattice`` class and its subclasses accept the following kwargs when being 
       empty ``dict``
     - comment (str): message about the lattice
 '''
+from collections import OrderedDict
 # import spglib
 from numbers import Real
 
@@ -179,7 +180,7 @@ class lattice(prec, verbose):
             self.coordSys = "C"
 
     def get_sym_index(self, csymbol):
-        '''Get the indices of atom with element symbol ``csymbol``
+        '''Get the indices of atoms with element symbol ``csymbol``
 
         Note that this is equivalent to ``latt[csymbol]``, given ``lattice`` instance latt.
 
@@ -412,14 +413,30 @@ class lattice(prec, verbose):
 
     @property
     def atomTypes(self):
-        _list = []
-        for _a in self.__atoms:
-            if _a not in _list:
-                _list.append(_a)
-        return _list
+        '''All atom types in the lattice
+        '''
+        # _list = []
+        # for _a in self.__atoms:
+        #     if _a not in _list:
+        #         _list.append(_a)
+        # return _list
+        _d = OrderedDict.fromkeys(self.__atoms)
+        return list(_d.keys())
+
+    @property
+    def typeMapping(self):
+        '''Map index (int) to atom type (str)
+        '''
+        _ats = self.atomTypes
+        _dict = {}
+        for i, _at in enumerate(_ats):
+            _dict.update({i: _at})
+        return _dict
 
     @property
     def typeIndex(self):
+        '''Indices of atom type of all atoms
+        '''
         _ats = self.atomTypes
         _dict = {}
         for i, _at in enumerate(_ats):
@@ -564,6 +581,14 @@ class lattice(prec, verbose):
             for _i in self.__selectDyn:
                 _flag[_i] = self.__selectDyn[_i]
         return _flag
+
+    def get_spglib_input(self):
+        '''get the input for spglib to get symmetry
+
+        Returns:
+            cell (3, 3), pos (n, 3), index of atom type (n), with n = self.natoms
+        '''
+        return self.cell, self.pos, self.typeIndex
 
     # * Factory methods
     @classmethod

@@ -26,7 +26,6 @@ class IncarError(Exception):
 class incar(*_incar_controllers):
     '''manage tags and IO of VASP input file INCAR
     '''
-    # For VASP tags that is not easily to find analogy in other programs
     _metadata = os.path.join(os.path.dirname(__file__), "metadata", "incartags.json")
     with open(_metadata, 'r') as h:
         _tagdoc = json.load(h)
@@ -51,7 +50,7 @@ class incar(*_incar_controllers):
         '''Initialize
 
         First, filter all incarargs to get all pwTags, xcTags, and remove their VASP equivalents,
-        and then add those tags not implemented in the controller tag mapping.
+        and then add to _vaspTags those tags not implemented in the controller tag mapping.
         '''
         self.comment = ''
         self._vaspTags = {}
@@ -155,9 +154,9 @@ class incar(*_incar_controllers):
         return _vals
 
     def _filter_tags_incar_not_mykit(self, *tags):
-        '''Get VASP tags that are implemented in incar and have no correspondents in base class tags.
+        '''Get VASP tags that are implemented in incar but have no correspondents in base class tags.
         
-        Common plane_wave and xc tags, and their VASP correspondent,
+        Common planewave, ion and xc tags, and their VASP correspondent,
         will be filtered out.
 
         Returns:
@@ -210,7 +209,6 @@ class incar(*_incar_controllers):
         from sys import stdout
         self.__print(stdout)
 
-    # TODO test write method, i.e. __print method
     def write(self, pathIncar="INCAR", backup=False, suffix="_bak"):
         '''Write to INCAR file at pathIncar. 
 
@@ -350,7 +348,7 @@ class incar(*_incar_controllers):
                                         raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
                     _kw.update({_k: newList})
         return _kw
-                    
+
     # * Factory methods
     @classmethod
     def read_from_file(cls, pathIncar="INCAR"):
@@ -364,8 +362,7 @@ class incar(*_incar_controllers):
         _f.close()
         for _i, _l in enumerate(_lines):
             __tags = cls.analyze_incar_line(_l, lineNum=_i, filePath=pathIncar)
-            for _k, _v in __tags.items():
-                __incarTags.update({_k:_v})
+            __incarTags.update(__tags)
         return cls(**__incarTags)
         
     @classmethod

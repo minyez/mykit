@@ -78,7 +78,11 @@ class simple_cubic_lattice(ut.TestCase):
         self._latt.coordSys = 'D'
         self.assertEqual(self._latt[0][0], self._frac)
 
-        
+    def test_spglib_input(self):
+        _ip = self._latt.get_spglib_input()
+        self.assertTupleEqual((self._latt.cell, self._latt.pos, self._latt.typeIndex), _ip)
+
+
 class lattice_raise(ut.TestCase):
     
     def test_bad_cell(self):
@@ -254,6 +258,7 @@ class lattice_sort(ut.TestCase):
         _latt = lattice(_cell, _atoms, _pos, selectDyn={2:[False, False, False]})
         # _latt._sanitize_atoms()
         self.assertListEqual(list(sorted(_atoms, reverse=True)), _latt.atoms)
+        self.assertDictEqual({0: 'Si', 1: 'C'}, _latt.typeMapping)
         self.assertTrue(np.array_equal(_latt.pos, np.array(_posSanitied, dtype=_latt._dtype)))
 
     def test_sort_pos_sic(self):
@@ -276,6 +281,7 @@ class lattice_sort(ut.TestCase):
         _latt = lattice(_cell, _atoms, _pos)
         # no need to sanitize atoms
         self.assertListEqual(_atoms, _latt.atoms)
+        self.assertDictEqual({0: 'Si', 1: 'C'}, _latt.typeMapping)
         for _axis in range(3):
             _latt.sort_pos(axis=_axis+1)
             self.assertTrue(np.array_equal(np.array(_posSorted, dtype=_latt._dtype), \
