@@ -19,7 +19,7 @@ This module has its emphasis on the input files generation and tutorial purpose,
 ## Acknowledgement
 
 - `Symmetry` class is implemented based on python bindings of [spglib](https://atztogo.github.io/spglib/python-spglib.html) by @atztogo
-- Special kpoints are retrived from [Bilbao Crystallographic Server](http://www.cryst.ehu.es), explicitly the `KVEC` program. Citations: [Aroyo2014](doi:10.1107/S205327331303091X) and [Tasci2012](doi:10.1051/epjconf/20122200009)
+- Special kpoints are retrived from [Bilbao Crystallographic Server](http://www.cryst.ehu.es), explicitly the `KVEC` program. Citations: [Aroyo2014](https://dx.doi.org/10.1107/S205327331303091X) and [Tasci2012](https://dx.doi.org/10.1051/epjconf/20122200009)
 
 
 <!-- Currently partially supported codes:
