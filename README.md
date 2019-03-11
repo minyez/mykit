@@ -16,6 +16,9 @@ This module has its emphasis on the input files generation and tutorial purpose,
     alternative to run in a bash script, with each command line a self-explained -->
 - Conversion from input files of one atomic simulation program to those (or that) of another is nothing else than one-line command in terminal.
 
+## Acknowledgement
+
+- `Symmetry` class is implemented based on python bindings of [spglib](https://atztogo.github.io/spglib/python-spglib.html) by @atztogo
 
 
 <!-- Currently partially supported codes:

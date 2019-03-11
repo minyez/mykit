@@ -583,10 +583,10 @@ class Cell(prec, verbose):
         return _flag
 
     def get_spglib_input(self):
-        '''get the input for spglib to get symmetry
+        '''Return the input necessary for spglib to get symmetry
 
         Returns:
-            cell (3, 3), pos (n, 3), index of atom type (n), with n = self.natoms
+            cell (3,3), pos (n,3), index of atom type (n), with n = self.natoms
         '''
         return self.latt, self.pos, self.typeIndex
 
