@@ -120,20 +120,20 @@ class cell_raise(ut.TestCase):
 class cell_factory_method(ut.TestCase):
     '''Test the class methods to generate commonly used lattice structure'''
 
-    def test_bravis_cubic(self):
-        _pc = Cell.bravis_cP("C", aLatt=5.0, coordSys="D")
+    def test_bravais_cubic(self):
+        _pc = Cell.bravais_cP("C", aLatt=5.0, coordSys="D")
         self.assertEqual(1, len(_pc))
         self.assertEqual("D", _pc.coordSys)
-        _bcc = Cell.bravis_cI("C", aLatt=5.0, primitive=False, unit="au")
+        _bcc = Cell.bravais_cI("C", aLatt=5.0, primitive=False, unit="au")
         self.assertEqual("au", _bcc.unit)
         self.assertEqual(2, len(_bcc))
-        _fcc = Cell.bravis_cF("C", aLatt=5.0, primitive=False)
+        _fcc = Cell.bravais_cF("C", aLatt=5.0, primitive=False)
         self.assertEqual(4, len(_fcc))
         # primitive cell
-        _pbcc = Cell.bravis_cI("C", aLatt=5.0, primitive=True)
+        _pbcc = Cell.bravais_cI("C", aLatt=5.0, primitive=True)
         self.assertEqual(1, len(_pbcc))
         self.assertAlmostEqual(5.0*np.sqrt(3.0)/2.0, _pbcc.alen[0])
-        _pfcc = Cell.bravis_cF("C", aLatt=5.0, primitive=True)
+        _pfcc = Cell.bravais_cF("C", aLatt=5.0, primitive=True)
         self.assertEqual(1, len(_pfcc))
         self.assertAlmostEqual(5.0*np.sqrt(0.5), _pfcc.alen[0])
 
@@ -181,22 +181,22 @@ class cell_select_dynamics(ut.TestCase):
     '''Test the functionality of selective dynamics
     '''
     def test_fix_all(self):
-        _pc = Cell.bravis_cP("C")
+        _pc = Cell.bravais_cP("C")
         self.assertFalse(_pc.useSelDyn)
-        _pc = Cell.bravis_cP("C", allRelax=False)
+        _pc = Cell.bravais_cP("C", allRelax=False)
         self.assertTrue(_pc.useSelDyn)
         self.assertListEqual([False,]*3, _pc.sdFlags(0))
-        _pc = Cell.bravis_cI("C", allRelax=False)
+        _pc = Cell.bravais_cI("C", allRelax=False)
         self.assertTrue(_pc.useSelDyn)
         self.assertListEqual([[False,]*3,]*2, _pc.sdFlags())
     
     def test_fix_some(self):
-        _pc = Cell.bravis_cF("C", selectDyn={1:[False, True, True]})
+        _pc = Cell.bravais_cF("C", selectDyn={1:[False, True, True]})
         self.assertListEqual([True,]*3, _pc.sdFlags(0))
         self.assertListEqual([False,True,True,], _pc.sdFlags(1))
 
     def test_fix_by_set_method(self):
-        _pc = Cell.bravis_cF("C")
+        _pc = Cell.bravais_cF("C")
         _pc.set_fix(0, 1)
         self.assertListEqual([False,False,False], _pc.sdFlags(0))
         self.assertListEqual([False,False,False], _pc.sdFlags(1))
@@ -206,7 +206,7 @@ class cell_select_dynamics(ut.TestCase):
         self.assertListEqual([True,False,False], _pc.sdFlags(3))
 
     def test_relax_by_set_method(self):
-        _pc = Cell.bravis_cF("C", allRelax=False)
+        _pc = Cell.bravais_cF("C", allRelax=False)
         _pc.set_relax(0, 1)
         self.assertListEqual([True,True,True], _pc.sdFlags(0))
         self.assertListEqual([True,True,True], _pc.sdFlags(1))

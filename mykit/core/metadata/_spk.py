@@ -4,7 +4,7 @@ from numpy import power
 
 # * Condition functions to determine which set of special points  to extract
 # * the return value is the index of dict in "spPrim" value (list)
-# TODO: dealt with 3-15 unique b axis group
+# TODO: deal with 3-15 unique b axis group
 def cond_any(a, b, c):
     '''no specific condition
     '''

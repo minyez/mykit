@@ -3,12 +3,23 @@
 
 import unittest as ut
 
+from mykit.core.cell import Cell
 from mykit.core.metadata._spk import (_special_kpoints, cond_a_lt_b,
                                       cond_abc_invsq, cond_any, cond_c_lt_a,
                                       cond_curt_a_lt_sqrt_c,
                                       cond_max_bc_noneq_left)
 from mykit.core.symmetry import (Symmetry, SymmetryError, space_group,
                                  special_kpoints)
+
+
+class test_symmetry(ut.TestCase):
+
+    def test_check_primitive(self):
+        at = "C"
+        zbPrim = Cell.zincblende(at, at, primitive=True)
+        zbConv = Cell.zincblende(at, at, primitive=False)
+        self.assertTrue(Symmetry.check_primitive(zbPrim))
+        self.assertFalse(Symmetry.check_primitive(zbConv))
 
 
 class test_space_group(ut.TestCase):
@@ -19,6 +30,7 @@ class test_space_group(ut.TestCase):
         self.assertEqual(space_group.get_spg_symbol(64), 'Cmce')
         self.assertEqual(space_group.get_spg_symbol(123), 'P4mmm')
         self.assertEqual(space_group.get_spg_symbol(161), 'R3c')
+        self.assertEqual(space_group.get_spg_symbol(168), 'P6_3mc')
         self.assertEqual(space_group.get_spg_symbol(208), 'P4232')
         self.assertEqual(space_group.get_spg_symbol(230), 'Ia-3d')
         # test raises
@@ -28,6 +40,14 @@ class test_space_group(ut.TestCase):
             space_group.get_spg_symbol, 231)
         self.assertRaisesRegex(SymmetryError, r"Invalid space group id \(1~230\): -1", \
             space_group.get_spg_symbol, -1)
+
+    def test_get_spg(self):
+        at = "C"
+        fcc = Cell.bravais_cF(at, primitive=False)
+        self.assertTupleEqual(Symmetry.get_spg(fcc), (225, "Fm-3m"))
+        fcc = Cell.bravais_cF(at, primitive=True)
+        self.assertTupleEqual(Symmetry.get_spg(fcc), (225, "Fm-3m"))
+
 
 class test_spk_dict(ut.TestCase):
     '''Test the integrity of _special_kpoints dictionary

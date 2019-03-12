@@ -624,29 +624,87 @@ class Cell(prec, verbose):
         return cls(*_args, **_j)
 
     @classmethod
-    def bravis_cP(cls, atom, aLatt=1.0, **kwargs):
-        '''Generate a primitive cubic Bravis lattice
+    def _bravais_o(cls, kind, atom, a, b, c, **kwargs):
+        assert kind in ["P", "I", "F"]
+        _latt = [[a, 0.0, 0.0], [0.0, b, 0.0], [0.0, 0.0, c]]
+        if kind == "P":
+            _atoms = [atom,]
+            _pos = [[0.0, 0.0, 0.0]]
+        if kind == "I":
+            _atoms = [atom,]*2
+            _pos = [[0.0, 0.0, 0.0],[0.5,0.5,0.5]]
+        if kind == "F":
+            _atoms = [atom,]*4
+            _pos = [[0.0, 0.0, 0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+        kwargs.pop("coordSys", None)
+        return cls(_latt, _atoms, _pos, **kwargs)
+    
+    @classmethod
+    def bravais_oP(cls, atom, a=1.0, b=2.0, c=3.0, **kwargs):
+        '''Generate a simple orthorhombic Bravais lattice
+
+        Args:
+            atom (str) : the chemical symbol of atom
+            a,b,c (float) : the lattice constants (a,b,c)
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Simple orthorhombic lattice {}".format(atom)})
+        return cls._bravais_o("P", atom, a, b, c, **kwargs)
+
+    @classmethod
+    def bravais_oI(cls, atom, a=1.0, b=2.0, c=3.0, **kwargs):
+        '''Generate a body-centered orthorhombic Bravais lattice
+
+        Args:
+            atom (str) : the chemical symbol of atom
+            a,b,c (float) : the lattice constants (a,b,c)
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Body-centered orthorhombic lattice {}".format(atom)})
+        return cls._bravais_o("I", atom, a, b, c, **kwargs)
+
+    @classmethod
+    def bravais_oF(cls, atom, a=1.0, b=2.0, c=3.0, **kwargs):
+        '''Generate a face-centered orthorhombic Bravais lattice
+
+        Args:
+            atom (str) : the chemical symbol of atom
+            a,b,c (float) : the lattice constants (a,b,c)
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Face-centered orthorhombic lattice {}".format(atom)})
+        return cls._bravais_o("F", atom, a, b, c, **kwargs)
+
+    @classmethod
+    def bravais_cP(cls, atom, aLatt=1.0, **kwargs):
+        '''Generate a simple cubic Bravais lattice
 
         Args:
             atom (str) : the chemical symbol of atom
             alatt (float) : the lattice constant (a)
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(aLatt)
         _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
         _atoms =[atom]
         _pos = [[0.0,0.0,0.0]]
+        kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
             kwargs.update({"comment": "Simple cubic lattice {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def bravis_cI(cls, atom, aLatt=1.0, primitive=False, **kwargs):
-        '''Generate a body-centered cubic Bravis lattice
+    def bravais_cI(cls, atom, aLatt=1.0, primitive=False, **kwargs):
+        '''Generate a body-centered cubic Bravais lattice
 
         Args:
             atom (str) : the chemical symbol of atom
             alatt (float) : the lattice constant (a)
             primitive (bool) : if set True, the primitive cell will be generated
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(aLatt)
         if primitive:
@@ -657,18 +715,20 @@ class Cell(prec, verbose):
             _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
             _atoms =[atom,]*2
             _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
+        kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
             kwargs.update({"comment": "BCC {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def bravis_cF(cls, atom, aLatt=1.0, primitive=False, **kwargs):
-        '''Generate a face-centered cubic Bravis lattice
+    def bravais_cF(cls, atom, aLatt=1.0, primitive=False, **kwargs):
+        '''Generate a face-centered cubic Bravais lattice
 
         Args:
             atom (str) : the chemical symbol of atom
             alatt (float) : the lattice constant (a)
             primitive (bool) : if set True, the primitive cell will be generated
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(aLatt)
         if primitive:
@@ -679,6 +739,7 @@ class Cell(prec, verbose):
             _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
             _atoms =[atom,]*4
             _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+        kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
             kwargs.update({"comment": "FCC {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
@@ -694,6 +755,7 @@ class Cell(prec, verbose):
             atom2 (str): symbol of atom at tetrahedron interstitial
             aLatt (float): the lattice constant of the conventional cell.
             primitive (bool): if set True, the primitive cell will be generated.
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(aLatt)
         if primitive:
@@ -712,10 +774,36 @@ class Cell(prec, verbose):
                     [0.25, 0.75, 0.75],
                     [0.75, 0.25, 0.75],
                     [0.75, 0.75, 0.25]]
+        kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
             kwargs.update({"comment": "Zincblende {}{}".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
+    @classmethod
+    def wurtzite(cls, atom1, atom2, a=1.0, **kwargs):
+        '''Generate a standardized wurtzite lattice (space group 186)
+
+        ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
+
+        Args:
+            atom1 (str): symbol of atom at vertex of lattice
+            atom2 (str): symbol of atom at edge of lattice
+            a (float): the lattice constant of the cell.
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        _a = abs(a)
+        _halfa = _a/2.0
+        _c = _a * np.sqrt(8.0/3)
+        _latt = [[_a, 0.0, 0.0], [-_halfa, np.sqrt(3)*_halfa, 0.0], [0.0, 0.0, _c]]
+        _atoms = [atom1,]*2 + [atom2,]*2
+        _pos = [[0.0, 0.0, 0.0],
+                [2.0/3, 1.0/3, 0.5],
+                [0.0, 0.0, 2.0/3],
+                [2.0/3, 1.0/3, 1.0/6]]
+        kwargs.pop("coordSys", None)
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Zincblende {}{}".format(atom1, atom2)})
+        return cls(_latt, _atoms, _pos, **kwargs)
 
 def atoms_from_sym_nat(syms, nats):
     '''Generate ``atom`` list for ``Cell`` initilization from list of atomic symbols and number of atoms
