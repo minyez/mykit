@@ -238,19 +238,19 @@ class space_group:
             raise SymmetryError("Invalid space group id (1~230): {}".format(id))
         identity = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
         _dict = {
-            (5,8,9,12,15):
+            (5,8,9,12,15,):
                    np.array([[ 1.0,-1.0, 0.0],
                              [ 1.0, 1.0, 0.0],
                              [ 0.0, 0.0, 1.0]]), # u-v, u+v, w
-            (20,21,35,36,37,38,39,40,41):
+            (20,21,35,36,37,38,39,40,41,63,64,65,66,67,68,):
                    np.array([[ 1.0, 1.0, 0.0],
                              [-1.0, 1.0, 0.0],
                              [ 0.0, 0.0, 1.0]]), # u+v, -u+v, w
-            (22,42,43):
+            (22,42,43,69,70,):
                    np.array([[-1.0, 1.0, 1.0],
                              [ 1.0,-1.0, 1.0],
                              [ 1.0, 1.0,-1.0]]), # -u+v+w, u-v+w, u+v-w
-            (23,24,44,):
+            (23,24,44,45,46,71,72,):
                    np.array([[ 0.0, 1.0, 1.0],
                              [ 1.0, 0.0, 1.0],
                              [ 1.0, 1.0, 0.0]]), # v+w, u+w, u+v
@@ -259,7 +259,6 @@ class space_group:
             if id in k:
                 return v
         return identity
-
 
 
     @classmethod
@@ -296,10 +295,33 @@ class space_group:
 
 class special_kpoints:
     '''class for special kpoints of space groups
-    '''
-    _meta = os.path.join(os.path.dirname(__file__), 'metadata', "special_kpoints.json")
-    with open(_meta, 'r') as h:
-        _j = json.load(h)
 
-    def __init__(self, id):
-        pass
+    Args:
+        id (int): the id of space group
+    '''
+    pass
+    # _meta = os.path.join(os.path.dirname(__file__), 'metadata', "special_kpoints.json")
+    # try:
+    #     with open(_meta, 'r') as h:
+    #         _spAll = json.load(h)
+    # except json.JSONDecodeError:
+    #     raise SymmetryError("Fail to load metadata: {}".format(_meta))
+    
+
+
+    # def __init__(self, id):
+    #     if not isinstance(id):
+    #         raise SymmetryError("id should be int")
+    #     try:
+    #         assert id in range(1, 231)
+    #     except AssertionError:
+    #         raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+    #     self._sp = self._spAll[str(id)]
+    
+    # @property
+    # def spPrim(self):
+    #     return self._sp["spPrim"]
+
+    # @property
+    # def avail_kpaths(self):
+    #     return self._sp.get("kpath", [])
