@@ -25,38 +25,44 @@ class poscar(Cell):
     # ? But it may be good to let user deal with it, such as using "Fe1", "Fe2" to distinguish.
     # ? In this case, it should be careful to set POTCAR when recognizing atomic information in POSCAR
 
-    def __print(self, fp, scale=1.0):
-            _latt, _atoms, _pos = self.get_cell()
-            _syms, _nats = sym_nat_from_atoms(_atoms)
-            print(self.comment, file=fp)
-            print("{:8.6f}".format(scale), file=fp)
-            for i in range(3):
-                print("  %12.8f  %12.8f  %12.8f" \
-                    % (self.latt[i,0], self.latt[i,1], self.latt[i,2]), file=fp)
-            if _syms[0] != "A":
-                print(*_syms, file=fp)
-            print(*_nats, file=fp)
+    def __str__(self):
+        return self.__str()
+
+
+    def __str(self, scale=1.0):
+        '''return the POSCAR lines in one string
+        '''
+        _ret = []
+        _latt, _atoms, _pos = self.get_cell()
+        _syms, _nats = sym_nat_from_atoms(_atoms)
+        _ret.append(self.comment)
+        _ret.append("{:8.6f}".format(scale))
+        for i in range(3):
+            _ret.append("  %12.8f  %12.8f  %12.8f" \
+                % (self.latt[i,0], self.latt[i,1], self.latt[i,2]))
+        if not _syms[0].startswith("Unk"):
+            _ret.append(' '.join(_syms))
+        _ret.append(' '.join([str(x) for x in _nats]))
+        if self.useSelDyn:
+            _ret.append("Selective Dynamics")
+        _ret.append({"D": "Direct", "C": "Cart"}[self.coordSys])
+        for i in range(self.natoms):
             if self.useSelDyn:
-                print("Selective Dynamics", file=fp)
-            print({"D": "Direct", "C": "Cart"}[self.coordSys], file=fp)
-            for i in range(self.natoms):
-                if self.useSelDyn:
-                    _dyn = self.sdFlags(ia=i)
-                else:
-                    _dyn = []
-                if _syms[0] != "A":
-                    _ainfo = ['#{}'.format(_atoms[i])]
-                else:
-                    _ainfo = []
-                _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
-                print("%15.9f  %15.9f %15.9f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]), \
-                    *_aflag, file=fp)
+                _dyn = self.sdFlags(ia=i)
+            else:
+                _dyn = []
+            if not _syms[0].startswith("Unk"):
+                _ainfo = ['#{}'.format(_atoms[i])]
+            else:
+                _ainfo = []
+            _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
+            _ret.append("%15.9f %15.9f %15.9f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]) + ' '.join(_aflag))
+        return '\n'.join(_ret)
 
     def print(self):
         '''Preview the POSCAR output
         '''
-        from sys import stdout
-        self.__print(stdout)
+        print(self)
 
     def write(self, pathPoscar='POSCAR', scale=1.0, backup=False, suffix="_bak"):
         '''Write POSCAR to path 
@@ -71,7 +77,7 @@ class poscar(Cell):
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
         with open(_name, 'w') as f:
-            self.__print(f, scale=scale)
+            print(self.__str(scale=scale), file=f)
     
     @classmethod
     def read_from_file(cls, pathPoscar="POSCAR"):
@@ -110,7 +116,7 @@ class poscar(Cell):
                 _natomsType = [int(_x) for _x in _line.split()]
                 if _symTypes is None:
                     cls.print_cm_warn("No atom information in POSCAR: {}".format(pathPoscar))
-                    _symTypes = [string.ascii_lowercase[_i] for _i,_x in enumerate(_natomsType)]
+                    _symTypes = ["Unk{}".format(i) for i, _x in enumerate(_natomsType)]
             else:
                 _f.close()
                 raise PoscarError("Bad POSCAR atomic format: {}".format(pathPoscar))
@@ -168,5 +174,3 @@ class poscar(Cell):
             raise PoscarError("the input is not a lattice instance")
         __kw = cell.get_kwargs()
         return cls(*cell.get_cell(), **__kw)
-
-    # TODO inherit factory methods from ``Cell`` for space group and Bravis cell creation

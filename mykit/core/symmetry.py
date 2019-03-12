@@ -46,7 +46,7 @@ class Symmetry(prec):
     def operations(self):
         '''Symmetry operations. See spglib get_symmetry docstring
         '''
-        _ops = spglib.get_symmetry(self._cell, symprec=self._symprec)
+        _ops = spglib.get_symmetry(self._cell.get_spglib_input(), symprec=self._symprec)
         return [(r, t) for r, t in zip(_ops["rotations"], _ops["translations"])]
 
     @property
@@ -131,21 +131,25 @@ class Symmetry(prec):
             primitive (bool): if set True, the standard primitive cell will be returned
         
         Returns:
+            False if fail to standardize the cell, otherwise True 
+
             Cell or its subclass instance, depending on the ``cell`` at instantialization
         '''
         assert isinstance(primitive, bool)
+        _flag = False
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
         _stdCell = spglib.standardize_cell(self._cell.get_spglib_input(), \
             to_primitive=primitive, symprec=self._symprec)
         if _stdCell != None:
+            _flag = True
             _latt, _pos, _indice = _stdCell
             _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
             _newCell = _type(_latt, _atoms, _pos, \
                 unit=self._cell.unit, coordSys=self._cell.coordSys)
         else:
             _newCell = self._cell
-        return _newCell
+        return _flag, _newCell
 
 
 # pylint: disable=bad-whitespace
@@ -208,11 +212,12 @@ class space_group:
     
     @staticmethod
     def k_trans_mat_from_prim_to_conv(id):
-        '''Convert k-point coordinate in reciprocal lattice of primitive cell to that of conventional cell
+        '''Return transformation matrix to convert k-point coordinate in 
+        reciprocal lattice vectors of primitive cell to that in vectors of conventional cell
 
         The transormation matrix is retrived from Bilbao server.
-        The k-point coordinate in primitive cell, (u,v,w), is converted to conventional cell (p,q,n) by
-        the matrix A as
+        The k-point coordinate in primitive cell, (u,v,w), is converted to 
+        conventional cell (p,q,n) by the matrix A as
 
         (p,q,n)^T = A x (u,v,w)^T
 
@@ -222,7 +227,7 @@ class space_group:
             For space group 38,39,40,41, tranformation matrix to conventional basis C2mm is used
 
         Args:
-            id (int): the id of space group, 1~230
+            id (int): the id of space group of the cell, 1~230
 
         Returns:
             array: (3,3)

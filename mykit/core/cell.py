@@ -80,11 +80,13 @@ class Cell(prec, verbose):
             return self.get_sym_index(index)
 
     def __str__(self):
-        return "{}\nLattice:\n {}\nAtoms: {}\nPositions:\n {}\nUnit: {}\nCoordinates in {}".format(\
+        return "{}\nLattice:\n{}\nAtoms: {}\nPositions:\n{}\nUnit: {}\nCoordinates in {}".format(\
             self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
     
     def __repr__(self):
-        return self.__str__()
+        return '{}'.format({"comment": self.comment, "latt": self.__latt, "atoms": self.__atoms, \
+            "pos": self.__pos, "unit": self.__unit, "coordSys": self.__coordSys, \
+            "allRelax": self.__allRelax, "selectDyn": self.__selectDyn})
 
     def __parse_cellkw(self, **kwargs):
         # accept_kw = ['unit', 'coordSys', 'allRelax', 'selectDyn']
@@ -634,7 +636,7 @@ class Cell(prec, verbose):
         _atoms =[atom]
         _pos = [[0.0,0.0,0.0]]
         if not "comment" in kwargs:
-            kwargs.update({"comment": "Primitive cubic lattice"})
+            kwargs.update({"comment": "Simple cubic lattice {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
@@ -656,7 +658,7 @@ class Cell(prec, verbose):
             _atoms =[atom,]*2
             _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
         if not "comment" in kwargs:
-            kwargs.update({"comment": "Body-centered cubic lattice"})
+            kwargs.update({"comment": "BCC {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
@@ -678,7 +680,7 @@ class Cell(prec, verbose):
             _atoms =[atom,]*4
             _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
         if not "comment" in kwargs:
-            kwargs.update({"comment": "Face-centered cubic lattice"})
+            kwargs.update({"comment": "FCC {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
@@ -711,7 +713,7 @@ class Cell(prec, verbose):
                     [0.75, 0.25, 0.75],
                     [0.75, 0.75, 0.25]]
         if not "comment" in kwargs:
-            kwargs.update({"comment": "Zincblende"})
+            kwargs.update({"comment": "Zincblende {}{}".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
 

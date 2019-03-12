@@ -9,7 +9,7 @@
         "vasp": "kdense"
     },
     "kmode": {
-        "vasp": "kmodr"
+        "vasp": "kmode"
     },
     "kpath": {
         "vasp": "kpath"
