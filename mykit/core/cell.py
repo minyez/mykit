@@ -802,7 +802,39 @@ class Cell(prec, verbose):
                 [2.0/3, 1.0/3, 1.0/6]]
         kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
-            kwargs.update({"comment": "Zincblende {}{}".format(atom1, atom2)})
+            kwargs.update({"comment": "Wurtzite {}{}".format(atom1, atom2)})
+        return cls(_latt, _atoms, _pos, **kwargs)
+    
+    @classmethod
+    def rutile(cls, atom1, atom2, a=1.0, c=2.0, u=0.31, **kwargs):
+        '''Generate a standardized rutile lattice (space group 136)
+
+        ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
+
+        Args:
+            atom1 (str): symbol of atom at vertex and center of lattice
+            atom2 (str): symbol of atom at face of lattice
+            a,c (float): the lattice constant of the cell.
+            u (float): the internal coordinate
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        try:
+            assert 0.0 < u < 1.0
+        except AssertionError:
+            raise CellError("Internal coordinate should be in (0,1), get {}".format(u))
+        _a = abs(a)
+        _c = abs(c)
+        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
+        _atoms = [atom1,]*2 + [atom2,]*4
+        _pos = [[0.0, 0.0, 0.0],
+                [0.5, 0.5, 0.5],
+                [ u, u, 0.0],
+                [-u,-u, 0.0],
+                [0.5-u,0.5+u,0.5],
+                [0.5+u,0.5-u,0.5]]
+        kwargs.pop("coordSys", None)
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
 def atoms_from_sym_nat(syms, nats):

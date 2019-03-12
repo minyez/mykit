@@ -15,11 +15,13 @@ They lie the basis for input conversion
 ### `cell` module
 
 - `Cell` base class: creation of periodic systems
-  - Factory methods for common crystals
+  - Factory methods for common crystals, check [this site](http://www.kayelaby.npl.co.uk/chemistry/3_7/3_7_7.html)
     - [x] BCC, FCC
     - [x] zincblende
-    - [ ] wurtzite
-    - [ ] rutile
+    - [x] wurtzite
+    - [x] rutile
+    - [ ] diamond
+    - [ ] perovskite
 
 ### Input controllers
 
@@ -46,7 +48,7 @@ and help map name and value of parameter tags between different simulation progr
   - [x] return primitive cell
   - [x] return standardized cell
 - `special_kpoints`
-  - [ ] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server (currently 44)
+  - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
   - [ ] converting primitive to conventional coordinate
 
 ## `vasp`: VASP related
