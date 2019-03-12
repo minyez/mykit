@@ -8,7 +8,7 @@ import string
 import numpy as np
 
 from mykit.core.cell import Cell, atoms_from_sym_nat, sym_nat_from_atoms
-from mykit.core.utils import trim_comment
+from mykit.core.utils import trim_after
 
 
 class PoscarError(Exception):
@@ -144,7 +144,7 @@ class poscar(Cell):
             for _i in range(_natoms):
                 try:
                     _line = _f.readline().strip()
-                    _words = trim_comment(_line, r'[\#]').split()
+                    _words = trim_after(_line, r'[\#]').split()
                     _pos.append([float(_x) for _x in _words[:3]])
                     if __flagSelDyn:
                         __fixFlag = [__fixDict.get(_words[i]) for i in range(3,6)]

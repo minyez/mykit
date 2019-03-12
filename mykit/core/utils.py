@@ -5,6 +5,7 @@
 import os
 import re
 
+
 def get_dirpath(filePath):
     '''get the name of directory with filePath
 
@@ -21,16 +22,34 @@ def get_dirpath(filePath):
         _path = _path + '/'
     return os.path.dirname(_path)
 
-def trim_comment(string, commMark):
-    '''Trim a comment string from the end
+
+def trim_after(string, regex):
+    '''Trim a string after the first match of regex.
+
+    The matched pattern is trimed as well.
     
     Args:
         string (str): the string to trim
-        commMark (regex): the comment mark to trim from
+        regex (regex): the regex to match
     '''
-    _search = re.search(commMark, string)
+    _search = re.search(regex, string)
     if _search != None:
         return string[:_search.start()]
+    return string
+
+
+def trim_before(string, regex):
+    '''Trim a string from the beginning to the first match of regex.
+
+    The matched pattern is not trimed.
+
+    Args:
+        string (str): the string to trim
+        regex (regex): the regex to match
+    '''
+    _search = re.search(regex, string)
+    if _search != None:
+        return string[_search.start():]
     return string
 
 
@@ -108,4 +127,3 @@ def find_vol_dirs(path='.'):
         return float(dirstr.split('_')[1])
     _dirs = sorted(_dirs, key=__sort_vol)
     return _dirs
-

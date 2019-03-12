@@ -8,7 +8,7 @@ import re
 
 from mykit.core.ion import ion_control
 from mykit.core.planewave import planewave_control
-from mykit.core.utils import check_duplicates_in_tag_tuple, trim_comment
+from mykit.core.utils import check_duplicates_in_tag_tuple, trim_after
 from mykit.core.xc import xc_control
 
 # from mykit.core.program import program
@@ -254,7 +254,7 @@ class incar(*_incar_controllers):
                     return {}
         # Here start treat a line that possibly contain INCAR tags
         # 1. Trim line after #, ! and (
-        _l = trim_comment(_l, r"[\#\!\(]").strip()
+        _l = trim_after(_l, r"[\#\!\(]").strip()
         if len(_l) == 0:
             return _kw
         # 2. Split the line by semicolon.

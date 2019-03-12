@@ -8,6 +8,7 @@ import os
 import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
+from mykit.core.utils import trim_after
 from mykit.vasp.poscar import poscar
 from mykit.vasp.potcar import potcar_search
 
@@ -26,7 +27,7 @@ def pv_addpot():
             help="XC functional to generate PAW. LDA or PBE (default).")
     parser.add_argument("--gw", dest="usegw", default=False, action='store_true', \
             help="flag for always using GW potential")
-    # parser.add_argument("-D", dest='debug', action='store_true', \
+    # parser.add_argument"-D", dest='debug', action='store_true', \
     #         help="flag for debug mode")
     opts = parser.parse_args()
 
@@ -35,6 +36,8 @@ def pv_addpot():
     else:
         _pc = poscar.read_from_file(opts.posin)
         ele = _pc.atomTypes
+        # Trim ele to get rid of number
+        ele = [trim_after(e, r"\d") for e in ele]
     
     pts = potcar_search(*ele, usegw=opts.usegw)
     # if opts.debug:
