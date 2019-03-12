@@ -10,6 +10,7 @@ import numpy as np
 import spglib
 
 from mykit.core.cell import Cell
+from mykit.core.metadata._spk import _special_kpoints
 from mykit.core.numeric import prec
 
 
@@ -298,25 +299,28 @@ class special_kpoints:
 
     Args:
         id (int): the id of space group
+        alen (array): (3,) array of lattice constant a,b,c
     '''
-    pass
-    # _meta = os.path.join(os.path.dirname(__file__), 'metadata', "special_kpoints.json")
-    # try:
-    #     with open(_meta, 'r') as h:
-    #         _spAll = json.load(h)
-    # except json.JSONDecodeError:
-    #     raise SymmetryError("Fail to load metadata: {}".format(_meta))
+
+    def __init__(self, id, alen):
+        if not isinstance(id):
+            raise SymmetryError("id should be int")
+        try:
+            assert id in range(1, 231)
+        except AssertionError:
+            raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+        try:
+            assert np.shape(alen) == (3,)
+        except AssertionError:
+            raise SymmetryError("Invalid lattice constant shape: {}".format(alen))
     
-
-
-    # def __init__(self, id):
-    #     if not isinstance(id):
-    #         raise SymmetryError("id should be int")
-    #     try:
-    #         assert id in range(1, 231)
-    #     except AssertionError:
-    #         raise SymmetryError("Invalid space group id (1~230): {}".format(id))
-    #     self._sp = self._spAll[str(id)]
+        self._spDict = _special_kpoints[id]
+        try:
+            iset = self._spDict["cond"](*alen)
+        except ValueError as _err:
+            raise SymmetryError(str(_err))
+        
+        self._sp = self._spDict["spPrim"][iset]
     
     # @property
     # def spPrim(self):
