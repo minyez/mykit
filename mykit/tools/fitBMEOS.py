@@ -7,6 +7,9 @@ The data file should be prepared forehand, and two formats are supported.
     2. volume, energy
 
 To use the second format, add option '--ncols 2'
+
+TODO: 
+    extend to EOS with number of parameters other than 4
 '''
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter

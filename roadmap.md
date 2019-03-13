@@ -20,7 +20,7 @@ They lie the basis for input conversion
     - [x] zincblende
     - [x] wurtzite
     - [x] rutile
-    - [ ] diamond
+    - [x] diamond
     - [ ] perovskite
 
 ### Input controllers
@@ -39,7 +39,7 @@ and help map name and value of parameter tags between different simulation progr
 
 ### `kmesh` module
 
-- [ ] Factory methods for kpath
+- [x] kpath decoder and encoder to translate between kpath string and list of path segments
 
 ### `symmetry` module
 
@@ -50,6 +50,8 @@ and help map name and value of parameter tags between different simulation progr
 - `special_kpoints`
   - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
   - [ ] converting primitive to conventional coordinate
+    - [x] transformation matrix from primitive to conventional
+  - [ ] Factory methods for kpath of special kpoints
 
 ## `vasp`: VASP related
 
@@ -60,9 +62,9 @@ and help map name and value of parameter tags between different simulation progr
 - `poscar` 
   - [x] Read, print and write
 - `potcar`
+  - [x] `potcar_search` for easily searching POTCAR
 - `kpoints`
   - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
-- `potcar_search` for easily searching POTCAR
 - `wavecar`
 - `outcar`
 - `chgcar`
