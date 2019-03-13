@@ -260,11 +260,15 @@ class cell_sort(ut.TestCase):
                         [0.25, 0.75, 0.75],  #C
                         [0.75, 0.25, 0.75],  #C
                         [0.75, 0.75, 0.25]]  #C
-        _cell = Cell(_latt, _atoms, _pos, selectDyn={2:[False, False, False]})
+        _cell = Cell(_latt, _atoms, _pos, \
+            selectDyn={2:[False, False, False]})
         # _latt._sanitize_atoms()
-        self.assertListEqual(list(sorted(_atoms, reverse=True)), _cell.atoms)
+        self.assertListEqual(list(sorted(_atoms, reverse=True)), \
+            _cell.atoms)
         self.assertDictEqual({0: 'Si', 1: 'C'}, _cell.typeMapping)
-        self.assertTrue(np.array_equal(_cell.pos, np.array(_posSanitied, dtype=_cell._dtype)))
+        self.assertTrue(np.array_equal(_cell.pos, \
+            np.array(_posSanitied, dtype=_cell._dtype)))
+        self.assertListEqual([False, False, False], _cell.sdFlags(1))
 
     def test_sort_pos_sic(self):
         '''Test sorting atoms and their positions in SiC

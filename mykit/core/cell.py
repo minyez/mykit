@@ -524,10 +524,8 @@ class Cell(prec, verbose):
             axis (int or list): the axes along which the position of atom is fixed
                 It can be 0|1|2|3, or a list with all its members 1|2|3
         '''
-        _new = {}
-        if len(iats) == 0:
-            pass
-        else:
+        if len(iats) != 0:
+            _new = {}
             for _ia in iats:
                 if _ia in range(self.natoms):
                     _new.update({_ia: select_dyn_flag_from_axis(axis, relax=False)})
@@ -541,10 +539,8 @@ class Cell(prec, verbose):
             axis (int or list): the axes along which the position of atom is relaxed
                 It can be 0|1|2|3, or a list with all its members 1|2|3
         '''
-        _new = {}
-        if len(iats) == 0:
-            pass
-        else:
+        if len(iats) != 0:
+            _new = {}
             for _ia in iats:
                 if _ia in range(self.natoms):
                     _new.update({_ia: select_dyn_flag_from_axis(axis, relax=True)})
@@ -561,17 +557,18 @@ class Cell(prec, verbose):
         pass
 
     def __set_sdFlags(self, selectDyn):
-        assert isinstance(selectDyn, dict)
-        for _k in selectDyn:
-            _flag = selectDyn[_k]
+        try:
+            assert isinstance(selectDyn, dict)
+        except AssertionError:
+            raise self._error("need dictionary to set selective dynamics")
+        for _k, flag in selectDyn.items():
             try:
-                assert isinstance(_flag, list)
-                assert len(_flag) == 3
-                assert all([isinstance(_x, bool) for _x in _flag])
+                assert isinstance(flag, list)
+                assert len(flag) == 3
+                assert all([isinstance(_x, bool) for _x in flag])
             except AssertionError:
                 raise self._error("Bad flag for selective dynamics")
-            else:
-                self.__selectDyn.update({_k: _flag})
+        self.__selectDyn.update(selectDyn)
 
     def sdFlags(self, ia=-1):
         '''Return the selective dynamic flag (bool) of atom
@@ -592,9 +589,9 @@ class Cell(prec, verbose):
             # self.print_log("Use global flag for atom {}".format(ia), level=3, depth=1)
             _flag = [self.__allRelax,] *3
         else:
-            _flag = [[self.__allRelax,]*3 for _r in range(self.natoms)]
-            for _i in self.__selectDyn:
-                _flag[_i] = self.__selectDyn[_i]
+            _flag = [[self.__allRelax,]*3 for _i in range(self.natoms)]
+            for i in self.__selectDyn:
+                _flag[i] = self.__selectDyn[i]
         return _flag
 
     def get_spglib_input(self):
@@ -871,6 +868,7 @@ class Cell(prec, verbose):
         if not "comment" in kwargs:
             kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
+
 
 def atoms_from_sym_nat(syms, nats):
     '''Generate ``atom`` list for ``Cell`` initilization from list of atomic symbols and number of atoms
