@@ -20,6 +20,33 @@ class test_symmetry(ut.TestCase):
         zbConv = Cell.zincblende(at, at, primitive=False)
         self.assertTrue(Symmetry.check_primitive(zbPrim))
         self.assertFalse(Symmetry.check_primitive(zbConv))
+    
+    def test_well_known_spg_of_sysmtems(self):
+        # TiO2
+        TiO2 = Cell.rutile("Ti", "O")
+        spgtio2 = Symmetry(TiO2)
+        self.assertEqual(136, spgtio2.spgId)
+        self.assertEqual('P4_2/mnm', spgtio2.spgSym)
+        self.assertTrue(spgtio2.isPrimitive)
+        # w-ZnS
+        wZnS = Cell.wurtzite("Zn", "S")
+        spgwzns = Symmetry(wZnS)
+        self.assertEqual(186, spgwzns.spgId)
+        self.assertEqual('P6_3mc', spgwzns.spgSym)
+        self.assertTrue(spgwzns.isPrimitive)
+        # zincblende ZnO
+        cZnO = Cell.zincblende("Zn", "O")
+        spgczno = Symmetry(cZnO)
+        self.assertEqual(216, spgczno.spgId)
+        self.assertEqual('F-43m', spgczno.spgSym)
+        self.assertFalse(spgczno.isPrimitive)
+        # diamond
+        dC = Cell.diamond("C", aLatt=3.25)
+        spgdc = Symmetry(dC)
+        self.assertEqual(227, spgdc.spgId)
+        self.assertEqual('Fd-3m', spgdc.spgSym)
+        self.assertFalse(spgdc.isPrimitive)
+        
 
 
 class test_space_group(ut.TestCase):
@@ -57,29 +84,35 @@ class test_spk_dict(ut.TestCase):
 
         self.assertEqual(cond_a_lt_b(2,1,3), 0)
         self.assertEqual(cond_a_lt_b(1,2,3), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_a_lt_b, 1, 1, 3)
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_a_lt_b, 1, 1, 3)
 
         self.assertEqual(cond_c_lt_a(2,1,3), 0)
         self.assertEqual(cond_c_lt_a(3,1,2), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_c_lt_a, 1, 3, 1)
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_c_lt_a, 1, 3, 1)
 
         self.assertEqual(cond_curt_a_lt_sqrt_c(8,1,3), 0)
         self.assertEqual(cond_curt_a_lt_sqrt_c(8,1,6), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_curt_a_lt_sqrt_c, 8, 1, 4)
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_curt_a_lt_sqrt_c, 8, 1, 4)
 
         self.assertEqual(cond_max_bc_noneq_left(2,5,3), 0)
         self.assertEqual(cond_max_bc_noneq_left(3,5,2), 0)
         self.assertEqual(cond_max_bc_noneq_left(2,3,5), 1)
         self.assertEqual(cond_max_bc_noneq_left(3,2,5), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_max_bc_noneq_left, 2, 5, 2)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_max_bc_noneq_left, 2, 2, 5)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_max_bc_noneq_left, 5, 2, 2)
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_max_bc_noneq_left, 2, 5, 2)
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_max_bc_noneq_left, 2, 2, 5)
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_max_bc_noneq_left, 5, 2, 2)
 
         self.assertEqual(cond_abc_invsq(0.1,0.5,0.5), 0)
         self.assertEqual(cond_abc_invsq(0.5,0.5,0.1), 1)
         self.assertEqual(cond_abc_invsq(0.2,0.2,0.5), 2)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set", cond_abc_invsq, 0.5, 0.1, 0.5)
-
+        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+            cond_abc_invsq, 0.5, 0.1, 0.5)
 
     def test_number_of_spg(self):
         for i in range(1, 231):
@@ -107,6 +140,16 @@ class test_spk_dict(ut.TestCase):
             if v["cond"] in hasTwoSets:
                 self.assertEqual(2, len(v["spPrim"]), msg="bad key {}".format(k))
 
+
+class test_special_kpoints(ut.TestCase):
+
+    def test_initialize(self):
+        '''Test initialize directly or from Cell or Symmetry instance
+        '''
+        # check P1
+        spk = special_kpoints(1, (1.0,1.1,1.2))
+        self.assertEqual(1, len(spk.spPrim))
+        self.assertIn("GM", spk.spPrim)
 
 if __name__ == '__main__':
     ut.main()

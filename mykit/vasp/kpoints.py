@@ -126,12 +126,11 @@ class kpoints(verbose):
                 except (TypeError, IndexError):
                     raise KpointsError("Bad kgrid format for G/M mode: {}".format(_kg))
                 if _ks == None:
-                    print(0, 0, 0, file=fp)
-                else:
-                    try:
-                        print("{:3d} {:3d} {:3d}".format(*_ks), file=fp)
-                    except (TypeError, IndexError):
-                        raise KpointsError("Bad kshift format for G/M mode: {}".format(_ks))
+                    _ks = [0, 0, 0]
+                try:
+                    print("{:3d} {:3d} {:3d}".format(*_ks), file=fp)
+                except (TypeError, IndexError):
+                    raise KpointsError("Bad kshift format for G/M mode: {}".format(_ks))
             elif _mode == "A":
                 print(int(_kdense), file=fp)
             elif _mode == "L":

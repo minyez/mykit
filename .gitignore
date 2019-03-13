@@ -6,15 +6,11 @@ __pycache__
 *.o
 */.cache
 .DS_Store
-# ignore the test files
-#POTCAR
-#POSCAR
-#KPOINTS
-#INCAR*
 #*.struct
 
 # jupyter checkpoints
-*/.ipynb_checkpoints
+.ipynb_checkpoints
+*-checkpoint.ipynb
 
 #optimize.job
 #test.py
@@ -22,6 +18,7 @@ __pycache__
 .idea/
 .vscode/
 .pytest_cache/
+
 prototypes/
 
 # ignore private files

@@ -34,6 +34,7 @@ class Symmetry(prec):
             symprec=self._symprec).split()
         self._spgSym = _spg[0]
         self._spgId = int(_spg[1][1:-1])
+        self._isPrim = None
 
     @property
     def operations(self):
@@ -60,7 +61,9 @@ class Symmetry(prec):
 
     @property
     def isPrimitive(self):
-        return Symmetry.check_primitive(self._cell)
+        if self._isPrim is None:
+            self._isPrim = Symmetry.check_primitive(self._cell)
+        return self._isPrim
 
     def ibzkpt(self, kgrid, shift=None, frac=True):
         '''Return the irreducible k-points (IBZK) corresponding to mesh
@@ -81,7 +84,8 @@ class Symmetry(prec):
         
         _div = {True: _kgrid, False: np.array([1,1,1])}[frac]
         # All k-points and mapping to ir-grid points
-        ind_ibzk = list(set(_mapping))
+        # ind_ibzk = list(set(_mapping))
+        ind_ibzk = list(OrderedDict.fromkeys(_mapping, 0).keys())
         ibzk = []
         for i in ind_ibzk:
             ibzk.append(_grid[i, :]/_div)
@@ -111,26 +115,27 @@ class Symmetry(prec):
 
             Cell or its subclass instance, depending on the ``cell`` at instantialization
         '''
-        _flag = None
+        flag = None
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
-        _primCell = spglib.find_primitive(self._cell.get_spglib_input(), \
+        primCell = spglib.find_primitive(self._cell.get_spglib_input(), \
             symprec=self._symprec)
-        if _primCell != None:
-            _latt, _pos, _indice = _primCell
+        if primCell != None:
+            _latt, _pos, _indice = primCell
             _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
             _newCell = _type(_latt, _atoms, _pos, \
                 unit=self._cell.unit, coordSys=self._cell.coordSys)
             # determine if the original cell is primitive
-            if _newCell.vol == self._cell.vol:
-                _flag = True
+            if abs(_newCell.vol - self._cell.vol) < 0.1:
+                flag = True
             else:
-                _flag = False
+                flag = False
         else:
             _newCell = self._cell
         if store:
             self._cell = _newCell
-        return _flag, _newCell
+            self._isPrim = True
+        return flag, _newCell
 
     def get_standard(self, primitive=False, store=False):
         '''Return the standardized cell from the original cell
@@ -148,14 +153,14 @@ class Symmetry(prec):
             at instantialization
         '''
         assert isinstance(primitive, bool)
-        _flag = False
+        flag = False
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
-        _stdCell = spglib.standardize_cell(self._cell.get_spglib_input(), \
+        stdCell = spglib.standardize_cell(self._cell.get_spglib_input(), \
             to_primitive=primitive, symprec=self._symprec)
-        if _stdCell != None:
-            _flag = True
-            _latt, _pos, _indice = _stdCell
+        if stdCell != None:
+            flag = True
+            _latt, _pos, _indice = stdCell
             _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
             _newCell = _type(_latt, _atoms, _pos, \
                 unit=self._cell.unit, coordSys=self._cell.coordSys)
@@ -163,7 +168,9 @@ class Symmetry(prec):
             _newCell = self._cell
         if store:
             self._cell = _newCell
-        return _flag, _newCell
+            if primitive:
+                self._isPrim = True
+        return flag, _newCell
 
     @classmethod
     def check_primitive(cls, cell):
@@ -174,16 +181,16 @@ class Symmetry(prec):
             True, if the input cell is primitve, False otherwise
         '''
         _spglib_check_cell_and_coord(cell)
-        _flag = None
-        _primCell = spglib.find_primitive(cell.get_spglib_input(), \
+        flag = None
+        primCell = spglib.find_primitive(cell.get_spglib_input(), \
             symprec=cls._symprec)
-        if _primCell != None:
-            _vol = np.linalg.det(_primCell[0])
+        if primCell != None:
+            _vol = np.linalg.det(primCell[0])
             if abs(_vol - cell.vol) < 0.1:
-                _flag = True
+                flag = True
             else:
-                _flag = False
-        return _flag
+                flag = False
+        return flag
 
     @classmethod
     def get_spg(cls, cell):
@@ -248,7 +255,7 @@ class space_group:
             'P62'     , 'P64'   , 'P63'   , 'P-6'    , 'P6m'   , #171
             'P63m'    , 'P622'  , 'P6122' , 'P6522'  , 'P6222' ,
             'P6422'   , 'P6322' , 'P6mm'  , 'P6cc'   , 'P63cm' , #181
-            'P63mc'   , 'P-6m2' , 'P-6c2' , 'P-62m'  , 'P-62c' ,
+            'P6_3mc'  , 'P-6m2' , 'P-6c2' , 'P-62m'  , 'P-62c' ,
             'P6mmm'   , 'P6mcc' , 'P63mcm', 'P63mmc' , 'P23'   , #191
             'F23'     , 'I23'   , 'P213'  , 'I213'   , 'Pm-3'  ,
             'Pn-3'    , 'Fm-3'  , 'Fd-3'  , 'Im-3'   , 'Pa-3'  , #201
@@ -364,7 +371,7 @@ class special_kpoints:
     '''
 
     def __init__(self, id, alen, isPrimitive=True):
-        if not isinstance(id):
+        if not isinstance(id, int):
             raise SymmetryError("id should be int")
         try:
             assert id in range(1, 231)
@@ -382,6 +389,7 @@ class special_kpoints:
             raise SymmetryError(str(_err))
         
         self._sp = self._spDict["spPrim"][iset]
+        self._isPrim = isPrimitive
         self._kpath = self._spDict.get("kpath", [])
 
     @property
@@ -413,6 +421,8 @@ class special_kpoints:
             cell: instance of Cell or its subclasses
         '''
         _spglib_check_cell_and_coord(cell)
+        sym = Symmetry(cell)
+        return cls(sym.spgId, sym.alen, sym.isPrimitive)
 
 
 def _spglib_check_cell_and_coord(cellIn):

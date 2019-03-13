@@ -2,9 +2,15 @@
 from numpy import power
 
 
-# * Condition functions to determine which set of special points  to extract
-# * the return value is the index of dict in "spPrim" value (list)
+def _raise_need_standardize():
+    raise ValueError("Fail to determine special kpoints set. May need to standardize first.")
+
+
+# * Condition functions to determine which set of special points 
+# * to extract the return value is the index of dictionary in 
+# * "spPrim" key (list)
 # TODO: deal with 3-15 unique b axis group
+
 def cond_any(a, b, c):
     '''no specific condition
     '''
@@ -18,7 +24,7 @@ def cond_a_lt_b(a, b, c):
         return 1
     if a > b:
         return 0
-    raise ValueError("Fail to determine special kpoints set")
+    _raise_need_standardize()
 
 
 def cond_c_lt_a(a, b, c):
@@ -28,7 +34,8 @@ def cond_c_lt_a(a, b, c):
         return 1
     if c > a:
         return 0
-    raise ValueError("Fail to determine special kpoints set")
+    _raise_need_standardize()
+
 
 def cond_curt_a_lt_sqrt_c(a, b, c):
     '''check if cubic root of a < square root of c
@@ -38,7 +45,7 @@ def cond_curt_a_lt_sqrt_c(a, b, c):
         return 1
     if _r > 1:
         return 0
-    raise ValueError("Fail to determine special kpoints set")
+    _raise_need_standardize()
 
 
 def cond_abc_invsq(a, b, c):
@@ -52,7 +59,7 @@ def cond_abc_invsq(a, b, c):
     for i, v in enumerate([k0, k1, k2]):
         if v:
             return i
-    raise ValueError("Fail to determine special kpoints set")
+    _raise_need_standardize()
 
 
 def cond_max_bc_noneq_left(a, b, c):
@@ -62,12 +69,12 @@ def cond_max_bc_noneq_left(a, b, c):
         return 0
     if c > max(a, b) and b != a:
         return 1
-    raise ValueError("Fail to determine special kpoints set")
-        
-# ==========================
-# * Special kpoints metadata
-# ==========================
+    _raise_need_standardize()
 
+
+# =================================================
+# * Special kpoints metadata, retrieved from Bilbao
+# =================================================
 _special_kpoints = {
     # ! Strictly speaking, P1 has no special kpoints. 
     # ! Gamma is added here for consistency of code

@@ -58,7 +58,6 @@ class potcar_search(verbose):
         else:
             self._names = (*value,)
 
-
     def _get_xc_home(self, xc):
         '''Get the home directory of xc type PAW
 

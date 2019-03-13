@@ -424,11 +424,6 @@ class Cell(prec, verbose):
     def atomTypes(self):
         '''All atom types in the cell
         '''
-        # _list = []
-        # for _a in self.__atoms:
-        #     if _a not in _list:
-        #         _list.append(_a)
-        # return _list
         _d = OrderedDict.fromkeys(self.__atoms)
         return list(_d.keys())
 
@@ -746,7 +741,7 @@ class Cell(prec, verbose):
 
     @classmethod
     def zincblende(cls, atom1, atom2, aLatt=1.0, primitive=False, **kwargs):
-        '''Generate a standardized zincblende lattice.
+        '''Generate a standardized zincblende lattice (space group 216)
 
         ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
 
@@ -778,6 +773,18 @@ class Cell(prec, verbose):
         if not "comment" in kwargs:
             kwargs.update({"comment": "Zincblende {}{}".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
+
+    @classmethod
+    def diamond(cls, atom, aLatt=1.0, primitive=False, **kwargs):
+        '''Generate a standardized diamond lattice (space group 227)
+
+        Args:
+            atom (str): symbol of atom
+            aLatt (float): the lattice constant of the conventional cell.
+            primitive (bool): if set True, the primitive cell will be generated.
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        return cls.zincblende(atom, atom, aLatt=aLatt, primitive=primitive, **kwargs)
 
     @classmethod
     def wurtzite(cls, atom1, atom2, a=1.0, **kwargs):
