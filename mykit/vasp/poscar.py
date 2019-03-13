@@ -18,6 +18,8 @@ class poscar(Cell):
     '''The class to manipulate POSCAR, the VASP lattice input file.
     '''
 
+    _error = PoscarError
+
     def __init__(self, cell, atoms, pos, **kwargs):
         super(poscar, self).__init__(cell, atoms, pos, **kwargs)
 
@@ -27,7 +29,6 @@ class poscar(Cell):
 
     def __str__(self):
         return self.__str()
-
 
     def __str(self, scale=1.0):
         '''return the POSCAR lines in one string
@@ -72,7 +73,7 @@ class poscar(Cell):
         try:
             assert not os.path.isdir(_name)
         except AssertionError:
-            raise PoscarError("The path to write POSCAR is a directory.")
+            raise self._error("The path to write POSCAR is a directory.")
         if os.path.isfile(_name) and backup:
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
@@ -93,7 +94,7 @@ class poscar(Cell):
         try:
             _f = open(pathPoscar, 'r')
         except FileNotFoundError as _err:
-            raise PoscarError("Fail to open file: {}".format(pathPoscar))
+            raise cls._error("Fail to open file: {}".format(pathPoscar))
         else:
             _symTypes = None
             # line 1: comment on system
@@ -106,7 +107,7 @@ class poscar(Cell):
                 _latt = np.array(_latt, dtype=cls._dtype) * _scale
             except ValueError:
                 _f.close()
-                raise PoscarError("Bad lattice vector: {}".format(pathPoscar))
+                raise cls._error("Bad lattice vector: {}".format(pathPoscar))
             # Next 2 or 1 line(s), depend on whether element symbols are typed or not
             _line = _f.readline().strip()
             if _line[0] in string.ascii_letters:
@@ -119,12 +120,12 @@ class poscar(Cell):
                     _symTypes = ["Unk{}".format(i) for i, _x in enumerate(_natomsType)]
             else:
                 _f.close()
-                raise PoscarError("Bad POSCAR atomic format: {}".format(pathPoscar))
+                raise cls._error("Bad POSCAR atomic format: {}".format(pathPoscar))
             try:
                 assert len(_symTypes) == len(_natomsType)
             except AssertionError:
                 _f.close()
-                raise PoscarError("Inconsistent input of symbol and numbers of atom: {}".format(pathPoscar))
+                raise cls._error("Inconsistent input of symbol and numbers of atom: {}".format(pathPoscar))
             _atoms = atoms_from_sym_nat(_symTypes, _natomsType)
             _natoms = sum(_natomsType)
             # Next 2 or 1 line(s), depend on whether 'selective dynamics line' is typed
@@ -135,7 +136,7 @@ class poscar(Cell):
             if _line[0].upper() in ["C", "K", "D"]:
                 _cs = {"C":"C", "K":"C", "D":"D"}[_line[0].upper()]
             else:
-                raise PoscarError("Bad coordinate system: {}".format(pathPoscar))
+                raise cls._error("Bad coordinate system: {}".format(pathPoscar))
             # Next _natoms lines: read atomic position and selective dynamics flag
             _pos = []
             _mult = 1.0E0
@@ -156,10 +157,10 @@ class poscar(Cell):
                             __fix.update({_i: __fixFlag})
                 except ValueError:
                     _f.close()
-                    raise PoscarError("Bad internal coordinates at atom line {}: {}".format(_i+1, pathPoscar))
+                    raise cls._error("Bad internal coordinates at atom line {}: {}".format(_i+1, pathPoscar))
                 except IndexError:
                     _f.close()
-                    raise PoscarError("Bad selective dynamics flag at atom line {}: {}".format(_i+1, pathPoscar))
+                    raise cls._error("Bad selective dynamics flag at atom line {}: {}".format(_i+1, pathPoscar))
             _pos = np.array(_pos, dtype=cls._dtype) * _mult
             _f.close()
             return cls(_latt, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix, comment=_comment)
@@ -171,6 +172,6 @@ class poscar(Cell):
         try:
             assert isinstance(cell, Cell)
         except AssertionError:
-            raise PoscarError("the input is not a lattice instance")
+            raise cls._error("the input is not a lattice instance")
         __kw = cell.get_kwargs()
         return cls(*cell.get_cell(), **__kw)

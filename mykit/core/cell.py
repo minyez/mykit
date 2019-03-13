@@ -4,9 +4,9 @@
 The ``cell`` class and its subclasses accept the following kwargs when being instantialized:
 
     - unit (str): The unit system  to use, either "ang" (default) or "au".
-    - coordSys (str): Coordinate system for the internal positions, 
+    - coordSys (str): Coordinate system for the internal positions,
       either "D" (Direct, default) or "C" (Cartesian)
-    - allRelax (bool) : default selective dynamics option for atoms. 
+    - allRelax (bool) : default selective dynamics option for atoms.
       Set True (default) to allow all DOFs to relax
     - selectDyn (dict) : a dictionary with key-value pair as ``int: [bool, bool, bool]``, which controls
       the selective dynamic option for atom with the particular index (starting from 0). Default is an
@@ -41,11 +41,14 @@ class Cell(prec, verbose):
 
     Note:
         Various kwargs are acceptable for ``Cell`` and its subclasses. Check ``cell`` module docstring.
-    
+
     Examples:
     >>> Cell([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
     <mykit.core.cell.Cell>
     '''
+
+    _error = CellError
+
     def __init__(self, latt, atoms, pos, **kwargs):
 
         # if kwargs:
@@ -60,7 +63,7 @@ class Cell(prec, verbose):
             self.__latt = np.array(latt, dtype=self._dtype)
             self.__pos = np.array(pos, dtype=self._dtype)
         except ValueError as _err:
-            raise CellError("Fail to create cell and pos array. Please check.")
+            raise self._error("Fail to create cell and pos array. Please check.")
         self.__atoms = [_a.capitalize() for _a in atoms]
         self.__parse_cellkw(**kwargs)
         # check input consistency
@@ -82,11 +85,12 @@ class Cell(prec, verbose):
     def __str__(self):
         return "{}\nLattice:\n{}\nAtoms: {}\nPositions:\n{}\nUnit: {}\nCoordinates in {}".format(\
             self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
-    
+
     def __repr__(self):
-        return '{}'.format({"comment": self.comment, "latt": self.__latt, "atoms": self.__atoms, \
-            "pos": self.__pos, "unit": self.__unit, "coordSys": self.__coordSys, \
-            "allRelax": self.__allRelax, "selectDyn": self.__selectDyn})
+        # return '{}'.format({"comment": self.comment, "latt": self.__latt, "atoms": self.__atoms, \
+        #     "pos": self.__pos, "unit": self.__unit, "coordSys": self.__coordSys, \
+        #     "allRelax": self.__allRelax, "selectDyn": self.__selectDyn})
+        return self.__str__()
 
     def __parse_cellkw(self, **kwargs):
         # accept_kw = ['unit', 'coordSys', 'allRelax', 'selectDyn']
@@ -112,7 +116,7 @@ class Cell(prec, verbose):
 
     def get_cell(self):
         '''Purge out the cell, atoms and pos.
-        
+
         ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``Cell`` and its subclasses.
         They can also be used to build sysmetry operations with spglib utilities.
         '''
@@ -125,7 +129,7 @@ class Cell(prec, verbose):
             dictionary that can be parsed to ``create_from_cell`` class method.
         '''
         _d = {
-                "unit" : self.__unit, 
+                "unit" : self.__unit,
                 "coordSys" : self.__coordSys,
                 "comment": self.comment,
                 "allRelax" : self.__allRelax,
@@ -141,23 +145,23 @@ class Cell(prec, verbose):
             assert self.natoms > 0
             assert np.shape(self.__pos) == (self.natoms, 3)
         except AssertionError:
-            raise CellError("Invalid cell setup")
+            raise self._error("Invalid cell setup")
         # ? switch automatically, or let the user deal with it
         try:
             assert self.vol > 0
         except AssertionError:
-            raise CellError("Left-handed system found (vol<0). Switch two vector.")
+            raise self._error("Left-handed system found (vol<0). Switch two vector.")
 
     def _switch_two_atom_index(self, iat1, iat2):
         '''switch the index of atoms with index iat1 and iat2
 
-        Except ``__pos`` and ``__atoms``, 
-        this method should also deals possible switch in other positional 
+        Except ``__pos`` and ``__atoms``,
+        this method should also deals possible switch in other positional
         attributes, e.g.
-        
+
         - ``selectDyn`` (DONE)
 
-        Note that this method is mainly for sorting use, and does NOT change 
+        Note that this method is mainly for sorting use, and does NOT change
         the geometry of the cell at all.
         '''
         try:
@@ -165,7 +169,7 @@ class Cell(prec, verbose):
             assert iat2 in range(self.natoms)
             assert iat1 != iat2
         except AssertionError:
-            raise CellError("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
+            raise self._error("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
 
         self.__pos[[iat1, iat2]] = self.__pos[[iat2, iat1]]
         self.__atoms[iat1], self.__atoms[iat2] = self.__atoms[iat2], self.__atoms[iat1]
@@ -180,7 +184,7 @@ class Cell(prec, verbose):
     def __assure_atoms_in_fist_lattice(self):
         '''Move all atoms into the lattice (0,0,0).
 
-        For Cartisian system, the move is achieved by first 
+        For Cartisian system, the move is achieved by first
         converting to and then back from direct system.
         By this process, each component of the coordinate (in direct system)
         belongs to [0,1)
@@ -195,7 +199,7 @@ class Cell(prec, verbose):
     def get_sym_index(self, csymbol):
         '''Get the indices of atoms with element symbol ``csymbol``
 
-        Note that this is equivalent to ``latt[csymbol]``, given ``Cell`` instance latt.
+        Note that this is equivalent to ``cell[csymbol]``, given cell an instance of ``Cell``.
 
         Args:
             csymbol (str) : chemical-symbol-like identifier
@@ -257,7 +261,7 @@ class Cell(prec, verbose):
     def __sanitize_atoms(self):
         '''Sanitize the atoms arrangement after initialization.
 
-        It mainly deals with arbitrary input of ``atoms`` when initialized. 
+        It mainly deals with arbitrary input of ``atoms`` when initialized.
         '''
         self.__bubble_sort_atoms(self.typeIndex, range(self.natoms))
 
@@ -266,15 +270,22 @@ class Cell(prec, verbose):
 
         The ``atoms`` list will not change by sorting, i.e. the sorting is performed
         within each atomic group.
-        If ``reverse`` is set as False, atom with higher coordinate in lattice (0,0,0)
-        will appear earlier, otherwise later
+        If ``reverse`` is False, atom with higher coordinate in lattice (0,0,0)
+        will appear earlier, otherwise later.
+
+        This behavior is opposite to ``sort`` functions, in spirit of that surfaces are often
+        placed at high along one axis, and sorting in descending order makes the surface
+        appear first and easy to modify.
 
         Args :
             axis (1,2,3)
             reverse (bool)
         '''
-        assert axis in range(1,4)
-        assert isinstance(reverse, bool)
+        try:
+            assert axis in range(1,4)
+            assert isinstance(reverse, bool)
+        except AssertionError:
+            raise self._error()
         __sortKeys = self.pos[:, axis-1]
         # self.print_log("__sortKeys in sort_pos", __sortKeys, level=3)
         for _at in self.atomTypes:
@@ -405,7 +416,7 @@ class Cell(prec, verbose):
             self.__latt = self.__latt * _conv
             self.__unit = _u
         else:
-            raise CellError("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
+            raise self._error("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
 
     @property
     def coordSys(self):
@@ -418,7 +429,7 @@ class Cell(prec, verbose):
         if _conv is not None:
             self.__pos = np.matmul(self.__pos, _conv)
         else:
-            raise CellError("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
+            raise self._error("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
 
     @property
     def atomTypes(self):
@@ -450,7 +461,7 @@ class Cell(prec, verbose):
     @property
     def vol(self):
         return np.linalg.det(self.__latt)
-    
+
     @property
     def natoms(self):
         return len(self.__atoms)
@@ -481,7 +492,7 @@ class Cell(prec, verbose):
         '''Reciprocal lattice vectors in unit^-1
         '''
         return self.recpLattIn2Pi * 2.0E0 * pi
-    
+
     @property
     def b(self):
         '''Alias of reciprocal lattice vector
@@ -498,7 +509,7 @@ class Cell(prec, verbose):
         '''
         self.__selectDyn = {}
         self.__allRelax = False
-    
+
     def relax_all(self):
         '''Relax all atoms.
         '''
@@ -558,7 +569,7 @@ class Cell(prec, verbose):
                 assert len(_flag) == 3
                 assert all([isinstance(_x, bool) for _x in _flag])
             except AssertionError:
-                raise CellError("Bad flag for selective dynamics")
+                raise self._error("Bad flag for selective dynamics")
             else:
                 self.__selectDyn.update({_k: _flag})
 
@@ -597,24 +608,24 @@ class Cell(prec, verbose):
     # * Factory methods
     @classmethod
     def read_from_json(cls, pathJson):
-        '''Initialize a ``cell`` instance from a JSON file
+        '''Initialize a ``Cell`` instance from a JSON file
         '''
         import json
         import os
         if pathJson is None or not os.path.isfile(pathJson):
-            raise CellError("JSON file not found: {}".format(pathJson))
+            raise cls._error("JSON file not found: {}".format(pathJson))
         with open(pathJson, 'r') as h:
             try:
                 _j = json.load(h)
             except json.JSONDecodeError:
-                raise CellError("invalid JSON file for cell: {}".format(pathJson))
-        
+                raise cls._error("invalid JSON file for cell: {}".format(pathJson))
+
         _argList = ["latt", "atoms", "pos"]
         _args = []
         for _i, arg in enumerate(_argList):
             v = _j.pop(arg, None)
             if v is None:
-                raise CellError("invalid JSON file for cell: {}. No {}".format(pathJson, arg))
+                raise cls._error("invalid JSON file for cell: {}. No {}".format(pathJson, arg))
             _args.append(v)
         return cls(*_args, **_j)
 
@@ -633,7 +644,7 @@ class Cell(prec, verbose):
             _pos = [[0.0, 0.0, 0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
         kwargs.pop("coordSys", None)
         return cls(_latt, _atoms, _pos, **kwargs)
-    
+
     @classmethod
     def bravais_oP(cls, atom, a=1.0, b=2.0, c=3.0, **kwargs):
         '''Generate a simple orthorhombic Bravais lattice
@@ -674,15 +685,15 @@ class Cell(prec, verbose):
         return cls._bravais_o("F", atom, a, b, c, **kwargs)
 
     @classmethod
-    def bravais_cP(cls, atom, aLatt=1.0, **kwargs):
+    def bravais_cP(cls, atom, a=1.0, **kwargs):
         '''Generate a simple cubic Bravais lattice
 
         Args:
             atom (str) : the chemical symbol of atom
-            alatt (float) : the lattice constant (a)
+            a (float) : the lattice constant (a)
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        _a = abs(aLatt)
+        _a = abs(a)
         _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
         _atoms =[atom]
         _pos = [[0.0,0.0,0.0]]
@@ -692,16 +703,16 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def bravais_cI(cls, atom, aLatt=1.0, primitive=False, **kwargs):
+    def bravais_cI(cls, atom, a=1.0, primitive=False, **kwargs):
         '''Generate a body-centered cubic Bravais lattice
 
         Args:
             atom (str) : the chemical symbol of atom
-            alatt (float) : the lattice constant (a)
+            a (float) : the lattice constant (a)
             primitive (bool) : if set True, the primitive cell will be generated
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        _a = abs(aLatt)
+        _a = abs(a)
         if primitive:
             _latt = [[-_a/2.0,_a/2.0,_a/2.0],[_a/2.0,-_a/2.0,_a/2.0],[_a/2.0,_a/2.0,-_a/2.0]]
             _atoms =[atom]
@@ -716,16 +727,16 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def bravais_cF(cls, atom, aLatt=1.0, primitive=False, **kwargs):
+    def bravais_cF(cls, atom, a=1.0, primitive=False, **kwargs):
         '''Generate a face-centered cubic Bravais lattice
 
         Args:
             atom (str) : the chemical symbol of atom
-            alatt (float) : the lattice constant (a)
+            a (float) : the lattice constant (a)
             primitive (bool) : if set True, the primitive cell will be generated
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        _a = abs(aLatt)
+        _a = abs(a)
         if primitive:
             _latt = [[0.0,_a/2.0,_a/2.0],[_a/2.0,0.0,_a/2.0],[_a/2.0,_a/2.0,0.0]]
             _atoms =[atom]
@@ -740,7 +751,28 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def zincblende(cls, atom1, atom2, aLatt=1.0, primitive=False, **kwargs):
+    def perovskite(cls, atom1, atom2, atom3, a=1.0, **kwargs):
+        '''Generate a perovskit lattice
+
+        Args:
+            atom1 (str) : the chemical symbol of atom at vertices of cubic cell
+            atom2 (str) : the chemical symbol of atom at center of cubic cell
+            atom3 (str) : the chemical symbol of atom at faces of cubic cell
+            a (float) : the lattice constant (a)
+            primitive (bool) : if set True, the primitive cell will be generated
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        _a = abs(a)
+        _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
+        _atoms =[atom1,atom2,] + [atom3,]*3
+        _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+        kwargs.pop("coordSys", None)
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Perovskite {}{}{}3".format(atom1,atom2,atom3)})
+        return cls(_latt, _atoms, _pos, **kwargs)
+
+    @classmethod
+    def zincblende(cls, atom1, atom2, a=1.0, primitive=False, **kwargs):
         '''Generate a standardized zincblende lattice (space group 216)
 
         ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
@@ -748,11 +780,11 @@ class Cell(prec, verbose):
         Args:
             atom1 (str): symbol of atom at vertex
             atom2 (str): symbol of atom at tetrahedron interstitial
-            aLatt (float): the lattice constant of the conventional cell.
+            a (float): the lattice constant of the conventional cell.
             primitive (bool): if set True, the primitive cell will be generated.
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        _a = abs(aLatt)
+        _a = abs(a)
         if primitive:
             _latt = [[0.0, _a/2.0, _a/2.0], [_a/2.0, 0.0, _a/2.0], [_a/2.0, _a/2.0, 0.0]]
             _atoms = [atom1, atom2]
@@ -775,26 +807,24 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def diamond(cls, atom, aLatt=1.0, primitive=False, **kwargs):
+    def diamond(cls, atom, a=1.0, primitive=False, **kwargs):
         '''Generate a standardized diamond lattice (space group 227)
 
         Args:
-            atom (str): symbol of atom
-            aLatt (float): the lattice constant of the conventional cell.
+            atom (str): symbol of the atom
+            a (float): the lattice constant of the conventional cell.
             primitive (bool): if set True, the primitive cell will be generated.
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        return cls.zincblende(atom, atom, aLatt=aLatt, primitive=primitive, **kwargs)
+        return cls.zincblende(atom, atom, a=a, primitive=primitive, **kwargs)
 
     @classmethod
     def wurtzite(cls, atom1, atom2, a=1.0, **kwargs):
         '''Generate a standardized wurtzite lattice (space group 186)
 
-        ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
-
         Args:
-            atom1 (str): symbol of atom at vertex of lattice
-            atom2 (str): symbol of atom at edge of lattice
+            atom1 (str): symbol of atom at vertices of lattice
+            atom2 (str): symbol of atom at edges of lattice
             a (float): the lattice constant of the cell.
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
@@ -811,12 +841,10 @@ class Cell(prec, verbose):
         if not "comment" in kwargs:
             kwargs.update({"comment": "Wurtzite {}{}".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
-    
+
     @classmethod
     def rutile(cls, atom1, atom2, a=1.0, c=2.0, u=0.31, **kwargs):
         '''Generate a standardized rutile lattice (space group 136)
-
-        ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
 
         Args:
             atom1 (str): symbol of atom at vertex and center of lattice
@@ -828,7 +856,7 @@ class Cell(prec, verbose):
         try:
             assert 0.0 < u < 1.0
         except AssertionError:
-            raise CellError("Internal coordinate should be in (0,1), get {}".format(u))
+            raise cls._error("Internal coordinate should be in (0,1), get {}".format(u))
         _a = abs(a)
         _c = abs(c)
         _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
@@ -853,7 +881,7 @@ def atoms_from_sym_nat(syms, nats):
 
     Returns :
         a list of str, containing symbol of each atom in the cell
-    
+
     Examples:
     >>> atoms_from_sym_nat(["C", "Al", "F"], [2, 3, 1])
     ["C", "C", "Al", "Al", "Al", "F"]
@@ -876,7 +904,7 @@ def sym_nat_from_atoms(atoms):
     Returns :
         list of str : atomic symbols
         list of int : number of atoms for each symbol
-    
+
     Examples:
     >>> sym_nat_from_atoms(["C", "Al", "Al", "C", "Al", "F"])
     ["C", "Al", "F"], [2, 3, 1]
@@ -912,7 +940,7 @@ def axis_list(axis):
 
     Args:
         axis (int or list of int)
-    
+
     Returns:
         tuple
     '''
@@ -943,10 +971,10 @@ def periodic_duplicates_in_cell(directCoord):
 
     Args:
         directCoord (array): the direct coordinate of an atom in the cell
-    
+
     Note:
         The function works only when each component belongs to [0,1)
-    
+
     TODO:
         Generalize this function to mirrors in n-th lattice shell
 

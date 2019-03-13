@@ -21,7 +21,7 @@ They lie the basis for input conversion
     - [x] wurtzite
     - [x] rutile
     - [x] diamond
-    - [ ] perovskite
+    - [x] perovskite
 
 ### Input controllers
 
@@ -66,7 +66,6 @@ and help map name and value of parameter tags between different simulation progr
 - `kpoints`
   - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
 - `wavecar`
-- `outcar`
 - `chgcar`
 - `procar`
 - `contcar`
