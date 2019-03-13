@@ -49,8 +49,10 @@ and help map name and value of parameter tags between different simulation progr
   - [x] return standardized cell
 - `special_kpoints`
   - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
-  - [ ] converting primitive to conventional coordinate
+  - [x] converting primitive to conventional coordinate
     - [x] transformation matrix from primitive to conventional
+  - [x] converting kpath string to symbols and coordinates of related path segments
+  - [ ] Predefined kpaths for space groups :wretch:
   - [ ] Factory methods for kpath of special kpoints
 
 ## `vasp`: VASP related
@@ -65,6 +67,7 @@ and help map name and value of parameter tags between different simulation progr
   - [x] `potcar_search` for easily searching POTCAR
 - `kpoints`
   - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
+  - [ ] `__repr__` and `__str__` magics
 - `wavecar`
 - `chgcar`
 - `procar`

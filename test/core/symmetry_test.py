@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # coding = utf-8
 
+import re
 import unittest as ut
+
+import numpy as np
 
 from mykit.core.cell import Cell
 from mykit.core.metadata._spk import (_special_kpoints, cond_a_lt_b,
@@ -11,6 +14,14 @@ from mykit.core.metadata._spk import (_special_kpoints, cond_a_lt_b,
 from mykit.core.symmetry import (Symmetry, SymmetryError, space_group,
                                  special_kpoints)
 
+NKSETS_COND = {
+    cond_any: 1,
+    cond_a_lt_b: 2,
+    cond_c_lt_a: 2,
+    cond_curt_a_lt_sqrt_c: 2,
+    cond_max_bc_noneq_left: 2,
+    cond_abc_invsq: 3,
+}
 
 class test_symmetry(ut.TestCase):
 
@@ -84,34 +95,41 @@ class test_spk_dict(ut.TestCase):
 
         self.assertEqual(cond_a_lt_b(2,1,3), 0)
         self.assertEqual(cond_a_lt_b(1,2,3), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_a_lt_b, 1, 1, 3)
 
         self.assertEqual(cond_c_lt_a(2,1,3), 0)
         self.assertEqual(cond_c_lt_a(3,1,2), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_c_lt_a, 1, 3, 1)
 
         self.assertEqual(cond_curt_a_lt_sqrt_c(8,1,3), 0)
         self.assertEqual(cond_curt_a_lt_sqrt_c(8,1,6), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_curt_a_lt_sqrt_c, 8, 1, 4)
 
         self.assertEqual(cond_max_bc_noneq_left(2,5,3), 0)
         self.assertEqual(cond_max_bc_noneq_left(3,5,2), 0)
         self.assertEqual(cond_max_bc_noneq_left(2,3,5), 1)
         self.assertEqual(cond_max_bc_noneq_left(3,2,5), 1)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_max_bc_noneq_left, 2, 5, 2)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_max_bc_noneq_left, 2, 2, 5)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_max_bc_noneq_left, 5, 2, 2)
 
         self.assertEqual(cond_abc_invsq(0.1,0.5,0.5), 0)
         self.assertEqual(cond_abc_invsq(0.5,0.5,0.1), 1)
         self.assertEqual(cond_abc_invsq(0.2,0.2,0.5), 2)
-        self.assertRaisesRegex(ValueError, r"Fail to determine special kpoints set. May need to standardize first.",\
+        self.assertRaisesRegex(ValueError, \
+            r"Fail to determine special kpoints set. May need to standardize first.",\
             cond_abc_invsq, 0.5, 0.1, 0.5)
 
     def test_number_of_spg(self):
@@ -121,25 +139,57 @@ class test_spk_dict(ut.TestCase):
 
     def test_has_cond_and_spPrim(self):
         for k, v in _special_kpoints.items():
-            self.assertIn("cond", v, msg="bad key {}".format(k))
-            self.assertIn("spPrim", v, msg="bad key {}".format(k))
-            self.assertTrue(isinstance(v["spPrim"], list), msg="bad key {}".format(k))
+            self.assertIn("cond", v, \
+                msg="missing cond key for spg {}".format(k))
+            self.assertIn("spPrim", v, \
+                msg="missing spPrim key for spg {}".format(k))
+            self.assertTrue(isinstance(v["spPrim"], list), \
+                msg="bad spPrim value for spg {}".format(k))
 
     def test_number_of_sets(self):
         for k, v in _special_kpoints.items():
-            if v["cond"] == cond_any:
-                self.assertEqual(1, len(v["spPrim"]), msg="bad key {}".format(k))
-            if v["cond"] == cond_abc_invsq:
-                self.assertEqual(3, len(v["spPrim"]), msg="bad key {}".format(k))
-            hasTwoSets = [
-                cond_a_lt_b, 
-                cond_c_lt_a, 
-                cond_curt_a_lt_sqrt_c,
-                cond_max_bc_noneq_left,
-                ]
-            if v["cond"] in hasTwoSets:
-                self.assertEqual(2, len(v["spPrim"]), msg="bad key {}".format(k))
+            self.assertEqual(NKSETS_COND[v["cond"]], len(v["spPrim"]), \
+                msg="inconsistent cond and spPrim for spg {}".format(k))
+    
+    def test_kpath_value(self):
+        '''Check the value of kpath key
 
+        Explicitly, if the ``kpath`` key exists, 
+        
+        - its value should be a list of lists with the same len as value of ``spPrim`` 
+            key
+
+        - The lists within are lists of strings, each of which is a kpath and should match
+            the ``KPATH_PATTERN`` defined in ``kmesh`` module
+
+        - the symbols obtained from decoding the kpath string, should belong to the
+            corresponding special kpoints set.
+        '''
+        from mykit.core.kmesh import KPATH_PATTERN, kpath_decoder
+        for k, v in _special_kpoints.items():
+            kpathSets = v.get('kpath', None)
+            if kpathSets != None:
+                self.assertTrue(isinstance(kpathSets, list))
+                nksets = NKSETS_COND[v["cond"]]
+                self.assertEqual(nksets, len(kpathSets), \
+                    msg="bad kpath value for spg {}".format(k))
+                for i, kpaths in enumerate(kpathSets):
+                    if kpaths != []:
+                        self.assertTrue(isinstance(kpaths, list), \
+                            msg="bad kpath value for spg {}".format(k))
+                        ksyms = v["spPrim"][i].keys()
+                        for kpath in kpaths:
+                            self.assertTrue(isinstance(kpath, str), \
+                                msg="bad kpath value for spg {}".format(k))
+                            self.assertRegex(kpath, KPATH_PATTERN, \
+                                msg="bad kpath value for spg {}".format(k))
+                            decoded = kpath_decoder(kpath)
+                            for (s, e) in decoded:
+                                self.assertIn(s, ksyms, \
+                                    msg="bad kpath value for spg {}".format(k))
+                                self.assertIn(e, ksyms, \
+                                    msg="bad kpath value for spg {}".format(k))
+            
 
 class test_special_kpoints(ut.TestCase):
 
@@ -147,9 +197,38 @@ class test_special_kpoints(ut.TestCase):
         '''Test initialize directly or from Cell or Symmetry instance
         '''
         # check P1
-        spk = special_kpoints(1, (1.0,1.1,1.2))
+        spk = special_kpoints(1, (1.0,1.1,1.2), True)
         self.assertEqual(1, len(spk.spPrim))
         self.assertIn("GM", spk.spPrim)
+
+    def test_convert_kpath(self):
+        # check space group 227, primitive
+        spkpts = special_kpoints(227, (5.0, 5.0, 5.0), True)
+        pathGM2X2L = spkpts.convert_kpath("GM-X-L")
+        self.assertIn("symbols", pathGM2X2L)
+        self.assertIn("coordinates", pathGM2X2L)
+        syms = pathGM2X2L["symbols"]
+        coords = pathGM2X2L["coordinates"]
+        self.assertListEqual([("GM", "X"), ("X", "L")], syms)
+        self.assertEqual(len(coords), 2)
+        self.assertTrue(np.array_equal(coords[0][0], \
+            np.array([0.0,0.0,0.0])))
+        self.assertTrue(np.array_equal(coords[0][1], \
+            np.array([0.5,0.0,0.5])))
+        self.assertTrue(np.array_equal(coords[1][0], \
+            np.array([0.5,0.0,0.5])))
+        self.assertTrue(np.array_equal(coords[1][1], \
+            np.array([0.5,0.5,0.5])))
+        # check transformation for a asymmetric trans. matrix.
+        # e.g. space group 5
+        spkpts = special_kpoints(5, (5.0, 5.0, 5.0), False)
+        pathGM2Y = spkpts.convert_kpath("GM-Y")
+        # Y = (0.5,0.5,0) in prim, (0,1,0)
+        coords = pathGM2Y["coordinates"]
+        self.assertTrue(np.array_equal(coords[0][0], \
+            np.array([0.0,0.0,0.0])))
+        self.assertTrue(np.array_equal(coords[0][1], \
+            np.array([0.0,1.0,0.0])))
 
 if __name__ == '__main__':
     ut.main()

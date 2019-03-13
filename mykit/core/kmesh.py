@@ -8,8 +8,9 @@ from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
                                  parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
 
-# Allowed pattern for kpoint symbols
+# Allowed pattern for kpoint symbols and kpath string
 KSYM_PATTERN = r'[A-Z]{1,2}'
+KPATH_PATTERN = r'^('+ KSYM_PATTERN + r'-)+' + KSYM_PATTERN + r'$'
 
 class KmeshError(Exception):
     pass
@@ -88,11 +89,8 @@ def kpath_decoder(kpath):
 
     The path can have more than one continuous path in reciprocal space,
     separated by space.
-    However, each continuous path should match the pattern 
-    `^(KSYM_PATTERN-)+KSYM_PATTERN$`, where KSYM_PATTERN is a defined pattern
-    for kpoint symbols.
-    `KmeshError` will be raised if the
-    pattern is not matched.
+    However, each continuous path should match the ``KPATH_PATTERN``, 
+    otherwise `KmeshError` will be raised.
 
     Args:
         kpath (str): the string containing kpoints symbol and 
@@ -110,7 +108,7 @@ def kpath_decoder(kpath):
         raise KmeshError("Input kpath should be string: {}".format(kpath))
 
     # the pattern of each path segment
-    linePat = re.compile(r'^('+ KSYM_PATTERN + r'-)+' + KSYM_PATTERN + r'$')
+    linePat = re.compile(KPATH_PATTERN)
 
     ksegs = []
     for kline in _klines:

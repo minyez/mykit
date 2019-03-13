@@ -4,12 +4,14 @@
 
 import json
 import os
+import re
 from collections import OrderedDict
 
 import numpy as np
 import spglib
 
 from mykit.core.cell import Cell
+from mykit.core.kmesh import kpath_decoder
 from mykit.core.metadata._spk import _special_kpoints
 from mykit.core.numeric import prec
 
@@ -361,7 +363,7 @@ class space_group:
         return cls.symbols[id-1]
 
 
-class special_kpoints:
+class special_kpoints(prec):
     '''class for special kpoints of space groups
 
     Args:
@@ -369,7 +371,7 @@ class special_kpoints:
         alen (array): (3,) array of lattice constant a,b,c
     '''
 
-    def __init__(self, id, alen, isPrimitive=True):
+    def __init__(self, id, alen, isPrimitive):
         if not isinstance(id, int):
             raise SymmetryError("id should be int")
         try:
@@ -381,6 +383,7 @@ class special_kpoints:
         except AssertionError:
             raise SymmetryError("Invalid lattice constant shape: {}".format(alen))
     
+        self.spgId = id
         self._spDict = _special_kpoints[id]
         try:
             iset = self._spDict["cond"](*alen)
@@ -389,23 +392,99 @@ class special_kpoints:
         
         self._sp = self._spDict["spPrim"][iset]
         self._isPrim = isPrimitive
-        self._kpath = self._spDict.get("kpath", [])
+        try:
+            self._kpaths = self._spDict["kpath"][iset]
+        except KeyError:
+            self._kpaths = []
 
     @property
     def spPrim(self):
+        '''Return all special points.
+        '''
         return self._sp
 
-    def check_kpath_predef(self, ipath=-1):
-        '''
-        '''
-        pass
+    def check_kpaths_predef(self, ipath=None):
+        '''Return the predefined kpath string
 
-
-    def kpath_predef(self, ipath=-1):
-        '''Get the 
+        Args:
+            ipath (int): the index of predefined kpath string to check.
+            None to return all kpath strings in a list.
+            If ipath is not found, an empty string will be returned.
+        
+        Returns:
+            list if ipath is None, otherwise string
         '''
-        kpath = []
+        kpath = self._kpaths
+        if ipath != None:
+            try:
+                assert isinstance(ipath, int)
+            except AssertionError:
+                raise ValueError("ipath should be int")
+            try:
+                kpath = self._kpaths[ipath]
+            except IndexError:
+                kpath = ''
         return kpath
+
+    def convert_kpath(self, kpathStr, custom_dict=None):
+        '''Convert a kpath string to coordinates
+
+        Args:
+            kpathStr (str): the kpath to translate
+            custom_kpt (dict): dictionary of custom kpoints, each item
+            being a symbol-coordinate pair. The coordinate should be in
+            the system of primitive cell.
+            Note that this will overwrite the default definition.
+
+        Returns:
+            dict with two keys, namely "symbols" and "coordinates"
+        '''
+        try:
+            assert isinstance(kpathStr, str)
+        except AssertionError:
+            raise ValueError("input kpath should be a str, not {}".format(type(kpathStr)))
+        if custom_dict != None:
+            try:
+                assert isinstance(custom_dict, dict)
+            except AssertionError:
+                raise ValueError("custom_dict should be a dict, not {}".format(type(custom_dict)))
+            else:
+                _custom = custom_dict
+        else:
+            _custom = {}
+        _ret = {} 
+        decoded = kpath_decoder(kpathStr)
+        coords = []
+        for se in decoded:
+            seCoord = []
+            for kp in se:
+                if kp in _custom:
+                    seCoord.append(_custom[kp])
+                elif kp in self.spPrim:
+                    seCoord.append(self.spPrim[kp])
+                else:
+                    raise SymmetryError("kpoint symbol not defined: {}".format(kp))
+            seCoord = np.array(seCoord, dtype=self._dtype)
+            if not self._isPrim:
+                trans = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
+                seCoord = np.dot(seCoord, np.transpose(trans))
+            coords.append(tuple(seCoord))
+        _custom["symbols"] = decoded
+        _custom["coordinates"] = coords
+        return _custom
+
+    def convert_kpath_predef(self, ipath=None):
+        '''Get the coordinates of special kpoints along predefined kpath
+        '''
+        raise NotImplementedError
+        # kpath = None
+        # kpaths = self.check_kpaths_predef(ipath=ipath)
+        # if kpaths == '' or kpaths == []:
+        #     pass
+        # else:
+        #     pass
+        
+        # return kpath
     
     @classmethod
     def from_symmetry(cls, sym):
