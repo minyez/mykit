@@ -198,8 +198,8 @@ class test_special_kpoints(ut.TestCase):
         '''
         # check P1
         spk = special_kpoints(1, (1.0,1.1,1.2), True)
-        self.assertEqual(1, len(spk.spPrim))
-        self.assertIn("GM", spk.spPrim)
+        self.assertEqual(1, len(spk.spkCoord))
+        self.assertIn("GM", spk.spkCoord)
 
     def test_convert_kpath(self):
         # check space group 227, primitive

@@ -398,8 +398,15 @@ class special_kpoints(prec):
             self._kpaths = []
 
     @property
-    def spPrim(self):
-        '''Return all special points.
+    def spkSym(self):
+        '''Return symbols of all available special kpoints
+        '''
+        return list(self._sp.keys())
+
+
+    @property
+    def spkCoord(self):
+        '''Return coordinates of all available special kpoints in primitive cell
         '''
         return self._sp
 
@@ -460,8 +467,8 @@ class special_kpoints(prec):
             for kp in se:
                 if kp in _custom:
                     seCoord.append(_custom[kp])
-                elif kp in self.spPrim:
-                    seCoord.append(self.spPrim[kp])
+                elif kp in self.spkCoord:
+                    seCoord.append(self.spkCoord[kp])
                 else:
                     raise SymmetryError("kpoint symbol not defined: {}".format(kp))
             seCoord = np.array(seCoord, dtype=self._dtype)
