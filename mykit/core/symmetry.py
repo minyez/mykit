@@ -180,7 +180,7 @@ class Symmetry(prec):
             None, if the primitive cell is not found
             True, if the input cell is primitve, False otherwise
         '''
-        _spglib_check_cell_and_coord(cell)
+        _spglib_check_cell_and_coordSys(cell)
         flag = None
         primCell = spglib.find_primitive(cell.get_spglib_input(), \
             symprec=cls._symprec)
@@ -203,7 +203,7 @@ class Symmetry(prec):
             int, space group id
             str, space group symbol
         '''
-        _spglib_check_cell_and_coord(cell)
+        _spglib_check_cell_and_coordSys(cell)
         _spg = spglib.get_spacegroup(cell.get_spglib_input(), \
             symprec=cls._symprec).split()
         return int(_spg[1][1:-1]), _spg[0]
@@ -329,7 +329,6 @@ class space_group:
                 return v
         return identity
 
-
     @classmethod
     def get_spg_index(cls, symbol):
         '''Get the index in ITA from the symbol of space group of symbol
@@ -396,13 +395,26 @@ class special_kpoints:
     def spPrim(self):
         return self._sp
 
-    @property
-    def avail_kpaths(self):
-        return self._kpath
+    def check_kpath_predef(self, ipath=-1):
+        '''
+        '''
+        pass
+
+
+    def kpath_predef(self, ipath=-1):
+        '''Get the 
+        '''
+        kpath = []
+        return kpath
     
     @classmethod
     def from_symmetry(cls, sym):
         '''Create special kpoints instance from a Symmetry instance
+
+        Note:
+            It is safer to use sym with its cell standardized,
+            otherwise the condition check for special kpoints set 
+            may fail.
 
         Args:
             sym: Symmetry instance
@@ -415,19 +427,26 @@ class special_kpoints:
 
     @classmethod
     def from_cell(cls, cell):
-        '''Create special kpoints instance from a Cell instance
+        '''Create special kpoints instance from a Cell instance.
+
+        Note:
+            It is safer to use a standardized cell, otherwise the 
+            condition check for special kpoints set may fail.
 
         Args:
-            cell: instance of Cell or its subclasses
+            cell: instance of ``Cell`` or its subclasses
         '''
-        _spglib_check_cell_and_coord(cell)
+        _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
         return cls(sym.spgId, sym.alen, sym.isPrimitive)
 
 
-def _spglib_check_cell_and_coord(cellIn):
+def _spglib_check_cell_and_coordSys(cellIn):
     '''Raise if the input is not an instance of Cell or its subclasses,
     or its coordinate system is not direct (i.e. fractional), required by spglib
+
+    Args:   
+        cellIn (any type): the input to check whether it is a cell instance
     '''
     try:
         assert isinstance(cellIn, Cell)

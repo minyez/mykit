@@ -8,9 +8,8 @@ from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
                                  parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
 
-# from collections.abc import Iterable
-
-
+# Allowed pattern for kpoint symbols
+KSYM_PATTERN = r'[A-Z]{1,2}'
 
 class KmeshError(Exception):
     pass
@@ -84,14 +83,15 @@ class kmesh_control(verbose, prog_mapper):
 
 
 def kpath_decoder(kpath):
-    '''Decode string consisting kpoints symbol to a list of strings,
-    each of which represents a straight line segment in reciprocal space
+    '''Decode string consisting kpoints symbol to a list of tuples,
+    each of which consist the starting and ending point in reciprocal space
 
     The path can have more than one continuous path in reciprocal space,
     separated by space.
     However, each continuous path should match the pattern 
-    `^([A-Z]{1,2}-)+[A-Z]{1,2}$`, i.e. words with 1 or 2 captical
-    characters, joint by one hyphen. `KmeshError` will be raised if the
+    `^(KSYM_PATTERN-)+KSYM_PATTERN$`, where KSYM_PATTERN is a defined pattern
+    for kpoint symbols.
+    `KmeshError` will be raised if the
     pattern is not matched.
 
     Args:
@@ -100,9 +100,9 @@ def kpath_decoder(kpath):
 
     Examples:
     >>> kpath_decoder("A-B-C D-E")
-    ["A-B", "B-C", "D-E"]
+    [("A", "B"), ("B", "C"), ("D", "E")]
     >>> kpath_decoder("GM-W-X-L-GM-X")
-    ["GM-W", "W-X", "X-L", "L-GM", "GM-X"]
+    [("GM", "W"), ("W", "X"), ("X", "L"), ("L", "GM"), ("GM", "X")]
     '''
     try:
         _klines = kpath.split()
@@ -110,7 +110,7 @@ def kpath_decoder(kpath):
         raise KmeshError("Input kpath should be string: {}".format(kpath))
 
     # the pattern of each path segment
-    linePat = re.compile(r'^([A-Z]{1,2}-)+[A-Z]{1,2}$')
+    linePat = re.compile(r'^('+ KSYM_PATTERN + r'-)+' + KSYM_PATTERN + r'$')
 
     ksegs = []
     for kline in _klines:
@@ -119,12 +119,13 @@ def kpath_decoder(kpath):
         symbols = kline.split('-')
         nSyms = len(symbols)
         for i in range(nSyms-1):
-            ksegs.append('{}-{}'.format(symbols[i], symbols[i+1]))
+            # ksegs.append('{}-{}'.format(symbols[i], symbols[i+1]))
+            ksegs.append((symbols[i], symbols[i+1]))
     return ksegs
 
 
 def kpath_encoder(ksegs):
-    '''Encode a list of kpath segment strings to a complete kpath string.
+    '''Encode a list/tuple of 2-member tuple of string to a complete kpath string.
 
     Args:
         ksegs (list or tuple): container of kpath segment strings
@@ -135,20 +136,21 @@ def kpath_encoder(ksegs):
         raise KmeshError("require list or tuple, received {}".format(type(ksegs)))
 
     kpath = ''
-    segPat = re.compile(r'^[A-Z]{1,2}-[A-Z]{1,2}$')
+    segPat = re.compile(r'^' + KSYM_PATTERN + r'$')
     lastSym = ''
 
     for i, kseg in enumerate(ksegs):
-        if not re.match(segPat, kseg):
-            raise KmeshError("Invalid kpath segment string: {}".format(kseg))
+        if len(kseg) != 2:
+            raise KmeshError("Invalid kpath segment (>2 members): {}".format(kseg))
+        for sym in kseg:
+            if not re.match(segPat, sym):
+                raise KmeshError("Invalid kpoint symbol: {}".format(sym))
         if i == 0:
-            kpath += kseg
-            lastSym = kseg.split('-')[-1]
-            continue
-        syms = kseg.split('-')
-        if syms[0] == lastSym:
-            kpath += '-' + syms[1]
+            kpath += '-'.join(kseg)
         else:
-            kpath += ' ' + kseg
-        lastSym = kseg.split('-')[-1]
+            if kseg[0] == lastSym:
+                kpath += '-' + kseg[1]
+            else:
+                kpath += ' ' + '-'.join(kseg)
+        lastSym = kseg[1]
     return kpath
