@@ -38,7 +38,7 @@ def pv_addpot():
         ele = _pc.atomTypes
         # Trim ele to get rid of number
         ele = [trim_after(e, r"\d") for e in ele]
-    
+        
     pts = potcar_search(*ele, usegw=opts.usegw)
     # if opts.debug:
     #     print(opts.xc)

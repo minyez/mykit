@@ -93,7 +93,11 @@ class potcar_search(verbose):
         '''
         _home = self._get_xc_home(xc)
         _dict = {}
-        for name in self._names:
+        # avoid searching duplicate when searching
+        # ! this only applies to `search` method, not export, 
+        # ! as there are cases that the same atom type appears twice or more
+        names = set(self._names)
+        for name in names:
             _d = {}
             for i in os.listdir(_home):
                 if fnmatch(i, name) or fnmatch(i, name+"_*"):
@@ -135,10 +139,18 @@ class potcar_search(verbose):
 def get_enmax(pathPotcar):
     '''Get ENMAX of a POTCAR
     '''
-    return float(sp.check_output(['grep', 'ENMAX', pathPotcar]).split()[2][:-1])
+    try:
+        v = float(sp.check_output(['grep', 'ENMAX', pathPotcar]).split()[2][:-1])
+    except ValueError:
+        raise PotcarError("Invalid POTCAR path: {}".format(pathPotcar))
+    return v
 
 
 def get_enmin(pathPotcar):
     '''Get ENMIN of a POTCAR
     '''
-    return float(sp.check_output(['grep', 'ENMIN', pathPotcar]).split()[5])
+    try:
+        v = float(sp.check_output(['grep', 'ENMIN', pathPotcar]).split()[5])
+    except ValueError:
+        raise PotcarError("Invalid POTCAR path: {}".format(pathPotcar))
+    return v
