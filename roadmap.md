@@ -78,3 +78,8 @@ and help map name and value of parameter tags between different simulation progr
 ## toolkit
 
 - [ ] decouple the argument parsing with the main program
+
+
+## Miscs
+
+- [x] version string controled by [versioneer](https://github.com/warner/python-versioneer)
