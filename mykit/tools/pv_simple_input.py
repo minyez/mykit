@@ -9,6 +9,7 @@ import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from mykit.core.log import verbose
+from mykit.core.symmetry import special_kpoints
 from mykit.vasp.incar import incar
 from mykit.vasp.kpoints import kpoints
 from mykit.vasp.poscar import poscar
@@ -16,7 +17,6 @@ from mykit.vasp.potcar import potcar_search
 
 
 def pv_simple_input():
-
 
     parser = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-i", dest='poscar', default="POSCAR", \
@@ -31,26 +31,35 @@ def pv_simple_input():
         help="K-mesh density control, i.e. a*k. Negative for not generating KPOINTS")
     parser.add_argument("--spin", dest='ispin', type=int, default=1, \
         help="Spin-polarization. 1 for nsp and 2 for sp.")
-    parser.add_argument("--task", dest="task", type=str, default="scf", \
+    parser.add_argument("--task", dest="task", \
+        choices=["scf", "dos", "band", "gw", "opt"], \
+        default="scf", \
         help="type of task for the input. Default scf (TODO)")
     parser.add_argument("-f", dest='overwrite', action="store_true", \
         help="flag to overwrite files, i.e. KPOINTS, POTCAR and INCAR")
 
     opts  = parser.parse_args()
     klen  = opts.klen
+    klenDe = {"dos":40, "band": 15, "gw": 10}
+    klenScf = 25
 
     if opts.overwrite:
         verbose.print_cm_warn("Overwrite switch on.")
     if os.path.isfile(opts.poscar):
-        # print(" Writing KPOINTS...(check odd/even yourself!)")
         pos = poscar.read_from_file(opts.poscar)
-        if klen >= 0:
+        if klen >= 0 and (not os.path.isfile('KPOINTS') or opts.overwrite):
             if klen==0:
-                # print("  - Warning: KLEN is not specified. Use default value: 30")
-                # print("  - Warning: you need to specify it yourself for metallic system")
-                klen = 30
-            nks = [int(klen/x) for x in pos.alen]
-            if not os.path.isfile('KPOINTS') or opts.overwrite:
+                klen = klenDe.get(opts.task, klenScf)
+            if opts.task == "band":
+                kpaths = special_kpoints.get_kpaths_from_cell(pos)
+                if kpaths is None:
+                    verbose.print_cm_warn("No predefined kpath available. Skip writing band KPOINTS.")
+                else:
+                    for i, kpath in enumerate(kpaths):
+                        kp = kpoints(kmode="L", kdense=klen, kpath=kpath)
+                        kp.write(pathKpoints="KPOINTS_band_{}".format(i))
+            else:
+                nks = [int(klen/x) for x in pos.alen]
                 kp = kpoints(kmode="G", kgrid=nks)
                 kp.write()
         if not os.path.isfile('POTCAR') or opts.overwrite:
@@ -60,7 +69,7 @@ def pv_simple_input():
     # write INCAR
     if not os.path.isfile('INCAR') or opts.overwrite:
         ic = incar.minimal_incar(opts.task, xc=opts.xc, nproc=opts.nproc, \
-            ISPIN=opts.ispin, ENCUT=opts.encut, comment="Simple {} input by mykit".format(opts.task))
+            ISPIN=opts.ispin, ENCUT=opts.encut, comment="Quick {} input by mykit".format(opts.task))
         ic.write()
         
 

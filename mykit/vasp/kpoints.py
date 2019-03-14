@@ -38,7 +38,16 @@ class kpoints(verbose):
             "M": Monkhorse-Pack
             "A": fully automatic, i.e. the grid will be decided by kdense
             "L": line mode for bandstructure. kpath should be parse as well. Reciprocal vector unit is always used.
-        kpath (nx3 array): the special points along the line. If specified, the mode will be changed to "L"
+        kpath (dict): the ends of each line segment of a kpath. "symbols" mark the symbols of ends and "coordinates"
+            give their corresponding coordinates. For example:
+            ```
+                kpath = {
+                    "symbols": ["GM","L","L","GM],
+                    "coordinates": [[0,0,0],[0.5,0.5,0.5],[0.5,0.5,0.5],[0,0,0]]
+                }
+            ```
+            Both keys words should have a value of list with even length.
+            If specified, the mode will be changed to "L".
         kpoints (nx4 array): the explicit kpoints to parse. the fourth column is the kpoint weight.
             If specified, the explict mode will be triggered.
     '''
@@ -136,14 +145,21 @@ class kpoints(verbose):
             elif _mode == "L":
                 print("Reciprocal", file=fp)
                 _kpath = self._control.tag_vals("vasp", "kpath")[0]
-                _nSpeK = len(_kpath)
-                if _nSpeK == 1:
+                try:
+                    assert isinstance(_kpath, dict) and "symbols" in _kpath and "coordinates" in _kpath
+                except AssertionError:
+                    raise KpointsError("Invalid kpath as a dict")
+                symbols = _kpath["symbols"]
+                coords = tuple(_kpath["coordinates"])
+                if len(symbols) != len(coords):
                     raise KpointsError("At least two special points are needed to define kpath")
-                for i in range(_nSpeK-1):
-                    print(*_kpath[i], file=fp)
-                    print(*_kpath[i+1], file=fp)
-                    if i != _nSpeK - 2:
-                        print('', file=fp)
+                nSeg = int(len(symbols)/2)
+                for i in range(nSeg):
+                    st = 2*i
+                    ed = 2*i + 1
+                    print("{:9.6f} {:9.6f} {:9.6f} {} #{}".format(*coords[st], 1, symbols[st]), file=fp)
+                    print("{:9.6f} {:9.6f} {:9.6f} {} #{}".format(*coords[ed], 1, symbols[ed]), file=fp)
+                    print('', file=fp)
             else:
                 raise KpointsError("Unknown KPOINTS mode: {}".format(_mode))
         

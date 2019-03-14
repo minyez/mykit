@@ -16,7 +16,9 @@ They lie the basis for input conversion
 
 - `Cell` base class: creation of periodic systems
   - Factory methods for common crystals, check [this site](http://www.kayelaby.npl.co.uk/chemistry/3_7/3_7_7.html)
-    - [x] BCC, FCC
+    - [x] cubic cells (cP, cI, cF)
+    - [x] orthorhombic cells (oP, oI, oF)
+    - [ ] hexagonal and trigonal cells
     - [x] zincblende
     - [x] wurtzite
     - [x] rutile
@@ -39,7 +41,7 @@ and help map name and value of parameter tags between different simulation progr
 
 ### `kmesh` module
 
-- [x] kpath decoder and encoder to translate between kpath string and list of path segments
+- [x] kpath decoder and encoder to translate between kpath string and list of ends of path line segments
 
 ### `symmetry` module
 
@@ -51,9 +53,9 @@ and help map name and value of parameter tags between different simulation progr
   - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
   - [x] converting primitive to conventional coordinate
     - [x] transformation matrix from primitive to conventional
-  - [x] converting kpath string to symbols and coordinates of related path segments
-  - [ ] Predefined kpaths for space groups :wretch:
-  - [ ] Factory methods for kpath of special kpoints
+  - [x] converting kpath string to symbols and coordinates of corresponding points on path line segments
+  - [ ] Predefined kpaths for space groups :wrench:
+  - [x] Factory methods for kpath of special kpoints
 
 ## `vasp`: VASP related
 
