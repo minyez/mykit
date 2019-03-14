@@ -12,6 +12,11 @@ __pycache__
 .ipynb_checkpoints
 *-checkpoint.ipynb
 
+# distribution
+build/
+dist/
+*.egg-info
+
 #optimize.job
 #test.py
 #*.dat
