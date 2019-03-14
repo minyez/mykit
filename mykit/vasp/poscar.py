@@ -34,8 +34,10 @@ class poscar(Cell):
         '''return the POSCAR lines in one string
         '''
         _ret = []
-        _latt, _atoms, _pos = self.get_cell()
-        _syms, _nats = sym_nat_from_atoms(_atoms)
+        # convert to ang, as vasp use ang only
+        _uWas = self.unit
+        self.unit = "ang"
+        _syms, _nats = sym_nat_from_atoms(self.atoms)
         _ret.append(self.comment)
         _ret.append("{:8.6f}".format(scale))
         for i in range(3):
@@ -53,11 +55,13 @@ class poscar(Cell):
             else:
                 _dyn = []
             if not _syms[0].startswith("Unk"):
-                _ainfo = ['#{}'.format(_atoms[i])]
+                _ainfo = ['#{}'.format(self.atoms[i])]
             else:
                 _ainfo = []
             _aflag = [{True:"T", False:"F"}[_d] for _d in _dyn] + _ainfo
             _ret.append("%15.9f %15.9f %15.9f " % (self.pos[i,0], self.pos[i,1], self.pos[i,2]) + ' '.join(_aflag))
+        # convert back to the original length unit
+        self.unit = _uWas
         return '\n'.join(_ret)
 
     def print(self):

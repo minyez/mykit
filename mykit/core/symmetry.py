@@ -2,10 +2,8 @@
 '''class and functions related to crystal symmetry
 '''
 
-import json
-import os
-import re
 from collections import OrderedDict
+from functools import partial
 
 import numpy as np
 import spglib
@@ -177,6 +175,9 @@ class Symmetry(prec):
     @classmethod
     def check_primitive(cls, cell):
         '''Check if the cell is primitive by its volume
+
+        Args:
+            cell: instance of Cell or its subclass
 
         Returns:
             None, if the primitive cell is not found
@@ -403,10 +404,9 @@ class special_kpoints(prec):
         '''
         return list(self._sp.keys())
 
-
     @property
     def spkCoord(self):
-        '''Return coordinates of all available special kpoints in primitive cell
+        '''Return coordinates in primitive cell of all available special kpoints
         '''
         return self._sp
 
@@ -439,7 +439,7 @@ class special_kpoints(prec):
         Args:
             kpathStr (str): the kpath to translate
             custom_kpt (dict): dictionary of custom kpoints, each item
-            being a symbol-coordinate pair. The coordinate should be in
+            being a symbol-coordinate pair. The coordinate must be in
             the system of primitive cell.
             Note that this will overwrite the default definition.
 
@@ -460,9 +460,9 @@ class special_kpoints(prec):
         else:
             _custom = {}
         _ret = {} 
-        decoded = kpath_decoder(kpathStr)
+        decodedSyms = kpath_decoder(kpathStr)
         coords = []
-        for se in decoded:
+        for se in decodedSyms:
             seCoord = []
             for kp in se:
                 if kp in _custom:
@@ -476,22 +476,24 @@ class special_kpoints(prec):
                 trans = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
                 seCoord = np.dot(seCoord, np.transpose(trans))
             coords.append(tuple(seCoord))
-        _custom["symbols"] = decoded
-        _custom["coordinates"] = coords
-        return _custom
+        _ret["symbols"] = decodedSyms
+        _ret["coordinates"] = coords
+        return _ret
 
-    def convert_kpath_predef(self, ipath=None):
+    def convert_kpaths_predef(self, ipath=None, custom_dict=None):
         '''Get the coordinates of special kpoints along predefined kpath
+
+        Args:
+            ipath (int): the index of predefined kpath string in check_kpaths_predef
+            custom_kpt (dict): dictionary of custom kpoints used in convert_kpath
         '''
-        raise NotImplementedError
-        # kpath = None
-        # kpaths = self.check_kpaths_predef(ipath=ipath)
-        # if kpaths == '' or kpaths == []:
-        #     pass
-        # else:
-        #     pass
-        
-        # return kpath
+        kpathPredef = self.check_kpaths_predef(ipath)
+        if not kpathPredef in ([], ''):
+            if isinstance(kpathPredef, str):
+                return self.convert_kpath(kpathPredef, custom_dict=custom_dict)
+            if isinstance(kpathPredef, list):
+                return list(map(partial(self.convert_kpath, custom_dict=custom_dict), kpathPredef))
+        return None
     
     @classmethod
     def from_symmetry(cls, sym):
@@ -525,6 +527,18 @@ class special_kpoints(prec):
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
         return cls(sym.spgId, sym.alen, sym.isPrimitive)
+
+    @classmethod
+    def get_kpaths_from_cell(cls, cell):
+        '''Return coordinates of all predefined kpaths for the space group of the cell
+
+        Args:
+            cell: instance of Cell or its subclass
+        '''
+        _spglib_check_cell_and_coordSys(cell)
+        sym = Symmetry(cell)
+        spk = cls(sym.spgId, sym.alen, sym.isPrimitive)
+        return spk.convert_kpaths_predef()
 
 
 def _spglib_check_cell_and_coordSys(cellIn):

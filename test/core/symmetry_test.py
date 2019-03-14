@@ -229,6 +229,11 @@ class test_special_kpoints(ut.TestCase):
             np.array([0.0,0.0,0.0])))
         self.assertTrue(np.array_equal(coords[0][1], \
             np.array([0.0,1.0,0.0])))
+    
+    def test_convert_kpaths_predef(self):
+        # Zincblende (spg 216)
+        zb = Cell.zincblende("Zn", "O", a=5.0)
+        spk = special_kpoints.get_kpaths_from_cell(zb)
 
 if __name__ == '__main__':
     ut.main()
