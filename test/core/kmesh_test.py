@@ -3,8 +3,8 @@
 
 import unittest as ut
 
-from mykit.core.kmesh import (KmeshError, kmesh_control, kpath_decoder,
-                              kpath_encoder)
+from mykit.core.kmesh import (KmeshError, _check_valid_ksym_coord_pair,
+                              kmesh_control, kpath_decoder, kpath_encoder)
 
 
 class test_kpath_coder_decoder(ut.TestCase):
@@ -44,11 +44,11 @@ class test_kpath_coder_decoder(ut.TestCase):
             self.assertListEqual(kpath_decoder(kline), ksyms)
         for _i, (kline, badPart) in enumerate(self.testSetsBadKlineInvalid):
             self.assertRaisesRegex(KmeshError, \
-                r"Invalid kpath line string: {}".format(badPart),\
+                "Invalid kpath line string: {}".format(badPart),\
                 kpath_decoder, kline)
         for _i, (kline, badPart) in enumerate(self.testSetsBadKlineZero):
             self.assertRaisesRegex(KmeshError, \
-                r"kpath with zero length: {}".format(badPart),\
+                "kpath with zero length: {}".format(badPart),\
                 kpath_decoder, kline)
 
     def test_encoder(self):
@@ -56,13 +56,30 @@ class test_kpath_coder_decoder(ut.TestCase):
             self.assertEqual(kpath_encoder(ksyms), kline)
         for _i, (ksyms, badPart) in enumerate(self.testSetsBadKsymInvalid):
             self.assertRaisesRegex(KmeshError, \
-                r"Invalid kpoint symbol: {}".format(badPart),\
+                "Invalid kpoint symbol: {}".format(badPart),\
                 kpath_encoder, ksyms)
         for _i, (ksyms, badPart) in enumerate(self.testSetsBadKsymOddLen):
             self.assertRaisesRegex(KmeshError, \
-                r"require even length, received {}".format(badPart),\
+                "require even length, received {}".format(badPart),\
                 kpath_encoder, ksyms)
-        
+    
+    def test_check_valid_ksym_coord_pair(self):
+        badSyms = (
+            ("GMX", [0.0, 0.0, 0.0]),
+            ("G1",  [0.0, 0.0, 0.0]),
+        )
+        badCoords = (
+            ("GM",  [0.0, 0.0]),
+            ("L",   [0.5,[0.0, 0.5]]),
+        )
+        for badSym in badSyms:
+            self.assertRaisesRegex(KeyError, \
+                "Invalid kpoint symbol: {}".format(badSym[0]), \
+                _check_valid_ksym_coord_pair, *badSym)
+        for badCoord in badCoords:
+            self.assertRaisesRegex(ValueError, \
+                "Invalid kpoint coordinate for symbol {}".format(badCoord[0]), \
+                _check_valid_ksym_coord_pair, *badCoord)
 
 
 if __name__ == '__main__':

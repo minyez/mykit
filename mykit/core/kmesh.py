@@ -4,6 +4,8 @@
 import os
 import re
 
+from numpy import shape
+
 from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
                                  parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import verbose
@@ -163,15 +165,16 @@ def kpath_encoder(ksyms):
             else:
                 kpath += ' ' + '-'.join(seg)
         lastSym = ed
-    # for i, ksym in enumerate(ksyms):
-        # if not re.match(symPat, ksym):
-        #     raise KmeshError("Invalid kpoint symbol: {}".format(ksym))
-        # if i == 0:
-        #     kpath += ksym
-        # else:
-        #     if ksym == lastSym:
-        #         kpath += '-' + ksym
-        #     else:
-        #         kpath += ' ' + ksym
-        # lastSym = ksym
     return kpath
+
+
+def _check_valid_ksym_coord_pair(ksym, coord):
+    if not re.match(r"^" + KSYM_PATTERN + r"$", ksym):
+        raise KeyError("Invalid kpoint symbol: {}".format(ksym))
+    try:
+        _shape = shape(coord)
+    except ValueError:
+        raise ValueError("Invalid kpoint coordinate for symbol {}".format(ksym))
+    else:
+        if _shape != (3,):
+            raise ValueError("Invalid kpoint coordinate for symbol {}".format(ksym))

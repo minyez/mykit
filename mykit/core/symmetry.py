@@ -3,15 +3,18 @@
 '''
 
 from collections import OrderedDict
-from functools import partial
 
 import numpy as np
 import spglib
 
 from mykit.core.cell import Cell
-from mykit.core.kmesh import kpath_decoder
+from mykit.core.kmesh import _check_valid_ksym_coord_pair, kpath_decoder
 from mykit.core.metadata._spk import _special_kpoints
 from mykit.core.numeric import prec
+
+# from functools import partial
+
+
 
 
 class SymmetryError(Exception):
@@ -26,8 +29,6 @@ class Symmetry(prec):
     '''
     
     def __init__(self, cell):
-
-            
         # convert to direct coordinate system
         self._cell = cell
         _spg = spglib.get_spacegroup(self._cell.get_spglib_input(), \
@@ -295,10 +296,7 @@ class space_group:
         Returns:
             array: (3,3)
         '''
-        try:
-            assert isinstance(id, int)
-        except AssertionError:
-            raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+        _check_valid_spg_id(id)
         # primitive and conventional cells coincide.
         identity = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
 
@@ -354,13 +352,7 @@ class space_group:
         Args:
             id (int): the id of space group, 1~230
         '''
-        if isinstance(id, str):
-            raise SymmetryError("string received. id should be int.")
-        try:
-            assert isinstance(id, int)
-            assert 0 < id < 231
-        except AssertionError:
-            raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+        _check_valid_spg_id(id)
         return cls.symbols[id-1]
 
 
@@ -370,15 +362,14 @@ class special_kpoints(prec):
     Args:
         id (int): the id of space group
         alen (array): (3,) array of lattice constant a,b,c
+        custom_kpt (dict): dictionary of custom kpoints, each item
+        being a symbol-coordinate pair. The coordinate must be in
+        the system of primitive cell.
+        Note that this will overwrite the default definition.
     '''
 
-    def __init__(self, id, alen, isPrimitive):
-        if not isinstance(id, int):
-            raise SymmetryError("id should be int")
-        try:
-            assert id in range(1, 231)
-        except AssertionError:
-            raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+    def __init__(self, id, alen, isPrimitive, custom_dict=None):
+        _check_valid_spg_id(id)
         try:
             assert np.shape(alen) == (3,)
         except AssertionError:
@@ -390,13 +381,28 @@ class special_kpoints(prec):
             iset = self._spDict["cond"](*alen)
         except ValueError as _err:
             raise SymmetryError(str(_err))
-        
         self._sp = self._spDict["spPrim"][iset]
         self._isPrim = isPrimitive
+        self._transMat = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
+        self._custom = _check_valid_custom_ksym_dict(custom_dict)
         try:
             self._kpaths = self._spDict["kpath"][iset]
         except KeyError:
             self._kpaths = []
+
+    def __getitem__(self, ksym):
+        '''Get the coordinate of kpoint symbol
+        '''
+        coord = self._sp.get(ksym, None)
+        if coord is None:
+            raise IndexError("kpoint symbol not defined: {}".format(ksym))
+        if not self._isPrim:
+            coord = np.dot(coord, np.transpose(self._transMat))
+        return list(coord)
+
+    def __setitem__(self, ksym, coord):
+        _check_valid_ksym_coord_pair(ksym, coord)
+        self._custom.update({ksym: coord})
 
     @property
     def spkSym(self):
@@ -433,15 +439,11 @@ class special_kpoints(prec):
                 kpath = ''
         return kpath
 
-    def convert_kpath(self, kpathStr, custom_dict=None):
+    def convert_kpath(self, kpathStr):
         '''Convert a kpath string to coordinates
 
         Args:
             kpathStr (str): the kpath to translate
-            custom_kpt (dict): dictionary of custom kpoints, each item
-            being a symbol-coordinate pair. The coordinate must be in
-            the system of primitive cell.
-            Note that this will overwrite the default definition.
 
         Returns:
             dict with two keys, namely "symbols" and "coordinates"
@@ -450,34 +452,24 @@ class special_kpoints(prec):
             assert isinstance(kpathStr, str)
         except AssertionError:
             raise ValueError("input kpath should be a str, not {}".format(type(kpathStr)))
-        if custom_dict != None:
-            try:
-                assert isinstance(custom_dict, dict)
-            except AssertionError:
-                raise ValueError("custom_dict should be a dict, not {}".format(type(custom_dict)))
-            else:
-                _custom = custom_dict
-        else:
-            _custom = {}
         _ret = {} 
         decodedSyms = kpath_decoder(kpathStr)
         coords = []
         for ksym in decodedSyms:
-            if ksym in _custom:
-                coords.append(_custom[ksym])
+            if ksym in self._custom:
+                coords.append(self._custom[ksym])
             elif ksym in self.spkCoord:
                 coords.append(self.spkCoord[ksym])
             else:
                 raise SymmetryError("kpoint symbol not defined: {}".format(ksym))
         coords = np.array(coords, dtype=self._dtype)
         if not self._isPrim:
-            trans = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
-            coords = np.dot(coords, np.transpose(trans))
+            coords = np.dot(coords, np.transpose(self._transMat))
         _ret["symbols"] = decodedSyms
         _ret["coordinates"] = coords
         return _ret
 
-    def convert_kpaths_predef(self, ipath=None, custom_dict=None):
+    def convert_kpaths_predef(self, ipath=None):
         '''Get the coordinates of special kpoints along predefined kpath
 
         Args:
@@ -487,9 +479,9 @@ class special_kpoints(prec):
         kpathPredef = self.check_kpaths_predef(ipath)
         if not kpathPredef in ([], ''):
             if isinstance(kpathPredef, str):
-                return self.convert_kpath(kpathPredef, custom_dict=custom_dict)
+                return self.convert_kpath(kpathPredef)
             if isinstance(kpathPredef, list):
-                return list(map(partial(self.convert_kpath, custom_dict=custom_dict), kpathPredef))
+                return list(map(self.convert_kpath, kpathPredef))
         return None
     
     @classmethod
@@ -553,3 +545,29 @@ def _spglib_check_cell_and_coordSys(cellIn):
         assert cellIn.coordSys == "D"
     except AssertionError:
         raise SymmetryError("The coordiante system should be direct. Cartisian found.")
+
+
+def _check_valid_spg_id(id):
+    '''Raise if id is not a valid spacegroup id, i.e. 1~230
+    '''
+    if isinstance(id, str):
+        raise SymmetryError("string received. id should be int.")
+    if not isinstance(id, int):
+        raise SymmetryError("id should be int")
+    try:
+        assert id in range(1, 231)
+    except AssertionError:
+        raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+
+
+def _check_valid_custom_ksym_dict(custom_dict):
+    if custom_dict != None:
+        try:
+            assert isinstance(custom_dict, dict)
+        except:
+            raise TypeError("custom_dict must be dict, received {}".format(type(custom_dict)))
+        for k, v in custom_dict.items():
+            _check_valid_ksym_coord_pair(k, v)
+        return custom_dict
+    else:
+        return {}
