@@ -15,7 +15,7 @@ They lie the basis for input conversion
 ### `cell` module
 
 - `Cell` base class: creation of periodic systems
-  - Factory methods for common crystals, check [this site](http://www.kayelaby.npl.co.uk/chemistry/3_7/3_7_7.html)
+  - Factory methods for common crystals
     - [x] cubic cells (cP, cI, cF)
     - [x] orthorhombic cells (oP, oI, oF)
     - [ ] hexagonal and trigonal cells
@@ -74,3 +74,7 @@ and help map name and value of parameter tags between different simulation progr
 - `chgcar`
 - `procar`
 - `contcar`
+
+## toolkit
+
+- [ ] decouple the argument parsing with the main program

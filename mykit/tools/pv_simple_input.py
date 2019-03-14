@@ -20,21 +20,21 @@ def pv_simple_input():
 
     parser = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-i", dest='poscar', default="POSCAR", \
-        help="Input file for KPOINTS generation. POSCAR as default")
+        help="input file for KPOINTS and POTCAR generation. POSCAR as default")
     parser.add_argument("-e", dest='encut', type=int, default=None, \
-        help="Planewave cutoff. 0 will set largest ENMAX")
+        help="planewave cutoff.")
     parser.add_argument("-n", dest='nproc', type=int, default=1, \
-        help="Number of processors ")
+        help="number of processors")
     parser.add_argument("-x", dest='xc', type=str, default=None, \
         help="type of XC functional for input orbitals, None for LEXCH in POTCAR")
     parser.add_argument("-l", dest='klen', type=int, default=0, \
-        help="K-mesh density control, i.e. a*k. Negative for not generating KPOINTS")
+        help="k-mesh density control, i.e. a*k. Negative for not generating KPOINTS")
     parser.add_argument("--spin", dest='ispin', type=int, default=1, \
-        help="Spin-polarization. 1 for nsp and 2 for sp.")
+        help="spin-polarization. 1 for nsp and 2 for sp.")
     parser.add_argument("--task", dest="task", \
         choices=["scf", "dos", "band", "gw", "opt"], \
         default="scf", \
-        help="type of task for the input. Default scf (TODO)")
+        help="type of task for the input. Default scf.")
     parser.add_argument("-f", dest='overwrite', action="store_true", \
         help="flag to overwrite files, i.e. KPOINTS, POTCAR and INCAR")
 
