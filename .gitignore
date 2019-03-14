@@ -13,13 +13,8 @@ __pycache__
 *-checkpoint.ipynb
 
 # distribution
-<<<<<<< HEAD
 build/
 dist/
-=======
-build
-dist
->>>>>>> 09639b0650fb58aa241750809d099848117ae9c0
 *.egg-info
 
 #optimize.job
