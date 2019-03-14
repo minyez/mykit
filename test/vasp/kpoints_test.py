@@ -9,19 +9,26 @@ from mykit.vasp.kpoints import KpointsError, kpoints
 class test_kpoints_init(ut.TestCase):
 
     def test_raise_at_initiate(self):
-        self.assertRaisesRegex(KpointsError, r"kdense must not be negative", \
+        self.assertRaisesRegex(KpointsError, \
+            r"kdense must not be negative", \
             kpoints, kdense=-1)
-        self.assertRaisesRegex(KpointsError, r"Enter at least one of *", \
+        self.assertRaisesRegex(KpointsError, \
+            r"Enter at least one of *", \
             kpoints)
-        self.assertRaisesRegex(KpointsError, r"Unknown KPOINTS mode: *", \
+        self.assertRaisesRegex(KpointsError, \
+            r"Unknown KPOINTS mode: *", \
             kpoints, kmode="D", kgrid=[6,6,6])
-        self.assertRaisesRegex(KpointsError, r"kpath should be specified for line mode", \
+        self.assertRaisesRegex(KpointsError, \
+            r"kpath should be specified for line mode", \
             kpoints, kmode="L", kdense=10)
-        self.assertRaisesRegex(KpointsError, r"Fully automatic mode needs positive kdense*", \
+        self.assertRaisesRegex(KpointsError, \
+            r"Fully automatic mode needs positive kdense*", \
             kpoints, kmode="A", kgrid=[6,6,6])
-        self.assertRaisesRegex(KpointsError, r"kgrid should be specified*", \
+        self.assertRaisesRegex(KpointsError, \
+            r"kgrid should be specified*", \
             kpoints, kmode="G", kdense=10)
-        self.assertRaisesRegex(KpointsError, r"kgrid should be specified*", \
+        self.assertRaisesRegex(KpointsError, \
+            r"kgrid should be specified*", \
             kpoints, kmode="M", kdense=10)
 
     def test_auto_mode_check(self):
@@ -42,13 +49,43 @@ class test_kpoints_init(ut.TestCase):
     def test_raise_in_G_M_mode(self):
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kgrid=[5,5], kmode="G")
-        self.assertRaisesRegex(KpointsError, r"Bad kgrid format for G/M mode: *", kp.print)
+        self.assertRaisesRegex(KpointsError, \
+            r"Bad kgrid format for G/M mode: *", \
+            kp.print)
     
     def test_raise_in_L_mode(self):
-        _kpath = [(0.0, 0.0, 0.0)]
-        kp = kpoints(comment="KPOINTS for test_raise_in_L_mode", \
-            kmode="L", kdense=15, kpath=_kpath)
-        self.assertRaisesRegex(KpointsError, r"At least two special points *", kp.print)
+        _kpathsBadDiffLen = [
+                {
+                    "coordinates" :[(0.0, 0.0, 0.0)],
+                    "symbols": ["GM", "L"],
+                },
+                {
+                    "coordinates" :[(0.0, 0.0, 0.0),(0.5,0.5,0.5)],
+                    "symbols": ["GM",],
+                },
+            ]
+        _kpathsBadOdd = [
+                {
+                    "coordinates" :[(0.0, 0.0, 0.0)],
+                    "symbols": ["GM"],
+                },
+                {
+                    "coordinates" :[(0.0, 0.0, 0.0),(0.5,0.5,0.5),(0.5,0.5,0.5)],
+                    "symbols": ["GM", "L", "L"],
+                },
+            ]
+        for _kpath in _kpathsBadDiffLen:
+            kp = kpoints(comment="KPOINTS for test_raise_in_L_mode", \
+                kmode="L", kdense=15, kpath=_kpath)
+            self.assertRaisesRegex(KpointsError, \
+                "Inconsistent length of symbols and coordiantes", \
+                kp.print)
+        for _kpath in _kpathsBadOdd:
+            kp = kpoints(comment="KPOINTS for test_raise_in_L_mode", \
+                kmode="L", kdense=15, kpath=_kpath)
+            self.assertRaisesRegex(KpointsError, \
+                "Odd length found for symbols/coordiantes, require even.", \
+                kp.print)
 
 
 if __name__ == '__main__':

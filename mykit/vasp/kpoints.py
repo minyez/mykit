@@ -152,7 +152,9 @@ class kpoints(verbose):
                 symbols = _kpath["symbols"]
                 coords = tuple(_kpath["coordinates"])
                 if len(symbols) != len(coords):
-                    raise KpointsError("At least two special points are needed to define kpath")
+                    raise KpointsError("Inconsistent length of symbols and coordiantes")
+                if len(symbols)%2 != 0:
+                    raise KpointsError("Odd length found for symbols/coordiantes, require even.")
                 nSeg = int(len(symbols)/2)
                 for i in range(nSeg):
                     st = 2*i
