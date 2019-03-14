@@ -55,7 +55,7 @@ class test_potcar_search(ut.TestCase):
                 pts.export, xc="pbe")
             # raise for invalid PAW directory structure
             self.assertRaisesRegex(PotcarError, \
-                r"POTCAR not found: {}".format(os.path.join(os.environ["HOME"], "C", "POTCAR")), \
+                "POTCAR not found: {}".format(os.path.join(os.environ["HOME"], "C", "POTCAR")), \
                     pts.export, xc="lda")
         except AssertionError as _err:
             # Remove file and copy back the default json
