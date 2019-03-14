@@ -15,35 +15,54 @@ class test_kpath_coder_decoder(ut.TestCase):
         might change.
     '''
     testSetsValid = (
-        ("A-B-C D-E", [("A", "B"), ("B", "C"), ("D", "E")]),
-        ("GM-W-X-L-GM-X", [("GM", "W"), ("W", "X"), ("X", "L"), ("L", "GM"), ("GM", "X")]),
+        ("A-B-C D-E", ["A", "B", "B", "C", "D", "E"]),
+        ("GM-W-X-L-GM-X", ["GM", "W", "W", "X", "X", "L", "L", "GM", "GM", "X"]),
     )
-    testSetsBadKline = (
+    testSetsBadKlineInvalid = (
         ("GMX-W", "GMX-W" ),
         ("GM-W LDL-L", "LDL-L"),
         ("GM-W LDL-", "LDL-"),
         ("GM-W LD--L", "LD--L"),
     )
-    testSetsBadKsegsSym = (
-        ([("GM", "W"), ("LDL", "L")], "LDL"),
-        ([("GMX", "W"),], "GMX"),
+    testSetsBadKlineZero = (
+        ("GM-GM", "GM-GM" ),
+        ("GM-W LD-LD", "LD-LD"),
+        ("GM-W-W L-LD", "W-W"),
+    )
+    testSetsBadKsymInvalid = (
+        (["GM", "W", "LDL", "L"], "LDL"),
+        (["GMX", "W"], "GMX"),
+    )
+    testSetsBadKsymOddLen = (
+        (["GM", "W", "LD"], 3),
+        (["GM", "W", "L", "X", "GM"], 5),
     )
 
+
     def test_decoder(self):
-        for _i, (kline, ksegs) in enumerate(self.testSetsValid):
-            self.assertListEqual(kpath_decoder(kline), ksegs)
-        for _i, (kline, badPart) in enumerate(self.testSetsBadKline):
+        for _i, (kline, ksyms) in enumerate(self.testSetsValid):
+            self.assertListEqual(kpath_decoder(kline), ksyms)
+        for _i, (kline, badPart) in enumerate(self.testSetsBadKlineInvalid):
             self.assertRaisesRegex(KmeshError, \
                 r"Invalid kpath line string: {}".format(badPart),\
                 kpath_decoder, kline)
+        for _i, (kline, badPart) in enumerate(self.testSetsBadKlineZero):
+            self.assertRaisesRegex(KmeshError, \
+                r"kpath with zero length: {}".format(badPart),\
+                kpath_decoder, kline)
 
     def test_encoder(self):
-        for _i, (kline, ksegs) in enumerate(self.testSetsValid):
-            self.assertEqual(kpath_encoder(ksegs), kline)
-        for _i, (ksegs, badPart) in enumerate(self.testSetsBadKsegsSym):
+        for _i, (kline, ksyms) in enumerate(self.testSetsValid):
+            self.assertEqual(kpath_encoder(ksyms), kline)
+        for _i, (ksyms, badPart) in enumerate(self.testSetsBadKsymInvalid):
             self.assertRaisesRegex(KmeshError, \
                 r"Invalid kpoint symbol: {}".format(badPart),\
-                kpath_encoder, ksegs)
+                kpath_encoder, ksyms)
+        for _i, (ksyms, badPart) in enumerate(self.testSetsBadKsymOddLen):
+            self.assertRaisesRegex(KmeshError, \
+                r"require even length, received {}".format(badPart),\
+                kpath_encoder, ksyms)
+        
 
 
 if __name__ == '__main__':

@@ -84,8 +84,10 @@ class kmesh_control(verbose, prog_mapper):
 
 
 def kpath_decoder(kpath):
-    '''Decode string consisting kpoints symbol to a list of tuples,
-    each of which consist the starting and ending point in reciprocal space
+    '''Decode string consisting kpoints symbol to a list of strings.
+
+    Those with even and odd indices (from 0) are the starting and 
+    ending point in reciprocal space, repectively
 
     The path can have more than one continuous path in reciprocal space,
     separated by space.
@@ -98,9 +100,9 @@ def kpath_decoder(kpath):
 
     Examples:
     >>> kpath_decoder("A-B-C D-E")
-    [("A", "B"), ("B", "C"), ("D", "E")]
+    ["A", "B", "B", "C", "D", "E"]
     >>> kpath_decoder("GM-W-X-L-GM-X")
-    [("GM", "W"), ("W", "X"), ("X", "L"), ("L", "GM"), ("GM", "X")]
+    ["GM", "W", "W", "X", "X", "L", "L", "GM", "GM", "X"]
     '''
     try:
         _klines = kpath.split()
@@ -118,37 +120,58 @@ def kpath_decoder(kpath):
         nSyms = len(symbols)
         for i in range(nSyms-1):
             # ksegs.append('{}-{}'.format(symbols[i], symbols[i+1]))
-            ksegs.append((symbols[i], symbols[i+1]))
+            if symbols[i] == symbols[i+1]:
+                raise KmeshError("kpath with zero length: {}-{}".format(symbols[i], symbols[i+1]))
+            ksegs.extend([symbols[i], symbols[i+1]])
     return ksegs
 
 
-def kpath_encoder(ksegs):
-    '''Encode a list/tuple of 2-member tuple of string to a complete kpath string.
+def kpath_encoder(ksyms):
+    '''Encode a list/tuple of strings to a complete kpath string.
 
     Args:
-        ksegs (list or tuple): container of kpath segment strings
+        ksyms (list or tuple): container of kpath symbols, must have an even length
     '''
     try:
-        assert isinstance(ksegs, (list, tuple))
-    except:
-        raise KmeshError("require list or tuple, received {}".format(type(ksegs)))
+        assert isinstance(ksyms, (list, tuple))
+    except AssertionError:
+        raise KmeshError("require list or tuple, received {}".format(type(ksyms)))
+    try:
+        assert len(ksyms)%2 == 0
+    except AssertionError:
+        raise KmeshError("require even length, received {}".format(len(ksyms)))
 
+    nLineSeg = int(len(ksyms)/2)
     kpath = ''
-    segPat = re.compile(r'^' + KSYM_PATTERN + r'$')
+    symPat = re.compile(r'^' + KSYM_PATTERN + r'$')
     lastSym = ''
 
-    for i, kseg in enumerate(ksegs):
-        if len(kseg) != 2:
-            raise KmeshError("Invalid kpath segment (>2 members): {}".format(kseg))
-        for sym in kseg:
-            if not re.match(segPat, sym):
-                raise KmeshError("Invalid kpoint symbol: {}".format(sym))
-        if i == 0:
-            kpath += '-'.join(kseg)
+    for _i in range(nLineSeg):
+        st = ksyms[2*_i]
+        ed = ksyms[2*_i+1]
+        if st == ed:
+            raise KmeshError("kpath with zero length: {}-{}".format(st, ed))
+        seg = (st, ed)
+        for ksym in seg:
+            if not re.match(symPat, ksym):
+                raise KmeshError("Invalid kpoint symbol: {}".format(ksym))
+        if _i == 0:
+            kpath += '-'.join(seg)
         else:
-            if kseg[0] == lastSym:
-                kpath += '-' + kseg[1]
+            if st == lastSym:
+                kpath += '-' + ed
             else:
-                kpath += ' ' + '-'.join(kseg)
-        lastSym = kseg[1]
+                kpath += ' ' + '-'.join(seg)
+        lastSym = ed
+    # for i, ksym in enumerate(ksyms):
+        # if not re.match(symPat, ksym):
+        #     raise KmeshError("Invalid kpoint symbol: {}".format(ksym))
+        # if i == 0:
+        #     kpath += ksym
+        # else:
+        #     if ksym == lastSym:
+        #         kpath += '-' + ksym
+        #     else:
+        #         kpath += ' ' + ksym
+        # lastSym = ksym
     return kpath

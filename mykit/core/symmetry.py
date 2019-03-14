@@ -462,20 +462,17 @@ class special_kpoints(prec):
         _ret = {} 
         decodedSyms = kpath_decoder(kpathStr)
         coords = []
-        for se in decodedSyms:
-            seCoord = []
-            for kp in se:
-                if kp in _custom:
-                    seCoord.append(_custom[kp])
-                elif kp in self.spkCoord:
-                    seCoord.append(self.spkCoord[kp])
-                else:
-                    raise SymmetryError("kpoint symbol not defined: {}".format(kp))
-            seCoord = np.array(seCoord, dtype=self._dtype)
-            if not self._isPrim:
-                trans = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
-                seCoord = np.dot(seCoord, np.transpose(trans))
-            coords.append(tuple(seCoord))
+        for ksym in decodedSyms:
+            if ksym in _custom:
+                coords.append(_custom[ksym])
+            elif ksym in self.spkCoord:
+                coords.append(self.spkCoord[ksym])
+            else:
+                raise SymmetryError("kpoint symbol not defined: {}".format(ksym))
+        coords = np.array(coords, dtype=self._dtype)
+        if not self._isPrim:
+            trans = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
+            coords = np.dot(coords, np.transpose(trans))
         _ret["symbols"] = decodedSyms
         _ret["coordinates"] = coords
         return _ret

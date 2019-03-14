@@ -184,10 +184,8 @@ class test_spk_dict(ut.TestCase):
                             self.assertRegex(kpath, KPATH_PATTERN, \
                                 msg="bad kpath value for spg {}".format(k))
                             decoded = kpath_decoder(kpath)
-                            for (s, e) in decoded:
-                                self.assertIn(s, ksyms, \
-                                    msg="bad kpath value for spg {}".format(k))
-                                self.assertIn(e, ksyms, \
+                            for ksym in decoded:
+                                self.assertIn(ksym, ksyms, \
                                     msg="bad kpath value for spg {}".format(k))
             
 
@@ -209,31 +207,25 @@ class test_special_kpoints(ut.TestCase):
         self.assertIn("coordinates", pathGM2X2L)
         syms = pathGM2X2L["symbols"]
         coords = pathGM2X2L["coordinates"]
-        self.assertListEqual([("GM", "X"), ("X", "L")], syms)
-        self.assertEqual(len(coords), 2)
-        self.assertTrue(np.array_equal(coords[0][0], \
-            np.array([0.0,0.0,0.0])))
-        self.assertTrue(np.array_equal(coords[0][1], \
-            np.array([0.5,0.0,0.5])))
-        self.assertTrue(np.array_equal(coords[1][0], \
-            np.array([0.5,0.0,0.5])))
-        self.assertTrue(np.array_equal(coords[1][1], \
-            np.array([0.5,0.5,0.5])))
-        # check transformation for a asymmetric trans. matrix.
-        # e.g. space group 5
+        self.assertListEqual(["GM", "X", "X", "L"], syms)
+        self.assertEqual(len(coords), 4)
+        self.assertTrue(np.array_equal(coords, \
+            np.array([[0.0,0.0,0.0],
+                      [0.5,0.0,0.5],
+                      [0.5,0.0,0.5],
+                      [0.5,0.5,0.5]])))
         spkpts = special_kpoints(5, (5.0, 5.0, 5.0), False)
         pathGM2Y = spkpts.convert_kpath("GM-Y")
         # Y = (0.5,0.5,0) in prim, (0,1,0)
         coords = pathGM2Y["coordinates"]
-        self.assertTrue(np.array_equal(coords[0][0], \
-            np.array([0.0,0.0,0.0])))
-        self.assertTrue(np.array_equal(coords[0][1], \
-            np.array([0.0,1.0,0.0])))
+        self.assertTrue(np.array_equal(coords, \
+            np.array([[0.0,0.0,0.0],[0.0,1.0,0.0]])))
     
     def test_convert_kpaths_predef(self):
         # Zincblende (spg 216)
         zb = Cell.zincblende("Zn", "O", a=5.0)
         spk = special_kpoints.get_kpaths_from_cell(zb)
+        print(spk)
 
 if __name__ == '__main__':
     ut.main()
