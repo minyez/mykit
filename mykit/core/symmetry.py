@@ -362,13 +362,13 @@ class special_kpoints(prec):
     Args:
         id (int): the id of space group
         alen (array): (3,) array of lattice constant a,b,c
-        custom_kpt (dict): dictionary of custom kpoints, each item
+        custom_symbols (dict): dictionary of custom kpoints, each item
         being a symbol-coordinate pair. The coordinate must be in
         the system of primitive cell.
         Note that this will overwrite the default definition.
     '''
 
-    def __init__(self, id, alen, isPrimitive, custom_dict=None):
+    def __init__(self, id, alen, isPrimitive, custom_symbols=None):
         _check_valid_spg_id(id)
         try:
             assert np.shape(alen) == (3,)
@@ -384,16 +384,20 @@ class special_kpoints(prec):
         self._sp = self._spDict["spPrim"][iset]
         self._isPrim = isPrimitive
         self._transMat = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
-        self._custom = _check_valid_custom_ksym_dict(custom_dict)
+        self._custom = _check_valid_custom_ksym_dict(custom_symbols)
         try:
             self._kpaths = self._spDict["kpath"][iset]
         except KeyError:
             self._kpaths = []
 
     def __getitem__(self, ksym):
-        '''Get the coordinate of kpoint symbol
+        '''Get the coordinate of kpoint symbol.
+        
+        Custom symbols will be searched first.
         '''
-        coord = self._sp.get(ksym, None)
+        coord = self._custom.get(ksym, None)
+        if coord is None:
+            coord = self._sp.get(ksym, None)
         if coord is None:
             raise IndexError("kpoint symbol not defined: {}".format(ksym))
         if not self._isPrim:
@@ -408,13 +412,16 @@ class special_kpoints(prec):
     def spkSym(self):
         '''Return symbols of all available special kpoints
         '''
-        return list(self._sp.keys())
+        return list(self.spkCoord.keys())
 
     @property
     def spkCoord(self):
         '''Return coordinates in primitive cell of all available special kpoints
         '''
-        return self._sp
+        _ret = {}
+        _ret.update(self._sp)
+        _ret.update(self._custom)
+        return _ret
 
     def check_kpaths_predef(self, ipath=None):
         '''Return the predefined kpath string
@@ -474,7 +481,6 @@ class special_kpoints(prec):
 
         Args:
             ipath (int): the index of predefined kpath string in check_kpaths_predef
-            custom_kpt (dict): dictionary of custom kpoints used in convert_kpath
         '''
         kpathPredef = self.check_kpaths_predef(ipath)
         if not kpathPredef in ([], ''):
@@ -503,7 +509,7 @@ class special_kpoints(prec):
         return cls(sym.spgId, sym.alen, sym.isPrimitive)
 
     @classmethod
-    def from_cell(cls, cell):
+    def from_cell(cls, cell, custom_symbols=None):
         '''Create special kpoints instance from a Cell instance.
 
         Note:
@@ -515,10 +521,10 @@ class special_kpoints(prec):
         '''
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
-        return cls(sym.spgId, sym.alen, sym.isPrimitive)
+        return cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
 
     @classmethod
-    def get_kpaths_from_cell(cls, cell):
+    def get_kpaths_from_cell(cls, cell, custom_symbols=None):
         '''Return coordinates of all predefined kpaths for the space group of the cell
 
         Args:
@@ -526,7 +532,7 @@ class special_kpoints(prec):
         '''
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
-        spk = cls(sym.spgId, sym.alen, sym.isPrimitive)
+        spk = cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
         return spk.convert_kpaths_predef()
 
 
@@ -560,14 +566,14 @@ def _check_valid_spg_id(id):
         raise SymmetryError("Invalid space group id (1~230): {}".format(id))
 
 
-def _check_valid_custom_ksym_dict(custom_dict):
-    if custom_dict != None:
+def _check_valid_custom_ksym_dict(custom_symbols):
+    if custom_symbols != None:
         try:
-            assert isinstance(custom_dict, dict)
+            assert isinstance(custom_symbols, dict)
         except:
-            raise TypeError("custom_dict must be dict, received {}".format(type(custom_dict)))
-        for k, v in custom_dict.items():
+            raise TypeError("custom_symbols must be dict, received {}".format(type(custom_symbols)))
+        for k, v in custom_symbols.items():
             _check_valid_ksym_coord_pair(k, v)
-        return custom_dict
+        return custom_symbols
     else:
         return {}

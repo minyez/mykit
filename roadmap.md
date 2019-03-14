@@ -69,7 +69,7 @@ and help map name and value of parameter tags between different simulation progr
   - [x] `potcar_search` for easily searching POTCAR
 - `kpoints`
   - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
-  - [ ] `__repr__` and `__str__` magics
+  - [x] `__repr__` and `__str__` magics
 - `wavecar`
 - `chgcar`
 - `procar`

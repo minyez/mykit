@@ -51,7 +51,7 @@ class test_kpoints_init(ut.TestCase):
             kgrid=[5,5], kmode="G")
         self.assertRaisesRegex(KpointsError, \
             r"Bad kgrid format for G/M mode: *", \
-            kp.print)
+            print, kp)
     
     def test_raise_in_L_mode(self):
         _kpathsBadDiffLen = [
@@ -79,13 +79,13 @@ class test_kpoints_init(ut.TestCase):
                 kmode="L", kdense=15, kpath=_kpath)
             self.assertRaisesRegex(KpointsError, \
                 "Inconsistent length of symbols and coordiantes", \
-                kp.print)
+                print, kp)
         for _kpath in _kpathsBadOdd:
             kp = kpoints(comment="KPOINTS for test_raise_in_L_mode", \
                 kmode="L", kdense=15, kpath=_kpath)
             self.assertRaisesRegex(KpointsError, \
                 "Odd length found for symbols/coordiantes, require even.", \
-                kp.print)
+                print, kp)
 
 
 if __name__ == '__main__':

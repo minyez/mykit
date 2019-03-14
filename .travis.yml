@@ -5,9 +5,10 @@ python:
 # install dependencies, not the package itself
 install:
   - pip install -r requirements.txt 
+  - python setup.py install
 script:
-  - rmd=`pwd`
-  - export PYTHONPATH="$rmd:$PYTHONPATH"
+  # - rmd=`pwd`
+  # - export PYTHONPATH="$rmd:$PYTHONPATH"
   - pytest
 #after_success:
 #  - bash < (curl -s https://codecov.io/bash)
