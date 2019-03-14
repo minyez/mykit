@@ -1,5 +1,7 @@
 # mykit
 
+[![Build Status](https://travis-ci.org/minyez/mykit.png?branch=master)](https://travis-ci.org/minyez/mykit)
+
 Personal toolkit for manipulating input and output files of various electornic structure calculators for periodic systems.
 
 *Note: Under extensive refactoring. Limited functionality and faaaaaar from the objectives.*
