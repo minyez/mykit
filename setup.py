@@ -10,6 +10,9 @@ EMAIL = 'stevezhang@pku.edu.cn'
 URL = 'https://github.com/minyez/' + NAME
 REQUIRES_PYTHON = '>=3.6.0'
 BINDIR = "tools"
+REQUIRED = [
+    'numpy', 'scipy', 'spglib',
+]
 
 # add executables in tools/ to scripts
 SCRIPTS = []
@@ -19,6 +22,7 @@ for fn in os.listdir(tools):
     if os.access(fpath, os.X_OK):
         SCRIPTS.append(os.path.join(BINDIR, fn))
 
+# start setup function
 setup(
     name            = NAME,
     description     = DESCRIPTION,
@@ -26,12 +30,24 @@ setup(
     author_email    = EMAIL,
     url             = URL,
     packages        = [NAME],
+
     license         = "LICENSE",
     version         = "0.0.1",
+    install_requires = REQUIRED,
     include_package_data = True,
     package_data = {
         NAME: ['vasp/metadata/*', 'core/metadata/*'],
     },
     python_requires = REQUIRES_PYTHON,
-    scripts         = SCRIPTS, 
+    scripts         = SCRIPTS,
+    classifiers=[
+        # Trove classifiers
+        # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy'
+    ],
 )

@@ -1,0 +1,13 @@
+include *.txt
+prune mykit.egg-info
+exclude *_old.py
+exclude *.pyc
+include *.md
+include *.rst
+include *.ipynb
+
+recursive-exclude doc *-checkpoint.ipynb
+
+graft test
+recursive-exclude test *.pyc
+recursive-exclude mykit/vasp pv_*.py
