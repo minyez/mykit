@@ -1,15 +1,16 @@
 language: python
 python:
   - "3.6"
-  - "3.7.1"
+  - "3.7-dev"
 # install dependencies, not the package itself
 install:
   - pip install -r requirements.txt 
-  - python setup.py install
+  # - python setup.py install
 script:
-  # - rmd=`pwd`
-  # - export PYTHONPATH="$rmd:$PYTHONPATH"
-  # - export PATH="$rmd/tools:$PATH"
+  - rmd=`pwd`
+  - export PYTHONPATH="$rmd:$PYTHONPATH"
+  - export PATH="$rmd/tools:$PATH"
+  - ls *
   - pytest
 #after_success:
 #  - bash < (curl -s https://codecov.io/bash)
