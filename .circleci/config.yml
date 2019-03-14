@@ -23,8 +23,8 @@ jobs:
             - "/usr/local/bin"
             - "/usr/local/lib/python3.7/site-packages"
       - run:
-        command: |
-          pipenv run python setup.py install
-          pipenv run pytest
+          command: |
+            pipenv run python setup.py install
+            pipenv run pytest
       - store_test_results:
           path: test-results
