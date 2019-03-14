@@ -9,6 +9,15 @@ AUTHOR = 'Minye Zhang'
 EMAIL = 'stevezhang@pku.edu.cn'
 URL = 'https://github.com/minyez/' + NAME
 REQUIRES_PYTHON = '>=3.6.0'
+BINDIR = "tools"
+
+# add executables in tools/ to scripts
+SCRIPTS = []
+tools = os.path.join(os.path.dirname(__file__), BINDIR)
+for fn in os.listdir(tools):
+    fpath = os.path.join(tools, fn)
+    if os.access(fpath, os.X_OK):
+        SCRIPTS.append(os.path.join(BINDIR, fn))
 
 setup(
     name            = NAME,
@@ -16,7 +25,6 @@ setup(
     author          = AUTHOR,
     author_email    = EMAIL,
     url             = URL,
-    # packages        = find_packages(exclude=("tests", "doc")),
     packages        = [NAME],
     license         = "LICENSE",
     version         = "0.0.1",
@@ -25,9 +33,5 @@ setup(
         NAME: ['vasp/metadata/*', 'core/metadata/*'],
     },
     python_requires = REQUIRES_PYTHON,
+    scripts         = SCRIPTS, 
 )
-
-# shutil.rmtree("build")
-# shutil.rmtree("dist")
-# shutil.rmtree(NAME+".egg-info")
-# shutil.rmtree(os.path.join(NAME, NAME+".egg-info"))
