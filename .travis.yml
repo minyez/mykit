@@ -2,8 +2,9 @@ language: python
 python:
   - "3.6"
   - "3.7-dev"
+# install dependencies, not the package itself
 install:
-  - pip setup.py install -r requirements.txt 
+  - pip install -r requirements.txt 
 script:
   - rmd=`pwd`
   - export PYTHONPATH="$rmd:$PYTHONPATH"
