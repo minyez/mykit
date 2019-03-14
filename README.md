@@ -7,9 +7,32 @@ Personal toolkit for manipulating input and output files of various electornic s
 
 *Note: Under extensive refactoring. Limited functionality and faaaaaar from the objectives.*
 
-## Objectives
+## Usage
 
-<!-- *This python module has no intention, and is definitely unable to compete with the repsected [ASE](https://wiki.fysik.dtu.dk/ase/) module.*-->
+Clone the repository to some local path, e.g. `/path/to/mykit/`. Install the package by
+
+```
+python setup.py install
+```
+
+and add to environment variables
+
+```shell
+export PATH="/path/to/mykit/tools/:$PATH"
+```
+
+Perform a quick test
+
+```shell
+cd /path/to/mykit/test
+bash runtests.sh
+```
+
+or simply run `pytest` at `/path/to/mykit/`
+
+Check the `doc/examples` for usages.
+
+## Objectives
 
 This module has its emphasis on the input files generation and tutorial purpose, by which means
 

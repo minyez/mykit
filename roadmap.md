@@ -57,7 +57,7 @@ and help map name and value of parameter tags between different simulation progr
   - [ ] Predefined kpaths for space groups :wrench:
   - [x] Factory methods for kpath of special kpoints
 
-## `vasp`: VASP related
+## `vasp` package: VASP related
 
 - `incar`
   - [x] Read, print and write 
@@ -75,7 +75,8 @@ and help map name and value of parameter tags between different simulation progr
 - `procar`
 - `contcar`
 
-## toolkit
+
+## tools
 
 - [ ] decouple the argument parsing with the main program
 
@@ -84,4 +85,4 @@ and help map name and value of parameter tags between different simulation progr
 
 - [x] version string controled by [versioneer](https://github.com/warner/python-versioneer)
 - [x] Travis CI
-- [ ] CircleCI
+- [x] CircleCI

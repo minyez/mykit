@@ -9,7 +9,7 @@ run_one_unittest() {
             $fn
             status=$?
             if [ ! $status == 0 ];then
-                exit
+                exit $status
             fi
             echo ""
         else
@@ -20,9 +20,21 @@ run_one_unittest() {
 }
 
 coreTestDir="core"
-coreTests=(config_test.py cell_test.py log_test.py utils_test.py planewave_test.py xc_test.py control_test.py)
+coreTests=(config_test.py
+           cell_test.py
+           log_test.py
+           ion_test.py
+           utils_test.py
+           planewave_test.py
+           kmesh_test.py
+           xc_test.py
+           control_test.py
+           symmetry_test.py)
 vaspTestDir="vasp"
-vaspTests=(poscar_test.py incar_test.py kpoints_test.py)
+vaspTests=(poscar_test.py
+           incar_test.py
+           kpoints_test.py
+           potcar_test.py)
 
 for ct in ${coreTests[@]}
 do

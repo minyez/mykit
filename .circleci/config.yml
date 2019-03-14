@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: circleci/python:3.7.1 # every job must define an image for the docker executor and subsequent jobs may define a different image.
         environment:
-          PIPENV_VENV_IN_PROJECT: true
+          PIPENV_VENV_IN_PROJECT: false
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
