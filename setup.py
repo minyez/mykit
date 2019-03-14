@@ -15,6 +15,7 @@ BINDIR = "tools"
 REQUIRED = [
     'numpy', 'scipy', 'spglib',
 ]
+LICENSE = "LICENSE"
 
 # add executables in tools/ to scripts
 SCRIPTS = []
@@ -32,7 +33,7 @@ setup(
     author_email    = EMAIL,
     url             = URL,
     packages        = [NAME],
-    license         = "LICENSE",
+    license         = LICENSE,
     version         = versioneer.get_version(),
     install_requires = REQUIRED,
     include_package_data = True,
@@ -40,7 +41,7 @@ setup(
         NAME: ['vasp/metadata/*', 'core/metadata/*'],
     },
     python_requires = REQUIRES_PYTHON,
-    scripts         = SCRIPTS,
+    #scripts         = SCRIPTS,
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -53,3 +54,5 @@ setup(
     ],
     cmdclass=versioneer.get_cmdclass(),
 )
+
+shutil.rmtree('__pycache__')

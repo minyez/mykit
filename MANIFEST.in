@@ -1,13 +1,15 @@
 include *.txt
-include *.py
-prune mykit.egg-info
-exclude *_old.py
 include *.md
-include *.rst
-include *.ipynb
+include LICENSE
+recursive-include mykit *.py *.json
+recursive-exclude mykit/vasp pv_*.py *_old.py
 
+recursive-include doc *.ipynb *.md *.rst
 recursive-exclude doc *-checkpoint.ipynb
 
 graft test
 recursive-exclude test *.pyc
-recursive-exclude mykit/vasp pv_*.py
+include versioneer.py
+include mykit/_version.py
+
+prune mykit.egg-info
