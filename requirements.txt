@@ -1,3 +1,2 @@
-spglib
 numpy
-scipy
+spglib >= 1.12.0
