@@ -3,6 +3,7 @@
 [![Travis CI](https://travis-ci.org/minyez/mykit.svg?branch=master)](https://travis-ci.org/minyez/mykit)
 [![CircleCI](https://circleci.com/gh/minyez/mykit/tree/master.svg?style=svg)](https://circleci.com/gh/minyez/mykit/tree/master)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/minyez/mykit/blob/master/LICENSE)
+![Python Version](https://img.shields.io/static/v1.svg?message=3.6.6,%203.7.1&color=3776AB&logo=Python&label=Python)
 
 Personal toolkit for manipulating input and output files of various electornic structure calculators for periodic systems.
 
