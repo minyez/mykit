@@ -8,6 +8,7 @@ import os
 import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
+from mykit.core.kmesh import kpath_encoder
 from mykit.core.log import verbose
 from mykit.core.symmetry import special_kpoints
 from mykit.vasp.incar import incar
@@ -56,7 +57,9 @@ def pv_simple_input():
                     verbose.print_cm_warn("No predefined kpath available. Skip writing band KPOINTS.")
                 else:
                     for i, kpath in enumerate(kpaths):
-                        kp = kpoints(kmode="L", kdense=klen, kpath=kpath)
+                        kpathStr = kpath_encoder(kpath["symbols"])
+                        kp = kpoints(kmode="L", kdense=klen, kpath=kpath, \
+                            comment="K-point path {}".format(kpathStr))
                         kp.write(pathKpoints="KPOINTS_band_{}".format(i))
             else:
                 nks = [int(klen/x) for x in pos.alen]

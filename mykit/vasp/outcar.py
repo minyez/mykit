@@ -1,8 +1,16 @@
 # coding = utf-8
 '''Module that defines classes for VASP output files
 '''
+import os
+import subprocess as sp
+
+import numpy as np
+
 # from mykit.core.lattice import lattice
 from mykit.core.log import verbose
+from mykit.core.utils import common_ss_conv
+
+
 class outcarError(Exception):
     pass
 
@@ -23,10 +31,10 @@ class outcar(verbose):
         self.__init_calc_params()
         self.__check_finished()
         if not self.flag_finish:
-            common_print_warn("Task has not finished.", func_level=0, verbose=self.verbose)
+            self.print_warn("Task has not finished.", level=0)
 
     def __print(self, pstr):
-        common_print_verbose_bool(pstr, self.verbose)
+        self.print_log(pstr, self.verbose)
 
     def __init_calc_params(self):
         '''
@@ -335,3 +343,19 @@ class outcar(verbose):
         # if the band structure has not been extracted, use get_band_structure to obtain that of the final structure
         if self.eigenene is None:
             self.get_band_structure()
+
+
+def read_fermi(outcar='OUTCAR'):
+
+    fermi_level = 0.0
+
+    if os.path.exists(outcar):
+        try:
+            fermi_level = float(sp.check_output("awk '/E-fermi/ {print $3}' %s" % outcar, shell=True))
+            print("Fermi level found: %6.4f" % fermi_level)
+        except ValueError:
+            print("WARNING: error in reading E-fermi from %s. Fermi level is set to 0." % outcar)
+    else:
+        print("WARNING: %s is not found. Fermi level is set to 0." % outcar)
+
+    return fermi_level

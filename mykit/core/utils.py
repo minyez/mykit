@@ -127,3 +127,26 @@ def find_vol_dirs(path='.'):
         return float(dirstr.split('_')[1])
     _dirs = sorted(_dirs, key=__sort_vol)
     return _dirs
+
+def common_ss_conv(string, i, conv2, sep=None):
+    '''
+    Split the string and convert a single substring to a specified type.
+
+    Args:
+        string (str): the string from which to convert value
+        i (int): the substring index in the list to be converted after splitting by sep
+        conv2: the type to which the substring will be converted
+        sep (regex): the separators used to split the string.
+    '''
+
+    str_tmp = string.strip()
+    if sep is not None:
+        str_list = re.split(r'[%s]'%sep, str_tmp)
+    #    print(str_list)
+    else:
+        str_list = str_tmp.split()
+
+    try:
+        return conv2(str_list[i])
+    except ValueError:
+        return conv2(float(str_list[i]))

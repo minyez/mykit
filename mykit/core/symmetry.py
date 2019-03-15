@@ -250,7 +250,7 @@ class space_group:
             'P4nnc'   , 'P4mbm' , 'P4mnc' , 'P4nmm'  , 'P4ncc' ,
             'P42mmc'  , 'P42mcm', 'P42nbc', 'P42nnm' , 'P42mbc', #131
             'P4_2/mnm', 'P42nmc', 'P42ncm', 'I4mmm'  , 'I4mcm' ,
-            'I41amd'  , 'I41acd', 'P3'    , 'P31'    , 'P32'   , #141
+            'I4_1/amd', 'I41acd', 'P3'    , 'P31'    , 'P32'   , #141
             'R3'      , 'P-3'   , 'R-3'   , 'P312'   , 'P321'  ,
             'P3112'   , 'P3121' , 'P3212' , 'P3221'  , 'R32'   , #151
             'P3m1'    , 'P31m'  , 'P3c1'  , 'P31c'   , 'R3m'   ,

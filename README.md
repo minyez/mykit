@@ -52,9 +52,9 @@ After installation, the jupyter notebooks in `doc/examples` may be checked for u
 
 ## Acknowledgement
 
-- `Symmetry` class and `get_spg` method of `space_group` class is implemented based on python bindings of [spglib](https://atztogo.github.io/spglib/python-spglib.html) by @atztogo
+- `Symmetry` class is implemented based on python bindings of [spglib](https://atztogo.github.io/spglib/python-spglib.html) by @atztogo
 - Special kpoints are retrieved from [Bilbao Crystallographic Server](http://www.cryst.ehu.es), explicitly by using the `KVEC` program. See [Aroyo2014](https://dx.doi.org/10.1107/S205327331303091X)
-- version string controlled by using [versioneer](https://github.com/warner/python-versioneer)
+- Version string controlled by using [versioneer](https://github.com/warner/python-versioneer)
 
 <!-- Currently partially supported codes:
 

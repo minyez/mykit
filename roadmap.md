@@ -22,6 +22,7 @@ They lie the basis for input conversion
     - [x] zincblende
     - [x] wurtzite
     - [x] rutile
+    - [x] anatase
     - [x] diamond
     - [x] perovskite
 
@@ -51,6 +52,8 @@ and help map name and value of parameter tags between different simulation progr
   - [x] return standardized cell
 - `special_kpoints`
   - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
+  - [ ] k-point path from [Setyawan and Curtarolo](https://doi.org/10.1016/j.commatsci.2010.05.010)
+    - [ ] create special kpoints from it, alternative to Bilbao
   - [x] converting primitive to conventional coordinate
     - [x] transformation matrix from primitive to conventional
   - [x] converting kpath string to symbols and coordinates of corresponding points on path line segments

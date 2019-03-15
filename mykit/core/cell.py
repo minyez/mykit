@@ -748,7 +748,7 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def perovskite(cls, atom1, atom2, atom3, a=1.0, **kwargs):
+    def perovskite(cls, atom1="Ca", atom2="Ti", atom3="O", a=1.0, **kwargs):
         '''Generate a perovskit lattice
 
         Args:
@@ -769,8 +769,8 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def zincblende(cls, atom1, atom2, a=1.0, primitive=False, **kwargs):
-        '''Generate a standardized zincblende lattice (space group 216)
+    def zincblende(cls, atom1="Zn", atom2="O", a=1.0, primitive=False, **kwargs):
+        '''Generate a zincblende lattice (space group 216)
 
         ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
 
@@ -804,8 +804,8 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def diamond(cls, atom, a=1.0, primitive=False, **kwargs):
-        '''Generate a standardized diamond lattice (space group 227)
+    def diamond(cls, atom="C", a=1.0, primitive=False, **kwargs):
+        '''Generate a diamond lattice (space group 227)
 
         Args:
             atom (str): symbol of the atom
@@ -816,8 +816,8 @@ class Cell(prec, verbose):
         return cls.zincblende(atom, atom, a=a, primitive=primitive, **kwargs)
 
     @classmethod
-    def wurtzite(cls, atom1, atom2, a=1.0, **kwargs):
-        '''Generate a standardized wurtzite lattice (space group 186)
+    def wurtzite(cls, atom1="Zn", atom2="O", a=1.0, **kwargs):
+        '''Generate a wurtzite lattice (space group 186)
 
         Args:
             atom1 (str): symbol of atom at vertices of lattice
@@ -840,8 +840,8 @@ class Cell(prec, verbose):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def rutile(cls, atom1, atom2, a=1.0, c=2.0, u=0.31, **kwargs):
-        '''Generate a standardized rutile lattice (space group 136)
+    def rutile(cls, atom1="Ti", atom2="O", a=1.0, c=2.0, u=0.31, **kwargs):
+        '''Generate a rutile lattice (space group 136)
 
         Args:
             atom1 (str): symbol of atom at vertex and center of lattice
@@ -864,6 +864,55 @@ class Cell(prec, verbose):
                 [-u,-u, 0.0],
                 [0.5-u,0.5+u,0.5],
                 [0.5+u,0.5-u,0.5]]
+        kwargs.pop("coordSys", None)
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})
+        return cls(_latt, _atoms, _pos, **kwargs)
+
+    @classmethod
+    def anatase(cls, atom1="Ti", atom2="O", a=3.7845, c=9.5143, u=0.2199, primitive=False, **kwargs):
+        '''Generate a anatase lattice (space group 141).
+
+        Note:
+            This cell is not standardized.
+
+        Args:
+            atom1 (str): symbol of atom at vertex
+            atom2 (str): symbol of atom at face of lattice
+            a,c (float): the lattice constant of the conventional cell.
+            u (float): the internal coordinate, i.e. distance between two atoms in terms of c
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        try:
+            assert 0.0 < u < 1.0
+        except AssertionError:
+            raise cls._error("Internal coordinate should be in (0,1), get {}".format(u))
+        _a = abs(a)
+        _c = abs(c)
+        if primitive:
+            _latt = [[-_a/2, _a/2, _c/2], [_a/2, -_a/2, _c/2], [_a/2, _a/2, -_c/2]]
+            _atoms = [atom1,]*2 + [atom2,]*4
+            _pos = [[0.0, 0.0, 0.0],
+                    [0.75,0.25,0.5],
+                    [0.25-u, 0.75-u, 0.5],
+                    [0.25+u, 0.75+u, 0.5],
+                    [ 0.5+u,  0.5+u, 0.0],
+                    [ 0.5-u,  0.5-u, 0.0],]
+        else:
+            _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
+            _atoms = [atom1,]*4 + [atom2,]*8
+            _pos = [[0.0, 0.0, 0.0],
+                    [0.5, 0.0,0.25],
+                    [0.0, 0.5,0.75],
+                    [0.5, 0.5, 0.5],
+                    [0.0, 0.0,   u],
+                    [0.0, 0.0,  -u],
+                    [0.5, 0.0,0.25-u],
+                    [0.5, 0.0,0.25+u],
+                    [0.0, 0.5,0.75-u],
+                    [0.0, 0.5,0.75+u],
+                    [0.5, 0.5, 0.5-u],
+                    [0.5, 0.5, 0.5+u]]
         kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
             kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})

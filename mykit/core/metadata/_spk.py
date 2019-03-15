@@ -2331,20 +2331,32 @@ _special_kpoints = {
     141: {
         "cond": cond_c_lt_a,
         "spPrim": [
-            {
+            {# AFLOW BCT2 lattices SKP
                 "GM": [0.0, 0.0, 0.0],
                 "M":  [0.5, 0.5,-0.5],
                 "X":  [0.0, 0.0, 0.5],
                 "P": [0.25,0.25,0.25],
-                "N":  [0.0, 0.5, 0.0],
+                "N":  [0.0, 0.5, 0.0], 
+                "Z":  [0.5, 0.5,-0.5], # Equivalent to M,
+                                       # present in Curtarolo2010 and MS
             },
-            {
+            {# AFLOW BCT1 lattices SKP
                 "GM": [0.0, 0.0, 0.0],
                 "M": [-0.5, 0.5, 0.5],
                 "X":  [0.0, 0.0, 0.5],
                 "P": [0.25,0.25,0.25],
-                "N":  [0.0, 0.5, 0.0],
+                "N":  [0.0, 0.5, 0.0], 
+                "Z": [-0.5, 0.5, 0.5], # Equivalent to M,
+                                       # present in Curtarolo2010 and MS
             },
+        ],
+        "path": [
+            [
+                "M-GM-X-P-N-GM",
+            ],
+            [
+                "M-GM-X-P-N-GM",
+            ],
         ]
     },
     142: {

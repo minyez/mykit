@@ -179,3 +179,19 @@ class poscar(Cell):
             raise cls._error("the input is not a lattice instance")
         __kw = cell.get_kwargs()
         return cls(*cell.get_cell(), **__kw)
+
+
+# ===============================
+
+# def read_atom_info(poscar='POSCAR'):
+#     atom_type_list = []
+#     natoms_list = []
+#     with open(poscar,'r') as h_poscar:
+#         for i in range(8):
+#             line = h_poscar.readline()
+#             if i == 5:
+#                 atom_type_list = line.split()
+#             if i == 6:
+#                 natoms_list = [int(x) for x in line.split()]
+
+#     return atom_type_list, natoms_list 

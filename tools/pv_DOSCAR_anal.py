@@ -1,42 +1,15 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
-from __future__ import print_function
-import sys, os
+import os
 import subprocess as sp
-import numpy as np
+import sys
 from argparse import ArgumentParser
 
-# ===============================
+import numpy as np
 
-def read_fermi(outcar='OUTCAR'):
-
-    fermi_level = 0.0
-
-    if os.path.exists(outcar):
-        try:
-            fermi_level = float(sp.check_output("awk '/E-fermi/ {print $3}' %s" % outcar, shell=True))
-            print("Fermi level found: %6.4f" % fermi_level)
-        except ValueError:
-            print("WARNING: error in reading E-fermi from %s. Fermi level is set to 0." % outcar)
-    else:
-        print("WARNING: %s is not found. Fermi level is set to 0." % outcar)
-
-    return fermi_level
-
-# ===============================
-
-def read_atom_info(poscar='POSCAR'):
-    atom_type_list = []
-    natoms_list = []
-    with open(poscar,'r') as h_poscar:
-        for i in range(8):
-            line = h_poscar.readline()
-            if i == 5:
-                atom_type_list = line.split()
-            if i == 6:
-                natoms_list = [int(x) for x in line.split()]
-
-    return atom_type_list, natoms_list 
+from mykit.core.cell import sym_nat_from_atoms
+from mykit.vasp.outcar import read_fermi
+from mykit.vasp.poscar import poscar
 
 # ===============================
 
@@ -178,7 +151,7 @@ def dos_anal_main(ArgList):
 
     fermi_level = read_fermi()
 
-    atom_type_list, natoms_list = read_atom_info()
+    atom_type_list, natoms_list = sym_nat_from_atoms(poscar.read_from_file().atoms)
 
     ispin, energy_grid, total_dos, pdos = read_doscar()
 
