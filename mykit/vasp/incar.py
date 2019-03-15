@@ -455,7 +455,7 @@ def _get_xc_tags_from_xcname(xc=None, ignore_error=True):
     _tags = {
         "LDA": {"GGA": "CA"}, 
         "PBE": {"GGA": "PE"},
-        "PBESOL": {"GGA": "PE"},
+        "PBESOL": {"GGA": "PS"},
         "RPBE": {"GGA": "RP"},
         "SCAN": {"METAGGA": "SCAN", "LASPH": True}, 
         "PBE0": dict(_tag_PBE0),

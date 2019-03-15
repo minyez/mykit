@@ -10,12 +10,12 @@ DESCRIPTION = 'Utilites for manipulating inputs and outputs of various electroni
 AUTHOR = 'Minye Zhang'
 EMAIL = 'stevezhang@pku.edu.cn'
 URL = 'https://github.com/minyez/' + NAME
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.5.6'
 BINDIR = "tools"
 REQUIRED = [
-    'numpy', 'scipy', 'spglib',
+    'numpy', 'spglib>=1.12.0',
 ]
-LICENSE = "LICENSE"
+LICENSE = "MIT"
 
 # add executables in tools/ to scripts
 SCRIPTS = []
@@ -48,7 +48,9 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     cmdclass=versioneer.get_cmdclass(),

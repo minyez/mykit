@@ -524,7 +524,19 @@ class special_kpoints(prec):
         return cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
 
     @classmethod
-    def get_kpaths_from_cell(cls, cell, custom_symbols=None):
+    def get_kpath_from_cell(cls, pathStr, cell, custom_symbols=None):
+        '''Return coordinates of all predefined kpaths for the space group of the cell
+
+        Args:
+            cell: instance of Cell or its subclass
+        '''
+        _spglib_check_cell_and_coordSys(cell)
+        sym = Symmetry(cell)
+        spk = cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
+        return spk.convert_kpath(pathStr)
+
+    @classmethod
+    def get_kpaths_predef_from_cell(cls, cell, custom_symbols=None):
         '''Return coordinates of all predefined kpaths for the space group of the cell
 
         Args:

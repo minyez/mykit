@@ -224,7 +224,7 @@ class test_special_kpoints(ut.TestCase):
     def test_convert_kpaths_predef(self):
         # Zincblende (spg 216)
         zb = Cell.zincblende("Zn", "O", a=5.0)
-        spk = special_kpoints.get_kpaths_from_cell(zb)
+        spk = special_kpoints.get_kpaths_predef_from_cell(zb)
         print(spk)
 
 if __name__ == '__main__':
