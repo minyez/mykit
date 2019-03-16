@@ -6,12 +6,14 @@ python:
 # install dependencies, not the package itself
 install:
   - pip install -r requirements.txt 
+  - pip install pytest-cov codecov
   # - python setup.py install
 script:
   - rmd=`pwd`
   - export PYTHONPATH="$rmd:$PYTHONPATH"
   - export PATH="$rmd/tools:$PATH"
   - ls *
-  - pytest
-#after_success:
+  - pytest --cov=./
+after_success:
+  - codecov
 #  - bash < (curl -s https://codecov.io/bash)

@@ -6,7 +6,7 @@ jobs:
       - image: circleci/python:3.7.1 # every job must define an image for the docker executor and subsequent jobs may define a different image.
         environment:
           PIPENV_VENV_IN_PROJECT: false
-          CODECOV_TOKEN: "983953a4-c383-4f0d-8e68-a31f293656e7"
+          # CODECOV_TOKEN: "983953a4-c383-4f0d-8e68-a31f293656e7"
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
@@ -16,7 +16,7 @@ jobs:
       - run:
           command: |
             pip install -r requirements.txt
-            pip install pytest pytest-cov codecov
+            pip install pytest #pytest-cov codecov coverage
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "requirements.txt" }}
           paths:
@@ -25,10 +25,6 @@ jobs:
       - run:
           command: |
             python setup.py install
-            # pytest --cov=./ | tee pytest-results
             pytest | tee pytest-results
-            for py in test/core/*.py; do coverage run python $py; done
-            for py in test/vasp/*.py; do coverage run python $py; done
-            codecov
       - store_test_results:
           path: pytest-results
