@@ -64,11 +64,6 @@ class poscar(Cell):
         self.unit = _uWas
         return '\n'.join(_ret)
 
-    def print(self):
-        '''Preview the POSCAR output
-        '''
-        print(self)
-
     def write(self, pathPoscar='POSCAR', scale=1.0, backup=False, suffix="_bak"):
         '''Write POSCAR to path 
         '''

@@ -7,7 +7,7 @@ import numpy as np
 
 from mykit.core.cell import (Cell, CellError, atoms_from_sym_nat, axis_list,
                              periodic_duplicates_in_cell, sym_nat_from_atoms)
-from mykit.core.constants import ang2au, au2ang
+from mykit.core.constants import ang2au, au2ang, pi
 
 
 class simple_cubic_lattice(ut.TestCase):
@@ -22,36 +22,29 @@ class simple_cubic_lattice(ut.TestCase):
 
     _cell = Cell(_latt, _atoms, _pos, unit="ang", coordSys="D")
     
-    def test_read_only_properties(self):
+    def test_properties(self):
+        # unit
+        self.assertEqual(self._cell.unit, "ang")
+        # coordinate system
+        self.assertEqual(self._cell.coordSys, "D")
+        # real space vectors
+        self.assertTrue(np.array_equal(self._cell.a, self._latt))
         self.assertAlmostEqual(pow(self._a, 3), self._cell.vol)
-        try:
-            self._cell.vol = 10.0
-        except AttributeError as _err:
-            self.assertIn("can't set attribute", _err.args)
-        else:
-            self.assertTrue(False, "Cell.vol should be read-only")
+        self.assertTrue(np.array_equal(self._cell.center, [0.5,0.5,0.5]))
+        lattConsts = self._cell.lattConsts
+        self.assertTupleEqual(lattConsts, \
+            (self._a, self._a, self._a, 90.0, 90.0, 90.0))
+        # Reciprocal
+        recpIn2Pi = np.array(self._latt, dtype=self._cell._dtype)/self._a**2
+        self.assertTrue(np.allclose(self._cell.bIn2Pi, recpIn2Pi))
+        self.assertTrue(np.allclose(self._cell.b, recpIn2Pi * 2.0 * pi))
+        self.assertTrue(np.allclose(self._cell.blen, (2.0*pi/self._a,)*3))
+        # atom types
         self.assertEqual(1, self._cell.natoms)
-        try:
-            self._cell.natoms = 2
-        except AttributeError as _err:
-            self.assertIn("can't set attribute", _err.args)
-        else:
-            self.assertTrue(False, "Cell.natoms should be read-only")
-        self.assertListEqual(list(self._atoms), self._cell.atomTypes)
-        try:
-            self._cell.atomTypes = ["B"]
-        except AttributeError as _err:
-            self.assertIn("can't set attribute", _err.args)
-        else:
-            self.assertTrue(False, "Cell.atomTypes should be read-only")
-        self.assertListEqual(list(range(len(self._atoms))), self._cell.typeIndex)
-        try:
-            self._cell.typeIndex = (0)
-        except AttributeError as _err:
-            self.assertIn("can't set attribute", _err.args)
-        else:
-            self.assertTrue(False, "Cell.typeIndex should be read-only")
-
+        self.assertListEqual(["C",], self._cell.atomTypes)
+        self.assertDictEqual({0: "C"}, self._cell.typeMapping)
+        self.assertListEqual([0,], self._cell.typeIndex)
+        
     def test_magic(self):
         self.assertEqual(1, len(self._cell))
         self.assertTupleEqual(tuple(self._pos[0]), tuple(self._cell[0]))
@@ -137,6 +130,26 @@ class cell_factory_method(ut.TestCase):
         self.assertEqual(1, len(_pfcc))
         self.assertAlmostEqual(5.0*np.sqrt(0.5), _pfcc.alen[0])
 
+    def test_bravais_orth(self):
+        oP = Cell.bravais_oP("C", a=1.0, b=2.0, c=3.0)
+        self.assertEqual(len(oP), 1)
+        self.assertEqual(oP.vol, 6.0)
+        oI = Cell.bravais_oI("C")
+        self.assertEqual(len(oI), 2)
+        oF = Cell.bravais_oF("C")
+        self.assertEqual(len(oF), 4)
+
+    def test_typical_sysmtes(self):
+        # both conventional and primitive
+        for p in [True, False]:
+            Cell.diamond("C", primitive=p)
+            Cell.anatase("Ti", "O", primitive=p)
+            Cell.rutile("Ti", "O", primitive=p)
+            Cell.zincblende("Zn", "O", primitive=p)
+        # primitive only
+        Cell.perovskite("Ca", "Ti", "O")
+        Cell.wurtzite("Zn", "O")
+
     def test_read_from_json(self):
         import os
         import tempfile
@@ -189,6 +202,13 @@ class cell_select_dynamics(ut.TestCase):
         _c = Cell.bravais_cI("C", allRelax=False, primitive=False)
         self.assertTrue(_c.useSelDyn)
         self.assertListEqual([[False,]*3,]*2, _c.sdFlags())
+
+    def test_relax_all(self):
+        _c = Cell.bravais_cI("C", allRelax=False, primitive=False, \
+            selectDyn={1: [True, False, True]})
+        _c.relax_all()
+        self.assertListEqual(_c.sdFlags(1), [True, True, True])
+        self.assertFalse(_c.useSelDyn)
     
     def test_fix_some(self):
         _pc = Cell.bravais_cF("C", selectDyn={1:[False, True, True]})

@@ -499,7 +499,7 @@ class Cell(prec, verbose):
     def recpLatt(self):
         '''Reciprocal lattice vectors in unit^-1
         '''
-        return self.recpLattIn2Pi * 2.0E0 * pi
+        return self.bIn2Pi * 2.0E0 * pi
 
     @property
     def b(self):

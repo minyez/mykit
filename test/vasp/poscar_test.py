@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import tempfile
 import unittest as ut
 
 import numpy as np
@@ -13,7 +14,7 @@ from mykit.core.cell import Cell
 from mykit.vasp.poscar import PoscarError, poscar
 
 
-class poscar_build_test(ut.TestCase):
+class test_poscar_build(ut.TestCase):
     
     def test_init_from_cell_atoms_pos(self):
         _cell = Cell.bravais_cP("C", a=5.0)
@@ -32,7 +33,7 @@ class poscar_build_test(ut.TestCase):
         self.assertEqual(_poscar.coordSys, "D")
         self.assertEqual(len(_poscar), 4)
 
-    def test_init_from_cellice(self):
+    def test_init_from_cell(self):
         _cell = Cell.bravais_cP("C", a=5.0)
         _poscar = poscar.create_from_cell(_cell)
         self.assertAlmostEqual(_poscar.get_cell()[0][0,0], 5.0)
@@ -72,6 +73,18 @@ class poscar_build_test(ut.TestCase):
                     _path = os.path.join(__poscarDir, _f)
                     self.assertRaises(PoscarError, poscar.read_from_file, _path)
         print("{} good POSCARs readed ({} verified by JSON file). {} bad POSCARs raised.".format(_countGood, _countVerified, _countBad))
+
+
+class test_poscar_write(ut.TestCase):
+
+    def test_print_write(self):
+        '''test functionality of print and write of POSCAR
+        '''
+        dC = poscar.diamond("C")
+        print(dC)
+        tf = tempfile.NamedTemporaryFile()
+        dC.write(pathPoscar=tf.name)
+        tf.close()
 
 
 def _verify_poscar_by_json(tc, pc, pathJson):

@@ -57,7 +57,21 @@ class test_symmetry(ut.TestCase):
         self.assertEqual(227, spgdc.spgId)
         self.assertEqual('Fd-3m', spgdc.spgSym)
         self.assertFalse(spgdc.isPrimitive)
-        
+        # direct get_spg
+        self.assertTupleEqual(Symmetry.get_spg(dC), (227, 'Fd-3m'))
+
+    def test_zincblende_prim(self):
+        at = "C"
+        zbConv = Cell.zincblende(at, at, primitive=False)
+        sym = Symmetry(zbConv)
+        sym.operations
+        # irreducible kpoints
+        sym.ibzkpt([2,2,2])
+        # get_primitive
+        isPrim, _ = sym.get_primitive()
+        self.assertFalse(isPrim)
+        # get_standard
+        sym.get_standard()
 
 
 class test_space_group(ut.TestCase):
