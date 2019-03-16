@@ -11,7 +11,10 @@ from mykit.core.metadata._spk import (_special_kpoints, cond_a_lt_b,
                                       cond_abc_invsq, cond_any, cond_c_lt_a,
                                       cond_curt_a_lt_sqrt_c,
                                       cond_max_bc_noneq_left)
-from mykit.core.symmetry import (Symmetry, SymmetryError, space_group,
+from mykit.core.symmetry import (Symmetry, SymmetryError,
+                                 _check_valid_custom_ksym_dict,
+                                 _check_valid_spg_id,
+                                 _spglib_check_cell_and_coordSys, space_group,
                                  special_kpoints)
 
 NKSETS_COND = {
@@ -205,7 +208,7 @@ class test_spk_dict(ut.TestCase):
 
 class test_special_kpoints(ut.TestCase):
 
-    def test_initialize(self):
+    def test_direct_initialize(self):
         '''Test initialize directly or from Cell or Symmetry instance
         '''
         # check P1
@@ -235,11 +238,75 @@ class test_special_kpoints(ut.TestCase):
         self.assertTrue(np.array_equal(coords, \
             np.array([[0.0,0.0,0.0],[0.0,1.0,0.0]])))
     
-    def test_convert_kpaths_predef(self):
+    def test_kpath_facotry_methods(self):
         # Zincblende (spg 216)
-        zb = Cell.zincblende("Zn", "O", a=5.0)
-        spk = special_kpoints.get_kpaths_predef_from_cell(zb)
-        print(spk)
+        zb = Cell.zincblende("Zn", "O", a=5.0, primitive=True)
+        kp = special_kpoints.get_kpaths_predef_from_cell(zb)
+        kp = special_kpoints.get_kpath_from_cell("GM-L-X", zb)
+        symbols = kp["symbols"]
+        coords = kp["coordinates"]
+        self.assertListEqual(["GM", "L", "L", "X"], symbols)
+        self.assertTrue(np.array_equal(np.array(coords), \
+            np.array([[0.0,0.0,0.0],
+                      [0.5,0.5,0.5],
+                      [0.5,0.5,0.5],
+                      [0.5,0.0,0.5]])))
+
+    def test_magic(self):
+        spkpts = special_kpoints(199, (5.0, 5.0, 5.0), True)
+        self.assertListEqual([0.0,0.0,0.0], spkpts["GM"])
+        self.assertListEqual([0.0,0.0,0.5], spkpts["N"])
+        spkpts["P"] = [0.2,0.2,0.2]
+        self.assertDictEqual(spkpts._custom, {"P": [0.2,0.2,0.2]})
+
+    def test_init_from_symmetry(self):
+        sym = Symmetry(Cell.wurtzite("Zn", "O", a=6.0))
+        spk = special_kpoints.from_symmetry(sym)
+        self.assertEqual(spk.spgId, 186)
+
+    def test_init_from_cell(self):
+        aTiO2 = Cell.anatase("Ti", "O", primitive=True)
+        print(aTiO2)
+        spk = special_kpoints.from_cell(aTiO2)
+        self.assertEqual(spk.spgId, 141)
+
+
+class test_symmetry_utils(ut.TestCase):
+
+
+    def test_check_cell_and_coordSys(self):
+        self.assertRaisesRegex(SymmetryError, \
+            r"The input should be instance of Cell *", \
+            _spglib_check_cell_and_coordSys, 1)
+        cF = Cell.bravais_cF("C", a=5.0)
+        cF.coordSys = "C"
+        print(cF)
+        self.assertRaisesRegex(SymmetryError, \
+            r"The coordinate system should be direct. Cartisian found.", \
+            _spglib_check_cell_and_coordSys, cF)
+
+    def test_check_valid_spg_id(self):
+        self.assertRaisesRegex(SymmetryError, \
+            r"string received. id should be int.", \
+            _check_valid_spg_id, "1")
+        for badId in [1.0, (1,)]:
+            self.assertRaisesRegex(SymmetryError, \
+                r"id should be int.", \
+                _check_valid_spg_id, badId)
+        for badId in [-10, 235, 400]:
+            self.assertRaisesRegex(SymmetryError, \
+                r"Invalid space group id *", \
+                _check_valid_spg_id, badId)
+    
+    def test_check_valid_custom_ksym_dict(self):
+        self.assertDictEqual({}, _check_valid_custom_ksym_dict(None))
+        self.assertRaisesRegex(TypeError, \
+            r"custom_symbols must be dict, *", \
+            _check_valid_custom_ksym_dict, 1)
+        ksymDict = {"P": [0.2,0.2,0.2]}
+        self.assertDictEqual(ksymDict, _check_valid_custom_ksym_dict(ksymDict))
+        
+
 
 if __name__ == '__main__':
     ut.main()

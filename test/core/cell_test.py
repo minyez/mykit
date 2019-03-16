@@ -66,9 +66,11 @@ class simple_cubic_lattice(ut.TestCase):
         # direct2cart
         self._cell.coordSys = 'C'
         self.assertTupleEqual(tuple(self._cell[0]), (self._frac * self._a, 0.0, 0.0))
+        self.assertEqual("C", self._cell.coordSys)
         # cart2direct
         self._cell.coordSys = 'D'
         self.assertEqual(self._cell[0][0], self._frac)
+        self.assertEqual("D", self._cell.coordSys)
 
     def test_spglib_input(self):
         _ip = self._cell.get_spglib_input()

@@ -171,6 +171,8 @@ class Symmetry(prec):
             self._cell = _newCell
             if primitive:
                 self._isPrim = True
+            else:
+                self._isPrim = None
         return flag, _newCell
 
     @classmethod
@@ -261,7 +263,7 @@ class space_group:
             'P6422'   , 'P6322' , 'P6mm'  , 'P6cc'   , 'P63cm' , #181
             'P6_3mc'  , 'P-6m2' , 'P-6c2' , 'P-62m'  , 'P-62c' ,
             'P6mmm'   , 'P6mcc' , 'P63mcm', 'P63mmc' , 'P23'   , #191
-            'F23'     , 'I23'   , 'P213'  , 'I213'   , 'Pm-3'  ,
+            'F23'     , 'I23'   , 'P213'  , 'I2_13'  , 'Pm-3'  ,
             'Pn-3'    , 'Fm-3'  , 'Fd-3'  , 'Im-3'   , 'Pa-3'  , #201
             'Ia-3'    , 'P432'  , 'P4232' , 'F432'   , 'F4132' ,
             'I432'    , 'P4332' , 'P4132' , 'I4132'  , 'P-43m' , #211
@@ -491,7 +493,7 @@ class special_kpoints(prec):
         return None
     
     @classmethod
-    def from_symmetry(cls, sym):
+    def from_symmetry(cls, sym, custom_symbols=None):
         '''Create special kpoints instance from a Symmetry instance
 
         Note:
@@ -506,7 +508,22 @@ class special_kpoints(prec):
             assert isinstance(sym, Symmetry)
         except:
             raise SymmetryError("The input should be Symmetry instance.")
-        return cls(sym.spgId, sym.alen, sym.isPrimitive)
+        # when primitive cell is meeted, need to extract the 
+        # lattice constants of conventional or standard cell
+        isPrim = sym.isPrimitive
+        if isPrim is None:
+            raise SymmetryError("Fail to determine whether the cell is primitive. Check the cell")
+        elif isPrim:
+            flag, stdCell = sym.get_standard()
+            # I think the exception is redudant, since if the cell cannot
+            # be standardized, isPrim flag is None and should be captured
+            # above. But anyway it is put here for safety.
+            if not flag:
+                raise SymmetryError("Fail to standardize the cell to obtain lattice constants")
+            alen = stdCell.alen
+        else:
+            alen = sym.alen
+        return cls(sym.spgId, alen, isPrim, custom_symbols=custom_symbols)
 
     @classmethod
     def from_cell(cls, cell, custom_symbols=None):
@@ -521,7 +538,7 @@ class special_kpoints(prec):
         '''
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
-        return cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
+        return cls.from_symmetry(sym, custom_symbols=custom_symbols)
 
     @classmethod
     def get_kpath_from_cell(cls, pathStr, cell, custom_symbols=None):
@@ -562,7 +579,7 @@ def _spglib_check_cell_and_coordSys(cellIn):
     try:
         assert cellIn.coordSys == "D"
     except AssertionError:
-        raise SymmetryError("The coordiante system should be direct. Cartisian found.")
+        raise SymmetryError("The coordinate system should be direct. Cartisian found.")
 
 
 def _check_valid_spg_id(id):
@@ -571,7 +588,7 @@ def _check_valid_spg_id(id):
     if isinstance(id, str):
         raise SymmetryError("string received. id should be int.")
     if not isinstance(id, int):
-        raise SymmetryError("id should be int")
+        raise SymmetryError("id should be int.")
     try:
         assert id in range(1, 231)
     except AssertionError:

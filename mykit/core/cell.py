@@ -414,17 +414,16 @@ class Cell(prec, verbose):
     @unit.setter
     def unit(self, u):
         _u = u.lower()
-        if _u == self.__unit:
-            return
-        _convDict = {"ang": au2ang, "au": ang2au}
-        _conv = _convDict.get(_u)
-        if _conv is not None:
-            if self.__coordSys == "C":
-                self.__pos = self.__pos * _conv
-            self.__latt = self.__latt * _conv
-            self.__unit = _u
-        else:
-            raise self._error("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
+        if _u != self.__unit:
+            _convDict = {"ang": au2ang, "au": ang2au}
+            _conv = _convDict.get(_u)
+            if _conv is not None:
+                if self.__coordSys == "C":
+                    self.__pos = self.__pos * _conv
+                self.__latt = self.__latt * _conv
+                self.__unit = _u
+            else:
+                raise self._error("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
 
     @property
     def coordSys(self):
@@ -432,12 +431,14 @@ class Cell(prec, verbose):
     @coordSys.setter
     def coordSys(self, s):
         _s = s.upper()
-        _convDict = {"C": self.__latt, "D": np.linalg.inv(self.__latt)}
-        _conv = _convDict.get(_s)
-        if _conv is not None:
-            self.__pos = np.matmul(self.__pos, _conv)
-        else:
-            raise self._error("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
+        if _s != self.__coordSys:
+            _convDict = {"C": self.__latt, "D": np.linalg.inv(self.__latt)}
+            _conv = _convDict.get(_s)
+            if _conv is not None:
+                self.__pos = np.matmul(self.__pos, _conv)
+                self.__coordSys = _s
+            else:
+                raise self._error("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
 
     @property
     def atomTypes(self):
