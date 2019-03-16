@@ -13,13 +13,4 @@ class prec:
     '''Metaclass to define the precision of numerical calculation and threshold
     '''
     _dtype = 'float'+str(npPrec).strip()
-    # _order = 'C'
     _symprec = 1.0E-5
-
-    # def __init__(self, dtype=None, order=None, symprec=None):
-    #     if dtype:
-    #         self._dtype = dtype
-    #     if order:
-    #         self._order = order
-    #     if symprec:
-    #         self._symprec = symprec

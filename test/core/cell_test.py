@@ -181,14 +181,14 @@ class cell_select_dynamics(ut.TestCase):
     '''Test the functionality of selective dynamics
     '''
     def test_fix_all(self):
-        _pc = Cell.bravais_cP("C")
-        self.assertFalse(_pc.useSelDyn)
-        _pc = Cell.bravais_cP("C", allRelax=False)
-        self.assertTrue(_pc.useSelDyn)
-        self.assertListEqual([False,]*3, _pc.sdFlags(0))
-        _pc = Cell.bravais_cI("C", allRelax=False)
-        self.assertTrue(_pc.useSelDyn)
-        self.assertListEqual([[False,]*3,]*2, _pc.sdFlags())
+        _c = Cell.bravais_cP("C")
+        self.assertFalse(_c.useSelDyn)
+        _c = Cell.bravais_cP("C", allRelax=False)
+        self.assertTrue(_c.useSelDyn)
+        self.assertListEqual([False,]*3, _c.sdFlags(0))
+        _c = Cell.bravais_cI("C", allRelax=False, primitive=False)
+        self.assertTrue(_c.useSelDyn)
+        self.assertListEqual([[False,]*3,]*2, _c.sdFlags())
     
     def test_fix_some(self):
         _pc = Cell.bravais_cF("C", selectDyn={1:[False, True, True]})
@@ -260,15 +260,15 @@ class cell_sort(ut.TestCase):
                         [0.25, 0.75, 0.75],  #C
                         [0.75, 0.25, 0.75],  #C
                         [0.75, 0.75, 0.25]]  #C
-        _cell = Cell(_latt, _atoms, _pos, \
+        SiC = Cell(_latt, _atoms, _pos, \
             selectDyn={2:[False, False, False]})
         # _latt._sanitize_atoms()
         self.assertListEqual(list(sorted(_atoms, reverse=True)), \
-            _cell.atoms)
-        self.assertDictEqual({0: 'Si', 1: 'C'}, _cell.typeMapping)
-        self.assertTrue(np.array_equal(_cell.pos, \
-            np.array(_posSanitied, dtype=_cell._dtype)))
-        self.assertListEqual([False, False, False], _cell.sdFlags(1))
+            SiC.atoms)
+        self.assertDictEqual({0: 'Si', 1: 'C'}, SiC.typeMapping)
+        self.assertTrue(np.array_equal(SiC.pos, \
+            np.array(_posSanitied, dtype=SiC._dtype)))
+        self.assertListEqual([False, False, False], SiC.sdFlags(1))
 
     def test_sort_pos_sic(self):
         '''Test sorting atoms and their positions in SiC
@@ -287,21 +287,75 @@ class cell_sort(ut.TestCase):
                 [0.75, 0.75, 0.25]]  #C
         _posSorted = [0.5, 0.5, 0.0, 0.0, 0.75, 0.75, 0.25, 0.25]
         _posSortedRev = [0.0, 0.0, 0.5, 0.5, 0.25, 0.25, 0.75, 0.75]
-        _cell = Cell(_latt, _atoms, _pos)
+        SiC = Cell(_latt, _atoms, _pos)
         # no need to sanitize atoms
-        self.assertListEqual(_atoms, _cell.atoms)
-        self.assertDictEqual({0: 'Si', 1: 'C'}, _cell.typeMapping)
+        self.assertListEqual(_atoms, SiC.atoms)
+        self.assertDictEqual({0: 'Si', 1: 'C'}, SiC.typeMapping)
         for _axis in range(3):
-            _cell.sort_pos(axis=_axis+1)
-            self.assertTrue(np.array_equal(np.array(_posSorted, dtype=_cell._dtype), \
-                _cell.pos[:,_axis]))
-            _cell.sort_pos(axis=_axis+1, reverse=True)
-            self.assertTrue(np.array_equal(np.array(_posSortedRev, dtype=_cell._dtype), \
-                _cell.pos[:,_axis]))
+            SiC.sort_pos(axis=_axis+1)
+            self.assertTrue(np.array_equal(np.array(_posSorted, dtype=SiC._dtype), \
+                SiC.pos[:,_axis]))
+            SiC.sort_pos(axis=_axis+1, reverse=True)
+            self.assertTrue(np.array_equal(np.array(_posSortedRev, dtype=SiC._dtype), \
+                SiC.pos[:,_axis]))
+
+
+class test_cell_manipulation(ut.TestCase):
+    '''Test manipulation methods for lattice and atoms
+    '''
+
+    def test_add_atom_on_graphene(self):
+        '''Test adding atoms in a graphene cell
+        '''
+        a = 5.2
+        _latt = [[a/2, 0.0, 0.0],
+                 [-a/2, a/2*np.sqrt(3.0), 0.0],
+                 [0.0, 0.0, 15.0]]
+        _atoms = ["C", "C",]
+        _pos = [[0.0, 0.0, 0.5],     
+                [1.0/3,2.0/3,0.5],]
+        gp = Cell(_latt, _atoms, _pos)
+        self.assertRaisesRegex(CellError, \
+            r"Invalid coordinate: *", \
+            gp.add_atom, "H", [0.2, 0.3])
+        self.assertRaisesRegex(CellError, \
+            "atom should be string, received <class 'int'>", \
+            gp.add_atom, 1, [0.2,0.3,0.4])
+        gp.fix_all()
+        gp.add_atom("H", [0.0,0.0,0.6], sdFlag=[False, False, True])
+        self.assertEqual(gp.natoms, 3)
+        self.assertListEqual(gp.atoms, ['C','C','H'])
+        self.assertDictEqual(gp.typeMapping, {0: 'C', 1: 'H'})
+        self.assertListEqual(gp.sdFlags(2), [False, False, True])
+
+    def test_atom_arrange_after_add_atom(self):
+        '''Test if the atoms are correctly rearranged
+        after adding new atom
+        '''
+        a = 2.0
+        _latt = [[a, 0.0, 0.0],
+                 [0.0, a, 0.0],
+                 [0.0, 0.0, a]]
+        _atoms = ["Na", "Cl",]
+        _pos = [[0.0, 0.0, 0.0],     
+                [0.5, 0.5, 0.5],]
+        brokenNaCl = Cell(_latt, _atoms, _pos)
+        brokenNaCl.add_atom('Na', [0.0,0.5,0.5])
+        self.assertListEqual(brokenNaCl.atoms, ['Na','Na','Cl'])
+        brokenNaCl.add_atom('Na', [0.5,0.0,0.5])
+        self.assertListEqual(brokenNaCl.atoms, ['Na','Na','Na','Cl'])
+        brokenNaCl.add_atom('Cl', [0.5,0.0,0.0])
+        self.assertListEqual(brokenNaCl.atoms, ['Na','Na','Na','Cl','Cl'])
+        self.assertTrue(np.array_equal(brokenNaCl.pos, \
+            np.array([[0.0,0.0,0.0],
+                      [0.0,0.5,0.5],
+                      [0.5,0.0,0.5],
+                      [0.5,0.5,0.5],
+                      [0.5,0.0,0.0],], dtype=brokenNaCl._dtype)))
 
 
 class test_cell_utils(ut.TestCase):
-    '''Test the utils for ``Cell`` use
+    '''Test the utility functions for ``Cell`` use
     '''
     
     def test_periodic_duplates_in_cell(self):

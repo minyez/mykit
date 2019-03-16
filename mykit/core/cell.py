@@ -51,8 +51,6 @@ class Cell(prec, verbose):
 
     def __init__(self, latt, atoms, pos, **kwargs):
 
-        # if kwargs:
-            # super(lattice, self).__init__(**kwargs)
         self.comment= 'Default Cell class'
         self.__allRelax = True
         self.__selectDyn = {}
@@ -87,22 +85,9 @@ class Cell(prec, verbose):
             self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
 
     def __repr__(self):
-        # return '{}'.format({"comment": self.comment, "latt": self.__latt, "atoms": self.__atoms, \
-        #     "pos": self.__pos, "unit": self.__unit, "coordSys": self.__coordSys, \
-        #     "allRelax": self.__allRelax, "selectDyn": self.__selectDyn})
         return self.__str__()
 
     def __parse_cellkw(self, **kwargs):
-        # accept_kw = ['unit', 'coordSys', 'allRelax', 'selectDyn']
-        # for kw, v in kwargs.items():
-        #     if kw in accept_kw:
-        #         if kw == 'unit':
-        #             self.__setattr__("__"+kw, v.lower())
-        #             continue
-        #         if kw == 'coordSys':
-        #             self.__setattr__("__"+kw, v.upper())
-        #             continue
-        #         self.__setattr__("__"+kw, v)
         if 'unit' in kwargs:
             self.__unit = kwargs['unit'].lower()
         if 'coordSys' in kwargs:
@@ -300,6 +285,29 @@ class Cell(prec, verbose):
         self.__latt = self.__latt * scale
         if self.__coordSys == "C":
             self.__pos = self.__pos * scale
+
+    def add_atom(self, atom, coord, sdFlag=None):
+        '''Add an atom with coordinate and selective dynamic flags
+
+        Args:
+            atom (str): the chemical symbol of the atom to add
+            coord (array-like): the coordinate of atom in ``Cell`` coordinate system
+            sdFlag (list of 3 bools): 
+        '''
+        try:
+            assert isinstance(atom, str)
+        except:
+            raise self._error("atom should be string, received {}".format(type(atom)))
+        try:
+            newPos = np.vstack([self.__pos, coord])
+        except ValueError:
+            raise self._error("Invalid coordinate: {}".format(coord))
+        if sdFlag != None:
+            self.__set_sdFlags({self.natoms: sdFlag})
+        self.__pos = newPos
+        self.__atoms.append(atom)
+        self.__assure_atoms_in_fist_lattice()
+        self.__sanitize_atoms()
 
     # TODO move atom
     def __move(self, ia):
