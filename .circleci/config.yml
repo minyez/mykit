@@ -16,7 +16,7 @@ jobs:
       - run:
           command: |
             pip install -r requirements.txt
-            pip install pytest
+            pip install pytest pytest-cov coverage
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "requirements.txt" }}
           paths:
@@ -25,6 +25,6 @@ jobs:
       - run:
           command: |
             python setup.py install
-            pytest > pytest-results
+            pytest --cov=./ | tee pytest-results
       - store_test_results:
           path: pytest-results

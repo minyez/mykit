@@ -1,0 +1,5 @@
+[run]
+source = mykit
+
+[report]
+ignore_errors = True
