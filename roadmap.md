@@ -25,6 +25,7 @@ They lie the basis for input conversion
     - [x] anatase
     - [x] diamond
     - [x] perovskite
+  - [x] add atoms 'on the fly'
 
 ### Input controllers
 
