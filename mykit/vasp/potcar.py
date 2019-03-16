@@ -26,7 +26,6 @@ class potcar_search(verbose):
         assert isinstance(usegw, bool)
         config = global_config()
         _homePawPbe, _homePawLda = config.get("vaspPawPbe", "vaspPawLda")
-        del config
         self._homePaw = {"PBE": _homePawPbe, "LDA": _homePawLda}
         try:
             assert len(names) > 0
@@ -35,6 +34,8 @@ class potcar_search(verbose):
         
         self._usegw = usegw
         self._names = names
+        self._home = None
+        self._cache = None
 
     @property
     def names(self):
@@ -53,6 +54,9 @@ class potcar_search(verbose):
                     assert isinstance(v, str)
         except AssertionError:
             raise PotcarError("invalid name, should be (list/tuple of) string : {}".format(value))
+        # when names change, clean the cache
+        if set(value) != set(self._names):
+            self._cache = None
         if isinstance(value, str):
             self._names = (value,)
         else:
@@ -92,23 +96,28 @@ class potcar_search(verbose):
             dict, items are name-dict pair, with each item in dict is POTCAR:(ENMIN, ENMAX)
         '''
         _home = self._get_xc_home(xc)
-        _dict = {}
-        # avoid searching duplicate when searching
-        # ! this only applies to `search` method, not export, 
-        # ! as there are cases that the same atom type appears twice or more
-        names = set(self._names)
-        for name in names:
-            _d = {}
-            for i in os.listdir(_home):
-                if fnmatch(i, name) or fnmatch(i, name+"_*"):
-                    if not i.endswith("_GW") and self._usegw:
+        if self._home != _home or self._cache is None:
+            # avoid searching duplicate when searching
+            # ! only applies to `search` method, not export, 
+            # ! as there are cases that the same atom type appears twice or more
+            names = set(self._names)
+            _dict = {}
+            for name in names:
+                _d = {}
+                for i in os.listdir(_home):
+                    if not (i.endswith("_GW") or i.endswith("_GW_new")) and self._usegw:
                         continue
-                    _path = os.path.join(_home, i, 'POTCAR')
-                    enmax = get_enmax(_path)
-                    enmin = get_enmin(_path)
-                    _d.update({i: (enmin, enmax)})
-            _dict.update({name: _d})
-        return _home, _dict
+                    # if fnmatch(i, name) or fnmatch(i, name+"_*"):
+                    if fnmatch(i, name) or fnmatch(i, name+"[0-9_]*"):
+                        _path = os.path.join(_home, i, 'POTCAR')
+                        enmin, enmax = Potcar.get_enmin_enmax(_path)
+                        # enmax = get_enmax(_path)
+                        # enmin = get_enmin(_path)
+                        _d[i] = (enmin, enmax)
+                _dict[name] = _d
+            self._home = _home
+            self._cache = _dict
+        return self._home, self._cache
         
     def export(self, xc="PBE", pathPotcar='POTCAR'):
         '''Concentate POTCARs of element names to ``pathPotcar``
@@ -136,21 +145,31 @@ class potcar_search(verbose):
         return _home
 
 
-def get_enmax(pathPotcar):
-    '''Get ENMAX of a POTCAR
+class Potcar:
+    '''Class for a POTCAR
     '''
-    try:
-        v = float(sp.check_output(['grep', 'ENMAX', pathPotcar]).split()[2][:-1])
-    except ValueError:
-        raise PotcarError("Invalid POTCAR path: {}".format(pathPotcar))
-    return v
 
+    @staticmethod
+    def get_enmin_enmax(pathPotcar):
+        '''Get ENMIN and ENMAX of a POTCAR file
 
-def get_enmin(pathPotcar):
-    '''Get ENMIN of a POTCAR
-    '''
-    try:
-        v = float(sp.check_output(['grep', 'ENMIN', pathPotcar]).split()[5])
-    except ValueError:
-        raise PotcarError("Invalid POTCAR path: {}".format(pathPotcar))
-    return v
+        It will locate the line 15 of POTCAR, and decode it to get ENMAX and ENMIN
+
+        Args:
+            pathPotcar (str): the path of POTCAR file
+
+        Returns:
+            two floats, enmin and enmax
+        '''
+        try:
+            with open(pathPotcar, 'r') as hpot:
+                for _i in range(14):
+                    hpot.readline()
+                words = hpot.readline().split()
+                enmax = float(words[2][:-1])
+                enmin = float(words[5])
+        except FileNotFoundError:
+            raise PotcarError("POTCAR not found: {}".format(pathPotcar))
+        except (IndexError, ValueError):
+            raise PotcarError("Bad POTCAR for ENMAX and ENMIN: {}".format(pathPotcar))
+        return enmin, enmax

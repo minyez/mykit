@@ -6,6 +6,7 @@ from mykit.core.config import global_config
 
 config = global_config()
 npPrec = config.get('numpyPrec')
+del config, global_config
 
 #pylint: disable=too-few-public-methods
 class prec:
