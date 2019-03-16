@@ -25,7 +25,7 @@ They lie the basis for input conversion
     - [x] anatase
     - [x] diamond
     - [x] perovskite
-  - [x] add atoms 'on the fly'
+  - [x] allow adding atoms 'on the fly'
 
 ### Input controllers
 
@@ -90,4 +90,4 @@ and help map name and value of parameter tags between different simulation progr
 - [x] version string controled by [versioneer](https://github.com/warner/python-versioneer)
 - [x] Travis CI
 - [x] CircleCI
-- [ ] Code coverage
+- [x] Code coverage

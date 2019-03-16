@@ -1,6 +1,11 @@
 version: 2
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-3.7.1
 jobs:
-  build:
+  test-3.7.1: &test-template
     working_directory: ~/mykit
     docker:
       - image: circleci/python:3.7.1 # every job must define an image for the docker executor and subsequent jobs may define a different image.
@@ -28,3 +33,11 @@ jobs:
             pytest | tee pytest-results
       - store_test_results:
           path: pytest-results
+  # test-3.6.3:
+  #   <<: *test-template
+  #   docker:
+  #     - image: circleci/python:3.6.3
+  # test-3.5.6:
+  #   <<: *test-template
+  #   docker:
+  #     - image: circleci/python:3.5.6

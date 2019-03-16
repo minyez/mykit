@@ -1,5 +1,15 @@
 [run]
 source = mykit
+omit = 
+    versioneer.py
+    setup.py
 
 [report]
 ignore_errors = True
+exclude_lines =
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
+
+    # Don't complain if non-runnable code isn't run:
+    if __name__ == .__main__.:
