@@ -265,9 +265,12 @@ class test_special_kpoints(ut.TestCase):
         self.assertEqual(spk.spgId, 186)
 
     def test_init_from_cell(self):
-        aTiO2 = Cell.anatase("Ti", "O", primitive=True)
-        print(aTiO2)
-        spk = special_kpoints.from_cell(aTiO2)
+        aTiO2Prim = Cell.anatase("Ti", "O", primitive=True)
+        print(aTiO2Prim)
+        spk = special_kpoints.from_cell(aTiO2Prim)
+        self.assertEqual(spk.spgId, 141)
+        aTiO2Conv = Cell.anatase("Ti", "O", primitive=False)
+        spk = special_kpoints.from_cell(aTiO2Conv)
         self.assertEqual(spk.spgId, 141)
 
 

@@ -4,20 +4,19 @@
 import json
 import os
 import re
+import tempfile
 import unittest as ut
 
 from mykit.vasp.incar import (IncarError, _get_para_tags_from_nproc,
                               _get_xc_tags_from_xcname, incar)
 
 
-class test_direct_set(ut.TestCase):
+class test_tag_manipulation(ut.TestCase):
 
-    def test_initialize(self):
+    def test_empty_init(self):
         _ic = incar()
         _ic.parse_tags(encutPw=100)
         _ic.parse_tags(ENCUT=100)
-
-class test_tag_manipulation(ut.TestCase):
 
     def test_parse_tag_and_tag_vals(self):
         _ic = incar(encutPw=100, ENCUTGW=50, gga="PE", ISTART=1)
@@ -50,7 +49,6 @@ class test_tag_manipulation(ut.TestCase):
         _ic.parse_tags(IBRION=3, ionAlgo=4)
         self.assertListEqual([3], _ic.tag_vals("IBRION"))
 
-
     def test_pop_and_delete_tags(self):
         _ic = incar(ENCUT=100, ENCUTGW=50, gga="PE", ISTART=1, AEXX=0.1, EDIFF=1.0E-6)
         ecut = _ic.pop_tags("ENCUT")[0]
@@ -76,7 +74,7 @@ class test_tag_manipulation(ut.TestCase):
         self.assertRaises(IncarError, _ic.__setitem__, "gga", "PE")
 
 
-class test_incar_factory(ut.TestCase):
+class test_incar_io(ut.TestCase):
 
     def test_read_from_file(self):
         _incar = None
@@ -103,6 +101,25 @@ class test_incar_factory(ut.TestCase):
                     _path = os.path.join(__incarDir, _f)
                     self.assertRaises(IncarError, incar.read_from_file, _path)
         print("{} good INCARs readed ({} verified by JSON file). {} bad INCARs raised.".format(_countGood, _countVerified, _countBad))
+
+    def test_print_write(self):
+        _ic = incar(comment="Test", ENCUT=200.0)
+        self.assertEqual("Test\nENCUT = 200.0", _ic.__str__())
+        tf = tempfile.NamedTemporaryFile()
+        _ic.write(pathIncar=tf.name)
+        tf.close()
+
+
+class test_incar_factory(ut.TestCase):
+
+    def test_minimal_incar(self):
+        self.assertRaisesRegex(IncarError, \
+            r"Task name not supported: unknown-task. Should be *", \
+            incar.minimal_incar, "unknown-task")
+        incar.minimal_incar("scf")
+        incar.minimal_incar("opt")
+        incar.minimal_incar("dos")
+        incar.minimal_incar("band")
 
 
 class test_tag_functions(ut.TestCase):

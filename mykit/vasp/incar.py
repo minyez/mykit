@@ -69,8 +69,27 @@ class incar(*_incar_controllers):
                 _ret.append(tv)
         return dict(_ret)
 
-    def __str__(self):
+    def __repr__(self):
         return "{}".format(self.tags)
+
+    def __str__(self):
+        # __all = self.tag_vals(*self.tagAll)
+        _ret = []
+        if self.comment != '':
+            _ret.append(self.comment)
+        for k, v in self.tags.items():
+            if v != None:
+                _str = k + " = "
+                if isinstance(v, (list, tuple)):
+                    _str += ' '.join([str(x) for x in v])
+                # elif isinstance(v, dict):
+                #     print(k, "=", **v, file=f)
+                elif isinstance(v, bool):
+                    _str += {True:".TRUE.", False:".FALSE."}[v]
+                else:
+                    _str += str(v)
+                _ret.append(_str)
+        return '\n'.join(_ret)
 
     def __getitem__(self, tag):
         try:
@@ -85,9 +104,6 @@ class incar(*_incar_controllers):
         except AssertionError:
             raise IncarError("Invalid tag for INCAR to parse: {}".format(tag))
         self.parse_tags(**{tag: val})
-
-    def __repr__(self):
-        return self.__str__()
 
     def parse_tags(self, **keyval):
         # print(keyval)
@@ -182,33 +198,6 @@ class incar(*_incar_controllers):
                 _filter1.append(_k)
         return _filter1
 
-    def __print(self, f):
-        '''Print the incar tag-value dict to file-type f in the INCAR format
-
-        Args:
-            f (file-type)
-        '''
-        # __all = self.tag_vals(*self.tagAll)
-        if self.comment != '':
-            print(self.comment, file=f)
-        # for _i, _v in enumerate(__all):
-        for k, v in self.tags.items():
-            if v != None:
-                if isinstance(v, (list, tuple)):
-                    print(k, "=", *v, file=f)
-                elif isinstance(v, dict):
-                    print(k, "=", **v, file=f)
-                elif isinstance(v, bool):
-                    print(k, "=", {True:".TRUE.", False:".FALSE."}[v], file=f)
-                else:
-                    print(k, "=", v, file=f)
-
-    def print(self):
-        '''Preview the INCAR output
-        '''
-        from sys import stdout
-        self.__print(stdout)
-
     def write(self, pathIncar="INCAR", backup=False, suffix="_bak"):
         '''Write to INCAR file at pathIncar. 
 
@@ -227,7 +216,7 @@ class incar(*_incar_controllers):
             _bakname = _name + suffix.strip()
             os.rename(_name, _bakname)
         with open(_name, 'w') as f:
-            self.__print(f)
+            print(self.__str__(), file=f)
             
     @classmethod
     def analyze_incar_line(cls, incarLine, lineNum=-1, filePath=None):

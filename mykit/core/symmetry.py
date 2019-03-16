@@ -12,10 +12,6 @@ from mykit.core.kmesh import _check_valid_ksym_coord_pair, kpath_decoder
 from mykit.core.metadata._spk import _special_kpoints
 from mykit.core.numeric import prec
 
-# from functools import partial
-
-
-
 
 class SymmetryError(Exception):
     pass
