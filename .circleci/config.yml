@@ -25,7 +25,10 @@ jobs:
       - run:
           command: |
             python setup.py install
-            pytest --cov=./ | tee pytest-results
+            # pytest --cov=./ | tee pytest-results
+            pytest | tee pytest-results
+            for py in test/core/*.py; do coverage run python $py; done
+            for py in test/vasp/*.py; do coverage run python $py; done
             codecov
       - store_test_results:
           path: pytest-results
