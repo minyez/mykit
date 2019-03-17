@@ -120,6 +120,7 @@ class test_incar_factory(ut.TestCase):
         incar.minimal_incar("opt")
         incar.minimal_incar("dos")
         incar.minimal_incar("band")
+        incar.minimal_incar("diag")
 
 
 class test_tag_functions(ut.TestCase):

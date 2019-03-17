@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding=utf-8
 
 # ====================================================
@@ -10,182 +9,14 @@
 # ====================================================
 
 from __future__ import print_function
-import sys
+
 import os
+import sys
 from xml.etree import ElementTree as etree
+
 import numpy as np
-from pc_utils import common_print_warn, common_ss_conv, \
-                     common_print_verbose_bool
 
-# ====================================================
-
-class vasp_incar:
-
-    def __init__(self, InFile=None, \
-                 encut=None, xc=None, lreal='.FALSE.', \
-                 ispin=1, istart=0, ediff=1E-7, \
-                 verbose=True):
-
-        self.__init_tags_dict() 
-        self.readinfile = InFile
-        self.verbose = verbose
-        self.header = None
-        self.xc = xc
-
-        self.incar_tags_dict = {}
-        if InFile is not None and os.path.exists(InFile):
-            self.__read_existing_tags(InFile)
-        self.mod_xc_tags(xc)
-        self.add_single_tag('ISTART', istart)
-        self.add_single_tag('ISPIN', ispin)
-        self.add_single_tag('LREAL', lreal)
-        self.add_single_tag('ENCUT', encut)
-
-    def __print(self, pstr):
-        common_print_verbose_bool(pstr, self.verbose)
-
-    def __getitem__(self, key):
-        return self.incar_tags_dict[key]
-
-
-    def __init_tags_dict(self):
-        self.bool_tags  = ['LCHARG','LWAVE','LDIPOL','LVHAR','LVTOT','LHFCALC','LASPH','LMIXTAU']
-        self.int_tags   = ['NGX','NGY','NGZ','NGXF','NGYF','NGZF','NBANDS','ISTART',\
-                           'ICHARG','ISPIN','NWRITE','NELM','NSW','IBRION','ISIF','ISYM',\
-                           'IALGO','ISMEAR','NKRED','NKREDX','NKREDY','NKREDZ','ODDONLY',\
-                           'EVENONLY','LMAXTAU','IDIPOL','NELMIN','NPAR']
-        self.float_tags = ['AEXX','AGGAX','AGGAC','ALDAC','ENCUT','ENCUTGW','EDIFF',\
-                           'EDIFFG','POTIM','NELECT','SMASS','AMIX','BMIX','SIGMA',\
-                           'HFSCREEN','TIME']
-        self.str_tags   = ['PREC','PRECFOCK','ALGO','LREAL','GGA','METAGGA']
-        self.long_tags  = ['MAGMOM','DIPOL']
-
-        self.all_tags = self.bool_tags + self.int_tags + \
-                        self.float_tags + self.str_tags + self.long_tags
-
-        self.tags_conv_dict = {}
-        for tag in self.bool_tags: 
-            self.tags_conv_dict.update({tag: bool})
-        for tag in self.int_tags: 
-            self.tags_conv_dict.update({tag: int})
-        for tag in self.float_tags: 
-            self.tags_conv_dict.update({tag: float})
-        for tag in self.long_tags:
-            self.tags_conv_dict.update({tag: str})
-        for tag in self.str_tags:
-            self.tags_conv_dict.update({tag: str})
-
-        self.tag_PBE0 = {'GGA':'PE', 'ALGO':'ALL', 'LHFCALC':'.TRUE.', \
-                    'TIME':0.4, 'PRECFOCK':'NORMAL'}
-        self.tag_HSE06 = self.tag_PBE0.copy()
-        self.tag_HSE06.update({'HFSCREEN':0.2})
-        self.tag_HF = self.tag_PBE0.copy() 
-        self.tag_HF.update({'AEXX':1.0})
-
-        self.xc_dict = {
-                    'LDA'    : {'GGA'     : 'CA'} ,
-                    'PBE'    : {'GGA'     : 'PE'} ,
-                    'PBESOL' : {'GGA'     : 'PS'} ,
-                    'RPBE'   : {'GGA'     : 'RP'} ,
-                    'SCAN'   : {'METAGGA' : 'SCAN', 'LASPH' : '.TRUE.'} ,
-                    'PBE0'   : self.tag_PBE0  ,
-                    'HSE06'  : self.tag_HSE06 ,
-                    'HF'     : self.tag_HF
-                  }
-
-
-    def __read_existing_tags(self, InFile):
-
-        with open(InFile, 'rw') as h_InFile:
-            self.inlines = h_InFile.readlines()
-
-        # check if the INCAR file is empty
-        if len(self.inlines) == 0:
-            return
-        else:
-            self.__print(" Read input tags from %s" % InFile)
-
-        # if = is not found in the first line, set it as the INCAR header
-        # or it is just a tag string
-        if '=' not in self.inlines[0]:
-            self.header = self.inlines[0].strip()
-            self.inlines = self.inlines[1:]
-        
-        for iline in self.inlines:
-            line_striped = iline.strip()
-            # skip for comment and empty line
-            if line_striped.startswith("#") or len(line_striped) == 0:
-                continue
-
-            # first separate with colon for multiple tags
-            tag_sep_list = line_striped.split(';')
-            
-            for tag in tag_sep_list:
-                tag_words = [x.strip() for x in tag.split('=')]
-                # check if comment is found in the value part.
-                # if so, delete the comment
-                if '#' in tag_words[1]:
-                    tag_words[1] = tag_words[1].split('#')[0].strip()
-                if tag_words[0] in self.tags_conv_dict:
-                    tag_words[1] = self.tags_conv_dict[tag_words[0]](tag_words[1])
-                self.incar_tags_dict.update({tag_words[0]:tag_words[1]})
-
-
-    def add_single_tag(self, tag, value):
-        if value in [None,'']:
-            return
-        self.incar_tags_dict.update({tag.upper(): value})
-
-
-    def write_incar_file(self, InCARout='INCAR', replace=True):
-        if os.path.exists(InCARout):
-            # backup the old INCAR
-            if replace:
-                os.rename(InCARout, InCARout+'.old')
-        with open(InCARout,'w') as h_incaro:
-            if self.header is not None:
-                h_incaro.write(self.header+'\n')
-            # print the key in a sorted order
-            for tag in sorted(self.incar_tags_dict.keys()):
-                h_incaro.write(' %-8s = %s\n' % (tag, str(self.incar_tags_dict[tag])))
-
-
-    def mod_xc_tags(self, xc):
-        '''
-        Modify XC related tags to the tag dictionary.
-        '''
-        if xc is None:
-            pass
-        else:
-            if xc.upper() == self.xc:
-                self.__print(" XC is already %s " % self.xc)
-            else:
-                if self.xc is not None:
-                    for tag in self.xc_dict[self.xc].keys():
-                        self.incar_tags_dict.pop(tag)
-                
-                xc_origin = self.xc
-                self.xc = xc.upper()
-
-                self.__print(" XC set to %6s, from %6s" % (self.xc, xc_origin))
-
-                for tag in self.xc_dict[self.xc].keys():
-                    self.incar_tags_dict.update({tag: self.xc_dict[self.xc][tag]})
-
-
-        return
-
-# ====================================================
-
-class vasp_read_wavecar:
-
-    def __init__(self, WavFile='WAVECAR', verbose=True):
-        
-        self.filename = WavFile
-        self.verbose = verbose
-        with open(WavFile,'rb') as h_WavFile:
-            #self.wavlines = h_WavFile.readlines()
-            pass
+from mykit.core.utils import common_ss_conv
 
 # ====================================================
 
@@ -198,17 +29,17 @@ class vasp_read_outcar:
         self.occ = None
         self.verbose = verbose
 
-        self.__print(" Reading OUTCAR: %s" % OutFile)
+        # self.__print(" Reading OUTCAR: %s" % OutFile)
         with open(OutFile,'r') as f:
             self.outlines = f.readlines()
         self.__divide_ion_iteration()
         self.__init_calc_params()
         self.__check_finished()
-        if not self.flag_finish:
-            common_print_warn("Task has not finished.", func_level=0, verbose=self.verbose)
+        # if not self.flag_finish:
+        #     common_print_warn("Task has not finished.", func_level=0, verbose=self.verbose)
 
-    def __print(self, pstr):
-        common_print_verbose_bool(pstr, self.verbose)
+    # def __print(self, pstr):
+    #     common_print_verbose_bool(pstr, self.verbose)
 
     def __init_calc_params(self):
         '''
@@ -523,364 +354,173 @@ class vasp_read_outcar:
 
 # ====================================================
 
-class vasp_read_poscar:
-    def __init__(self,PosFile='POSCAR', verbose=True):
-
-        print(" Reading POSCAR: %s" % PosFile)
-        with open(PosFile,'r') as f:
-            self.poslines = f.readlines()
-        self.filename = PosFile
-        self.verbose = verbose
-        self.__comment_info()
-        self.__latt_info()
-        self.__atom_info()
-        self.__coor_info()
-        print(" POSCAR read.")
-
-    def __print(self, pstr):
-        common_print_verbose_bool(pstr, self.verbose)
-
-    def __save_to_lines(self):
-        '''
-        save poscar data to poscar lines
-        '''
-        # reload all objects to poslines
-        self.action_change_scale(self.scale)
-        self.write_coortype_to_lines()
-        self.write_innerpos_to_lines()
-        self.write_lattice_to_lines()
+# class vasp_read_poscar:
+#     def check_mcenter(self):
+#         '''
+#         give the coordinate of the geometric center
+#         '''
+#         pass
 
 
-    def __comment_info(self):
-        self.comment = self.poslines[0]   # the comment line
+#     def action_centering(self,zdirt1=3,zdirt2=None,zdirt3=None):
+#         self.__print(" In action_centering:")
+#         dirt_list = [zdirt1]
+#         if (zdirt2 is not None) and (zdirt2 not in dirt_list):
+#             dirt_list.append(zdirt2)
+#         if (zdirt3 is not None) and (zdirt3 not in dirt_list):
+#             dirt_list.append(zdirt2)
+#         if self.coor_type == 'cart':
+#             self.__print(" Cartisian coordinate system detected. Centering is not supported yet. Pass")
+#             return
 
+#         for zdirt in dirt_list:
+#             iz = zdirt - 1
+#             if self.check_vacuum_pos(zdirt):
+#                 self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
+#                 continue
+#             else:
+#                 surf_atom = [self.check_extreme_atom(0.0,zdirt,False,1.0),self.check_extreme_atom(0.0,zdirt,True,1.0)]
+#                 # debug
+#                 # print surf_atom
+#                 shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
+#                 self.action_shift(shift,zdirt)
+#         self.__print(" Complete centering.")
+#         #self.write_innerpos_to_lines()
 
-    def __latt_info(self):
-        # unscaled lattice vectors
-        # scaled lattice volume
-        self.__print(" Loading lattice info...")
-        posls = self.poslines
-        self.scale = float(posls[1].split()[0])
-        self.lattice = []
-        for i in [2,3,4]:
-            self.lattice.append(np.array([float(x) for x in posls[i].split()]))
-        self.lenlat = [np.sqrt(np.dot(x,x)) for x in self.lattice]
-        self.lattice = np.array(self.lattice)
-        self.lenlat = np.array(self.lenlat)
-        self.volume = np.power(self.scale,3) * np.dot(np.cross(self.lattice[0],self.lattice[1]),self.lattice[2])
-
-
-    def __atom_info(self):
-        self.__print(" Loading atomic info...")
-        posls = self.poslines
-        self.atom_type = posls[5].split()
-        self.ntypes = len(self.atom_type)
-        self.atom_num = [int(i) for i in posls[6].split()]
-        self.natoms = sum(self.atom_num)
-        self.composition = ""
-        for i in xrange(len(self.atom_type)):
-            self.composition += self.atom_type[i]+str(self.atom_num[i])
-
-
-    def __coor_info(self):
-        self.__print(" Loading inner coordinates...")
-        posls = self.poslines
-        coor_type = ''
-        # delete the 'selevtive dynamics' line
-        if posls[7].startswith('S') or posls[7].startswith('s'):
-            del self.poslines[7]
-        if posls[7].startswith('C') or posls[7].startswith('c') \
-            or posls[7].startswith('K') or posls[7].startswith('k'):
-            self.coor_type = 'cart'
-            coor_type = 'Cartisian\n'
-        elif posls[7].startswith('D') or posls[7].startswith('d'):
-            self.coor_type = 'dirt'
-            coor_type = 'Direct\n'
-        else:
-            self.__print(" Unknown coordinate system tag. Exit")
-            sys.exit(1)
-        self.poslines[7] = 'Selective dynamics\n'+coor_type
-        self.write_innerpos_from_lines()
-        self.__print(" Checking periodic boundary condition...")
-        for i in xrange(self.natoms):
-            self.check_pbc(i+1)
-
-
-    def check_pbc(self,iatom):
-        '''
-        Check if the innerpos of [iatom]th atom is within the unit cell
-        If not, shift the innerpos according to the periodic boundary condition
-        Currently ONLY support DIRECT coordinate system
-        '''
-        # ia is the index of [iatom]th atom in self.innerpos[:]
-        ia = iatom - 1
-        if self.coor_type == 'cart':
-            self.__print(" In check_pbc:")
-            self.__print("  - Cartisian system detected. PBC check not supported yet. Pass")
-            return
-        else:
-            for iz in xrange(3):
-                while (self.innerpos[ia][iz] >= 1.0):
-                    self.__print("  - PBC check. Atom %3d, Coord. %d shift down" % (iatom,iz+1))
-                    self.innerpos[ia][iz] = self.innerpos[ia][iz] - 1.0
-                while (self.innerpos[ia][iz] < 0.0):
-                    self.__print("  - PBC check. Atom %3d, Coord. %d shift up" % (iatom,iz+1))
-                    self.innerpos[ia][iz] = self.innerpos[ia][iz] + 1.0
-
-
-    def check_atomtype(self,iatom):
-        if iatom <= 0 or iatom > self.natoms:
-            self.__print("Invalid atom index (should be positive and <= natoms)")
-            return None
-        ia = iatom
-        for itype in xrange(self.ntypes):
-            if ia <= self.atom_num[itype]:
-                return self.atom_type[itype]
-            else:
-                ia = ia - self.atom_num[itype]
-
-
-    def check_mcenter(self):
-        '''
-        give the coordinate of the geometric center
-        '''
-        pass
-
-
-    def action_centering(self,zdirt1=3,zdirt2=None,zdirt3=None):
-        self.__print(" In action_centering:")
-        dirt_list = [zdirt1]
-        if (zdirt2 is not None) and (zdirt2 not in dirt_list):
-            dirt_list.append(zdirt2)
-        if (zdirt3 is not None) and (zdirt3 not in dirt_list):
-            dirt_list.append(zdirt2)
-        if self.coor_type == 'cart':
-            self.__print(" Cartisian coordinate system detected. Centering is not supported yet. Pass")
-            return
-
-        for zdirt in dirt_list:
-            iz = zdirt - 1
-            if self.check_vacuum_pos(zdirt):
-                self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
-                continue
-            else:
-                surf_atom = [self.check_extreme_atom(0.0,zdirt,False,1.0),self.check_extreme_atom(0.0,zdirt,True,1.0)]
-                # debug
-                # print surf_atom
-                shift = 0.5 - sum([self.innerpos[i-1][iz] for i in surf_atom])/2.0
-                self.action_shift(shift,zdirt)
-        self.__print(" Complete centering.")
-        #self.write_innerpos_to_lines()
-
-
-    def action_dirt2cart(self,l_write=True):
-        if self.coor_type == 'cart':
-            self.__print(" Cartisian coordinate system detected. Nothing to do.")
-            return
-        for ia in xrange(self.natoms):
-            self.innerpos[ia] = np.dot(self.lattice,self.innerpos[ia])
-        self.coor_type = 'cart'
-        if l_write:
-            self.write_coortype_to_lines()
-            self.write_innerpos_to_lines()
-
-
-    def action_cart2dirt(self,l_write=True):
-        if self.coor_type == 'dirt':
-            self.__print(" Direct coordinate system detected. Nothing to do.")
-            return
-        # use coordinate transformation x_cart = Ax_dirt, x_dirt = A^{-1}x_cart
-        for ia in xrange(self.natoms):
-            self.innerpos[ia] = np.dot(np.linalg.inv(self.lattice),self.innerpos[ia])
-        self.coor_type = 'dirt'
-        if l_write:
-            self.write_coortype_to_lines()
-            self.write_innerpos_to_lines()
-
-
-    def action_change_scale(self,scale=1.0,l_write=True):
-        self.scale = scale
-        if l_write:
-            self.poslines[1] = "%12.8f\n" % self.scale
-
-
-    def write_lattice_to_lines(self):
-        for i in xrange(3):
-            self.poslines[i+2] = "%20.12f%20.12f%20.12f\n" % \
-                           (self.lattice[i][0],self.lattice[i][1],self.lattice[i][2])
-
-
-    def write_innerpos_from_lines(self):
-        posls = self.poslines
-        self.innerpos = []
-        for n_line in xrange(8,8+self.natoms):
-            self.innerpos.append(np.array([float(x) for x in posls[n_line].split()[0:3]]))
-
-
-    def write_innerpos_to_lines(self):
-        for ia in xrange(self.natoms):
-            self.poslines[ia+8] =  "%17.10f%17.10f%17.10f" % \
-                    (self.innerpos[ia][0],self.innerpos[ia][1],self.innerpos[ia][2]) \
-                    + "  T  T  T " + '#%2s\n' % self.check_atomtype(ia+1)
-
-
-    def write_coortype_to_lines(self):
-        if self.coor_type == 'cart':
-            self.poslines[7] = 'Selective dynamics\nCartisian\n'
-        if self.coor_type == 'dirt':
-            self.poslines[7] = 'Selective dynamics\nDirect\n'
-
-
-    def write_poscar(self,OutFile='POSCAR_new',f_reload=True):
-        self.__print(" Write POSCAR: %s" % OutFile)
-        if f_reload:
-            self.__print(" - Load modified atomic information to poslines")
-            self.__save_to_lines()
-        if OutFile is not None:
-            if OutFile==self.filename:
-                common_print_warn("OutFile same as input. Change input to %s.old" % self.filename, func_level=0, verbose=self.verbose)
-                os.rename(self.filename,self.filename+'.old') 
-                self.filename = self.filename + '.old'
-            with open(OutFile,'w+') as f:
-                for i in xrange(len(self.poslines)):
-                    f.write(self.poslines[i])
-            self.__print(" - Done output: %s" % OutFile)
-        else:
-            common_print_warn("Invalid output filename: None. Pass", func_level=0, verbose=self.verbose)
 
 # ===========================================================
 # slab-related utilities
 # ===========================================================
 
-    def check_extreme_atom(self,target=0.0,zdirt=3,l_far=True,terminal=1.0):
-        if self.coor_type == 'cart':
-            self.__print(" In check_extreme_atom:")
-            self.__print("  - Cartisian coordinate system detected. Currently not supported. Pass")
-            return None
-        for x in [target,terminal]:
-            if x < 0.0 or x > 1.0:
-                self.__print(" In check_extreme_atom:")
-                self.__print("  - Invalid target or terminal in extreme check. Pass.")
-                return None
-        iz = zdirt - 1
-        ia_far = 0
-        ia_clo = 0
-        dmax = 0.0
-        dmin = 1.0
-        for ia in xrange(self.natoms):
-            dist = self.innerpos[ia][iz]-target
-            if ( dist *(self.innerpos[ia][iz]-terminal)>0):
-                continue
-            dist = abs(dist)
-            if dist > dmax:
-                dmax = dist
-                ia_far = ia
-            if dist < dmin:
-                dmin = dist
-                ia_clo = ia
+#     def check_extreme_atom(self,target=0.0,zdirt=3,l_far=True,terminal=1.0):
+#         if self.coor_type == 'cart':
+#             self.__print(" In check_extreme_atom:")
+#             self.__print("  - Cartisian coordinate system detected. Currently not supported. Pass")
+#             return None
+#         for x in [target,terminal]:
+#             if x < 0.0 or x > 1.0:
+#                 self.__print(" In check_extreme_atom:")
+#                 self.__print("  - Invalid target or terminal in extreme check. Pass.")
+#                 return None
+#         iz = zdirt - 1
+#         ia_far = 0
+#         ia_clo = 0
+#         dmax = 0.0
+#         dmin = 1.0
+#         for ia in range(self.natoms):
+#             dist = self.innerpos[ia][iz]-target
+#             if ( dist *(self.innerpos[ia][iz]-terminal)>0):
+#                 continue
+#             dist = abs(dist)
+#             if dist > dmax:
+#                 dmax = dist
+#                 ia_far = ia
+#             if dist < dmin:
+#                 dmin = dist
+#                 ia_clo = ia
 
-        if l_far:
-            return ia_far+1
-        else:
-            return ia_clo+1
-
-
-    def check_vacuum_pos(self,zdirt):
-        thres_vac = 0.02
-        iz = zdirt - 1
-        zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
-        zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
-        # if the vacuum is in the middle of the slab/wire, return True
-        # else False
-        if zmin < thres_vac or (1.0-zmax) < thres_vac:
-            return True
-        else:
-            return False
+#         if l_far:
+#             return ia_far+1
+#         else:
+#             return ia_clo+1
 
 
-    def action_shift(self,shift,zdirt):
-        self.__print("  - overall shift %6.4f in direction %d" % (shift,zdirt))
-        for ia in xrange(self.natoms):
-            self.action_single_atom_shift(ia+1,shift,zdirt)
+#     def check_vacuum_pos(self,zdirt):
+#         thres_vac = 0.02
+#         iz = zdirt - 1
+#         zmax = max([self.innerpos[i][iz] for i in range(self.natoms)])
+#         zmin = min([self.innerpos[i][iz] for i in range(self.natoms)])
+#         # if the vacuum is in the middle of the slab/wire, return True
+#         # else False
+#         if zmin < thres_vac or (1.0-zmax) < thres_vac:
+#             return True
+#         else:
+#             return False
 
 
-    def action_single_atom_shift(self,iatom,shift,zdirt):
-        iz = zdirt - 1
-        ia = iatom - 1
-        self.innerpos[ia][iz] = self.innerpos[ia][iz] + shift
-        if self.coor_type == 'dirt':
-            self.check_pbc(iatom)
+#     def action_shift(self,shift,zdirt):
+#         self.__print("  - overall shift %6.4f in direction %d" % (shift,zdirt))
+#         for ia in range(self.natoms):
+#             self.action_single_atom_shift(ia+1,shift,zdirt)
 
 
-    def action_add_vacuum(self,vacadd,zdirt=3):
-        '''
-        add length to the vacuum region of slab model. In Angstrom unit.
-        1D case and middle vacuum case to be implemented
-        '''
-        self.__print(" In action_add_vacuum:")
-        #if abs(vacadd) < 0.1:
-        #    print "  - too small change in vacuum (abs <= 1.0 A). Pass."
-        #    return
-        # check the slab model
-        iz = zdirt - 1
-        for ix in xrange(3):
-            if (iz is not ix) and self.lattice[iz][ix] > 1.0E-2:
-                return
-            if (iz is not ix) and self.lattice[ix][iz] > 1.0E-2:
-                return
-
-        if self.check_vacuum_pos(zdirt):
-            self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
-            return
-
-        if self.coor_type == 'cart':
-            self.action_cart2dirt(False) # switch to direct system
-        zmax = max([self.innerpos[i][iz] for i in xrange(self.natoms)])
-        zmin = min([self.innerpos[i][iz] for i in xrange(self.natoms)])
-        vac_ori =  self.lattice[iz][iz] * (1.0 - (zmax-zmin))
-        self.__print("  - Original vacuum thickness: %8.5f" % vac_ori)
-
-        self.action_dirt2cart(False)     # switch to cartisian
-
-        self.lattice[iz][iz] = self.lattice[iz][iz] + vacadd
-        # shift the atoms in zdirt by half of vacadd
-        self.action_shift(vacadd/2.0,zdirt,False)
-        self.action_cart2dirt(True)
-
-        #self.action_centering(zdirt)
-        self.write_lattice_to_lines()
+#     def action_single_atom_shift(self,iatom,shift,zdirt):
+#         iz = zdirt - 1
+#         ia = iatom - 1
+#         self.innerpos[ia][iz] = self.innerpos[ia][iz] + shift
+#         if self.coor_type == 'dirt':
+#             self.check_pbc(iatom)
 
 
-    def check_sort_index(self,zdirt=3):
-        iz = zdirt - 1
-        Coords_all = [self.innerpos[i][iz] for i in xrange(self.natoms)]
-        sorted_index = sorted(range(self.natoms),key=lambda k:Coords_all[k])
-        return sorted_index
+#     def action_add_vacuum(self,vacadd,zdirt=3):
+#         '''
+#         add length to the vacuum region of slab model. In Angstrom unit.
+#         1D case and middle vacuum case to be implemented
+#         '''
+#         self.__print(" In action_add_vacuum:")
+#         #if abs(vacadd) < 0.1:
+#         #    print "  - too small change in vacuum (abs <= 1.0 A). Pass."
+#         #    return
+#         # check the slab model
+#         iz = zdirt - 1
+#         for ix in range(3):
+#             if (iz is not ix) and self.lattice[iz][ix] > 1.0E-2:
+#                 return
+#             if (iz is not ix) and self.lattice[ix][iz] > 1.0E-2:
+#                 return
+
+#         if self.check_vacuum_pos(zdirt):
+#             self.__print("  - Vacuum in the middle detected. Not supported currently. Pass.")
+#             return
+
+#         if self.coor_type == 'cart':
+#             self.action_cart2dirt(False) # switch to direct system
+#         zmax = max([self.innerpos[i][iz] for i in range(self.natoms)])
+#         zmin = min([self.innerpos[i][iz] for i in range(self.natoms)])
+#         vac_ori =  self.lattice[iz][iz] * (1.0 - (zmax-zmin))
+#         self.__print("  - Original vacuum thickness: %8.5f" % vac_ori)
+
+#         self.action_dirt2cart(False)     # switch to cartisian
+
+#         self.lattice[iz][iz] = self.lattice[iz][iz] + vacadd
+#         # shift the atoms in zdirt by half of vacadd
+#         self.action_shift(vacadd/2.0,zdirt,False)
+#         self.action_cart2dirt(True)
+
+#         #self.action_centering(zdirt)
+#         self.write_lattice_to_lines()
 
 
-    def action_sort_coor(self,zdirt=3):
-        '''
-        Sort atoms of each type
-        '''
-        # skip the heading, save the starting line of each atom block
-        iz = zdirt - 1
-        blocka = [0]
-        for i in xrange(self.ntypes-1):
-            blocka.append(blocka[i]+self.atom_num[i])
+#     def check_sort_index(self,zdirt=3):
+#         iz = zdirt - 1
+#         Coords_all = [self.innerpos[i][iz] for i in range(self.natoms)]
+#         sorted_index = sorted(range(self.natoms),key=lambda k:Coords_all[k])
+#         return sorted_index
 
-        for i in xrange(self.ntypes):
-            Coords = [self.innerpos[x][iz] for x in xrange(blocka[i],blocka[i]+self.atom_num[i])]
-#            print Coords
-            index = sorted(range(self.atom_num[i]),key=lambda k:Coords[k])
-#            print index
-            temp_list = []
-        # sort the coordinates for each type of atoms
-            for j in xrange(self.atom_num[i]):
-                temp_list.append(self.innerpos[blocka[i]+index[j]])
-            self.innerpos[blocka[i]:blocka[i]+self.atom_num[i]] = temp_list
 
-        self.write_innerpos_to_lines()
-        return self.check_sort_index(zdirt)
+#     def action_sort_coor(self,zdirt=3):
+#         '''
+#         Sort atoms of each type
+#         '''
+#         # skip the heading, save the starting line of each atom block
+#         iz = zdirt - 1
+#         blocka = [0]
+#         for i in range(self.ntypes-1):
+#             blocka.append(blocka[i]+self.atom_num[i])
+
+#         for i in range(self.ntypes):
+#             Coords = [self.innerpos[x][iz] for x in range(blocka[i],blocka[i]+self.atom_num[i])]
+# #            print Coords
+#             index = sorted(range(self.atom_num[i]),key=lambda k:Coords[k])
+# #            print index
+#             temp_list = []
+#         # sort the coordinates for each type of atoms
+#             for j in range(self.atom_num[i]):
+#                 temp_list.append(self.innerpos[blocka[i]+index[j]])
+#             self.innerpos[blocka[i]:blocka[i]+self.atom_num[i]] = temp_list
+
+#         self.write_innerpos_to_lines()
+#         return self.check_sort_index(zdirt)
 
 # ====================================================
 
@@ -906,7 +546,8 @@ class vasp_read_xml():
             self.__print("Warning: no PDOS data found")
 
     def __print(self, pstr):
-        common_print_verbose_bool(pstr, self.verbose)
+        # common_print_verbose_bool(pstr, self.verbose)
+        print(pstr, self.verbose)
 
 
     def init_section(self):
@@ -938,10 +579,10 @@ class vasp_read_xml():
         # initialize the pwav data
         self.pwdata = np.zeros([self.ispin,self.nkp,self.nbands,self.natom,len(self.str_pwaves)])
 
-        for spin in xrange(self.ispin):
-            for kp in xrange(self.nkp):
-                for band in xrange(self.nbands):
-                    for atom in xrange(self.natom):
+        for spin in range(self.ispin):
+            for kp in range(self.nkp):
+                for band in range(self.nbands):
+                    for atom in range(self.natom):
                         data = np.array([float(x) for x in pwav_dataset[spin][kp][band][atom].text.split()])
 
 
@@ -964,8 +605,8 @@ class vasp_read_xml():
     def read_eigen(self):
         self.eigen = np.zeros([self.ispin,self.nkp,self.nbands])
         eigen_data = self.calc.find('eigenvalues').find('array').find('set')
-        for spin in xrange(self.ispin):
-            for kp in xrange(self.nkp):
+        for spin in range(self.ispin):
+            for kp in range(self.nkp):
                 self.eigen[spin,kp] = np.array([float(x.text.split()[0]) for x in eigen_data[spin][kp]])
 
 
@@ -975,8 +616,8 @@ class vasp_read_xml():
         evbm = -100000.0
         vbm = self.nelec/2
         cbm = self.nelec/2 + 1
-        for spin in xrange(self.ispin):
-            for kp in xrange(self.nkp):
+        for spin in range(self.ispin):
+            for kp in range(self.nkp):
 #                print self.eigen[spin,kp,vbm-1],self.eigen[spin,kp,cbm-1]
                 if (self.eigen[spin,kp,vbm-1]> evbm):
                     evbm = self.eigen[spin,kp,vbm-1]
@@ -1005,12 +646,12 @@ class vasp_read_xml():
         except:
             return None
         if atom_type == 0:
-            return list(xrange(self.natom))
+            return list(range(self.natom))
         elif atom_type == 1:
-            return list(xrange(self.atoms[0]))
+            return list(range(self.atoms[0]))
         else:
-            list1 = list(xrange(sum(self.atoms[:itype-1])))
-            list2 = list(xrange(sum(self.atoms[:itype])))
+            list1 = list(range(sum(self.atoms[:itype-1])))
+            list2 = list(range(sum(self.atoms[:itype])))
             return [x for x in list2 if x not in list1]
 
 
@@ -1018,7 +659,7 @@ class vasp_read_xml():
         index_l = []
         # total wave
         if lcomponent == 't':
-            index_l = list(xrange(len(self.str_pwaves)))
+            index_l = list(range(len(self.str_pwaves)))
         for x in self.str_pwaves:
             if x.startswith(lcomponent):
                 index_l.append(self.str_pwaves.index(x))
@@ -1034,5 +675,3 @@ class vasp_read_xml():
 #                weigh += self.pwdata[spin][band][kp][at][pw]
                 weigh += self.pwdata[spin][band][kp][at][pw]
         return weigh
-
-

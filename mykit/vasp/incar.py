@@ -369,10 +369,11 @@ class incar(*_incar_controllers):
             incar object
         '''
         _taskDict = {
-                "scf": (_get_minimal_scf_tags,),
+                "scf": (_get_minimal_scf_tags, ),
                 "opt": (_get_minimal_scf_tags, _get_minimal_ion_opt_tags, ),
-                "band": (_get_minimal_scf_tags, _get_minimal_band_dos_tags, ),
-                "dos": (_get_minimal_scf_tags, _get_minimal_band_dos_tags, ),
+                "band": (_get_minimal_scf_tags, _get_minimal_band_tags, ),
+                "dos": (_get_minimal_scf_tags, _get_minimal_dos_tags, ),
+                "diag": (_get_minimal_scf_tags, _get_minimal_diag_tags, ),
             }
         minimals = _taskDict.get(task, None)
         if minimals is None:
@@ -400,10 +401,29 @@ def _get_minimal_scf_tags():
     return _scftags
 
 
-def _get_minimal_band_dos_tags():
+def _get_minimal_diag_tags():
+    _diatags = {
+        "NELM": 1,
+        "ALGO": "Exact",
+    }
+    return _diatags
+
+
+def _get_minimal_dos_tags():
+    _dostags = {
+        "ICHARG": 11,
+        "LORBIT": 11,
+        "ISTART": None,
+        "NEDOS": 3000,
+    }
+    return _dostags
+
+
+def _get_minimal_band_tags():
     _bandtags = {
         "ICHARG": 11,
         "LORBIT": 11,
+        "ISTART": None,
     }
     return _bandtags
 

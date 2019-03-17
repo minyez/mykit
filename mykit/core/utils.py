@@ -128,6 +128,7 @@ def find_vol_dirs(path='.'):
     _dirs = sorted(_dirs, key=__sort_vol)
     return _dirs
 
+
 def common_ss_conv(string, i, conv2, sep=None):
     '''
     Split the string and convert a single substring to a specified type.
@@ -146,7 +147,8 @@ def common_ss_conv(string, i, conv2, sep=None):
     else:
         str_list = str_tmp.split()
 
-    try:
-        return conv2(str_list[i])
-    except ValueError:
-        return conv2(float(str_list[i]))
+    # try:
+        # return conv2(str_list[i])
+    # except ValueError:
+    #     return conv2(float(str_list[i]))
+    return conv2(str_list[i])
