@@ -1,0 +1,7 @@
+{
+  "PREC": "High",
+  "ISMEAR": -5,
+  "NSW": 40,
+  "IBRION": 2,
+  "ISIF": 3
+}

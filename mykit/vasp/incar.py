@@ -234,7 +234,7 @@ class incar(*_incar_controllers):
                 # Otherwise, check if the first word before "=" belongs to a known VASP tag in tagAll
                 # if not, treat the line as a comment as well
                 else:
-                    _w = _l.split('=')[0]
+                    _w = _l.split('=')[0].strip()
                     if _w not in cls.tagAll:
                         return {"comment":_l}
             else:

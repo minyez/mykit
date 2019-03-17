@@ -90,6 +90,7 @@ class poscar(Cell):
         __flagSelDyn = False
         __fix = {}
         __fixDict = {'T': True, 'F': False}
+        _fAtomsAtHead = False
         try:
             _f = open(pathPoscar, 'r')
         except FileNotFoundError as _err:
@@ -110,12 +111,13 @@ class poscar(Cell):
             # Next 2 or 1 line(s), depend on whether element symbols are typed or not
             _line = _f.readline().strip()
             if _line[0] in string.ascii_letters:
+                _fAtomsAtHead = True
                 _symTypes = _line.split()
                 _line = _f.readline().strip()
             if _line[0] in string.digits[1:]:
                 _natomsType = [int(_x) for _x in _line.split()]
                 if _symTypes is None:
-                    cls.print_cm_warn("No atom information in POSCAR: {}".format(pathPoscar))
+                    # cls.print_cm_warn("No atom information in POSCAR: {}".format(pathPoscar))
                     _symTypes = ["Unk{}".format(i) for i, _x in enumerate(_natomsType)]
             else:
                 _f.close()
@@ -130,7 +132,7 @@ class poscar(Cell):
             # Next 2 or 1 line(s), depend on whether 'selective dynamics line' is typed
             _line = _f.readline().strip()
             if _line[0].upper() == "S":
-                __flagSelDyn = True
+                # __flagSelDyn = True
                 _line = _f.readline().strip()
             if _line[0].upper() in ["C", "K", "D"]:
                 _cs = {"C":"C", "K":"C", "D":"D"}[_line[0].upper()]
@@ -139,29 +141,49 @@ class poscar(Cell):
             # Next _natoms lines: read atomic position and selective dynamics flag
             _pos = []
             _mult = 1.0E0
+            _atomsFromPosLine = []
             if _cs == "C":
                 _mult = _scale
             for _i in range(_natoms):
+                # read the positions
                 try:
                     _line = _f.readline().strip()
-                    _words = trim_after(_line, r'[\#]').split()
+                    _words = trim_after(_line, r'[\#\!]').split()
                     _pos.append([float(_x) for _x in _words[:3]])
-                    if __flagSelDyn:
-                        __fixFlag = [__fixDict.get(_words[i]) for i in range(3,6)]
-                        if None in __fixFlag:
-                            raise IndexError
-                        elif __fixFlag == [True, True, True]:
-                            pass
-                        else:
-                            __fix.update({_i: __fixFlag})
-                except ValueError:
+                except (ValueError, IndexError):
                     _f.close()
                     raise cls._error("Bad internal coordinates at atom line {}: {}".format(_i+1, pathPoscar))
-                except IndexError:
+                # read possible selective dynamic flags, and atom type
+                if len(_words) == 3:
+                    pass
+                # add possible atomic info for ATAT like POSCAR
+                elif len(_words) == 4:
+                    try:
+                        assert _words[-1] not in __fixDict
+                    except AssertionError:
+                        _f.close()
+                        raise cls._error("Bad selective dynamics flag at atom line {}: {}".format(_i+1, pathPoscar))
+                    _atomsFromPosLine.append(_words[-1])
+                elif len(_words) in [6, 7]:
+                    __fixFlag = [__fixDict.get(_words[i]) for i in range(3,6)]
+                    if None in __fixFlag:
+                        # raise IndexError
+                        _f.close()
+                        raise cls._error("Bad selective dynamics flag at atom line {}: {}".format(_i+1, pathPoscar))
+                    elif __fixFlag == [True, True, True]:
+                        pass
+                    else:
+                        __fix.update({_i: __fixFlag})
+                    if len(_words) == 7:
+                        _atomsFromPosLine.append(_words[-1])
+                else:
                     _f.close()
-                    raise cls._error("Bad selective dynamics flag at atom line {}: {}".format(_i+1, pathPoscar))
+                    raise cls._error("Bad column numbers at atom line {}: {}".format(_i+1, pathPoscar))
             _pos = np.array(_pos, dtype=cls._dtype) * _mult
             _f.close()
+            # print(_fAtomsAtHead, _atomsFromPosLine)
+            if not _fAtomsAtHead and _atomsFromPosLine != []:
+                _atoms = _atomsFromPosLine
             return cls(_latt, _atoms, _pos, unit="ang", coordSys=_cs, allRelax=True, selectDyn=__fix, comment=_comment)
 
     @classmethod
