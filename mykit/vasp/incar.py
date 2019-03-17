@@ -19,6 +19,7 @@ _incar_controllers = (
     ion_control,
     )
 
+
 class IncarError(Exception):
     pass
 
@@ -221,6 +222,11 @@ class incar(*_incar_controllers):
     @classmethod
     def analyze_incar_line(cls, incarLine, lineNum=-1, filePath=None):
         '''Analyze one INCAR line
+
+        The steps follow:
+            1. Trim line after #, ! and (
+            2. Split the line by semicolon.
+            3. iterate for each segment, each giving a tag-value pair
         '''
         _kw = {}
         _l = incarLine.strip()
@@ -228,27 +234,20 @@ class incar(*_incar_controllers):
             return {}
         else:
             if lineNum == 0:
-                # If '=' is not found in the first line, set it as the comment.
                 if '=' not in _l:
                     return {"comment":_l}
-                # Otherwise, check if the first word before "=" belongs to a known VASP tag in tagAll
-                # if not, treat the line as a comment as well
                 else:
                     _w = _l.split('=')[0].strip()
                     if _w not in cls.tagAll:
                         return {"comment":_l}
             else:
-                # if '=' is not found in lines after first, skip it
                 if '=' not in _l:
                     return {}
         # Here start treat a line that possibly contain INCAR tags
-        # 1. Trim line after #, ! and (
         _l = trim_after(_l, r"[\#\!\(]").strip()
         if len(_l) == 0:
             return _kw
-        # 2. Split the line by semicolon.
         _words = _l.split(';')
-        # 3. iterate for each segment
         for _w in _words:
             if _w == '':
                 continue
@@ -258,84 +257,16 @@ class incar(*_incar_controllers):
                 raise IncarError("Bad tag pair on line {}. INCAR path: {}".format(lineNum+1, filePath))
             _k, _v = (_w.strip() for _w in kv)
             _k = _k.upper()
-            # Check if tag is valid
             if _k not in cls.tagAll:
                 raise IncarError("Unknown INCAR tag on line {}: {}. INCAR path: {}".format(lineNum+1, _k, filePath))
             # Special case for SYSTEM key: the value is always string
             if _k == "SYSTEM":
                 _kw.update({_k: _v})
                 continue
-            # Take care of the value. Raise for empty value
-            if len(_v) == 0:
-                raise IncarError("Unknown INCAR tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-            # Bool
-            if _v.startswith('.'):
-                if not _v.endswith('.'):
-                    raise IncarError("Bad bool tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-                _v = _v[1:-1].lower()
-                if _v == 'false':
-                    _kw.update({_k:False})
-                elif _v == 'true':
-                    _kw.update({_k:True})
-                else:
-                    raise IncarError("Bad bool tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-            else:
-                # TODO this part can be extracted to form an independent string function
-                # check if _v is a list of value
-                _vList = _v.split()
-                if len(_vList) == 1:
-                    try:
-                        # finally a integer
-                        _v = int(_v)
-                    except ValueError:
-                        try:
-                            # finally a float
-                            _v = float(_v)
-                        except ValueError:
-                            _vList = _v.split("*")
-                            if len(_vList) == 1:
-                                # finally a string
-                                pass
-                            else:
-                                # a single string with * in it, such as MAGMOM
-                                if len(_vList) != 2:
-                                    raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-                                try:
-                                    _v = [float(_vList[1]),] * int(_vList[0])
-                                except ValueError:
-                                    raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-                    _kw.update({_k:_v})
-                else:
-                    newList = []
-                    # _break = False
-                    for _seg in _vList:
-                        if _seg == ',':
-                            # _break = True
-                            continue
-                        try:
-                            # finally a integer
-                            _intSeg = int(_seg)
-                            newList.append(_intSeg)
-                        except ValueError:
-                            try:
-                                # finally a float
-                                _floatSeg = float(_seg)
-                                newList.append(_floatSeg)
-                            except ValueError:
-                                _segSplit = _seg.split("*")
-                                if len(_segSplit) == 1:
-                                    # finally a string
-                                    newList.append(_seg)
-                                else:
-                                    # a string with * in it, such as MAGMOM: 48*5.0 16*1.0
-                                    if len(_vList) != 2:
-                                        raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-                                    try:
-                                        _magSeg = [float(_vList[1]),] * int(_vList[0])
-                                        newList.extend(_magSeg)
-                                    except ValueError:
-                                        raise IncarError("Bad multiplication tag on line {}. INCAR path: {}".format(lineNum+1, filePath))
-                    _kw.update({_k: newList})
+            decoded = decode_incar_value(_v)
+            if decoded is None:
+                raise IncarError("Bad tag value on line {}. INCAR path: {}".format(lineNum+1, filePath))
+            _kw.update({_k: decoded})
         return _kw
 
     # * Factory methods
@@ -503,3 +434,62 @@ def _get_para_tags_from_nproc(nproc):
                 break
             _kpar -= 1
     return _paratags
+
+
+def decode_incar_value(vstr):
+    '''decode a string of INCAR tag value into right data type
+
+    Args:
+        vstr (str): value string to decode
+    '''
+    def __convert(v):
+        # Bool
+        if v.startswith('.'):
+            if v.endswith('.'):
+                b = vs[1:-1].lower()
+                if b == 'false':
+                    return False
+                elif b == 'true':
+                    return True
+        try:
+            return int(v)
+        except ValueError:
+            try:
+                return float(v)
+            except ValueError:
+                _vList = v.split("*")
+                # String
+                if len(_vList) == 1:
+                    return v
+                elif len(_vList) == 2:
+                    # a single string with * in it, such as MAGMOM
+                    try:
+                        return [float(_vList[1]),] * int(_vList[0])
+                    except ValueError:
+                        pass
+        return None
+
+    vs = vstr.strip()
+    value = None
+    if len(vs) == 0:
+        pass
+    else:
+        # check if string consists a list of value
+        _vList = vs.split()
+        if len(_vList) == 1:
+            _v = _vList[0]
+            value = __convert(_v)
+        else:
+            newList = []
+            for seg in _vList:
+                if seg == ',':
+                    continue
+                vseg = __convert(seg)
+                if vseg is None:
+                    return None
+                elif isinstance(vseg, list):
+                    newList.extend(vseg)
+                else:
+                    newList.append(vseg)
+            value = newList
+    return value
