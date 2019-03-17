@@ -1,0 +1,24 @@
+  PAW_PBE C_GW 28Sep2005                     
+   4.00000000000000     
+ parameters from PSCTR are:
+   VRHFIN =C: s2p2
+   LEXCH  = PE
+   EATOM  = 
+
+   TITEL  = PAW_PBE C_GW 28Sep2005
+   LULTRA = 
+   IUNSCR = 
+   RPACOR = 
+   POMASS = 
+   RCORE  = 
+   RWIGS  = 
+   ENMAX  =  413.992; ENMIN  =  310.494 eV
+   ICORE  = 
+   LCOR   = 
+   LPAW   = 
+   EAUG   = 
+   DEXC   =
+   RMAX   = 
+   RAUG   = 
+   RDEP   =
+   RDEPT  =

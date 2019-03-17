@@ -7,7 +7,7 @@ import tempfile
 import unittest as ut
 from shutil import copy2, move
 
-from mykit.vasp.potcar import PotcarError, potcar_search
+from mykit.vasp.potcar import Potcar, PotcarError, potcar_search
 
 
 class test_potcar_search(ut.TestCase):
@@ -75,6 +75,20 @@ class test_potcar_search(ut.TestCase):
         self.assertTupleEqual(pts.names, ("C",))
         pts.names = ("P", "C_GW")
         self.assertTupleEqual(("P", "C_GW"), pts.names)
+
+
+class test_potcar(ut.TestCase):
+
+    def test_get_enmin_enmax(self):
+        '''Test get ENMIN and ENMAX from a fake POTCAR
+        '''
+        self.assertRaisesRegex(PotcarError, r"POTCAR not found: *", \
+            Potcar.get_enmin_enmax, "not-exist-path.POTCAR")
+        fakePotPath = os.path.join(os.path.dirname(__file__), '..', 'testdata', 'POTCAR_fake')
+        self.assertTupleEqual((310.494, 413.992), Potcar.get_enmin_enmax(fakePotPath))
+        badPotPath = os.path.join(os.path.dirname(__file__), '..', 'testdata', 'POTCAR_bad_enm')
+        self.assertRaisesRegex(PotcarError, r"Bad POTCAR for ENMAX and ENMIN: *", \
+            Potcar.get_enmin_enmax, badPotPath)
 
 
 if __name__ == '__main__':
