@@ -90,4 +90,5 @@ and help map name and value of parameter tags between different simulation progr
 - [x] version string controled by [versioneer](https://github.com/warner/python-versioneer)
 - [x] Travis CI
 - [x] CircleCI
+- [x] Codacy
 - [x] Code coverage

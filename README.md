@@ -4,6 +4,7 @@
 [![Travis CI](https://travis-ci.org/minyez/mykit.svg?branch=master)](https://travis-ci.org/minyez/mykit)
 [![CircleCI](https://circleci.com/gh/minyez/mykit/tree/master.svg?style=svg)](https://circleci.com/gh/minyez/mykit/tree/master)
 [![Codecov](https://codecov.io/gh/minyez/mykit/branch/master/graph/badge.svg)](https://codecov.io/gh/minyez/mykit)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/895e480c22f3495ea1c266b0db8e369b)](https://www.codacy.com/app/minyez/mykit?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=minyez/mykit&amp;utm_campaign=Badge_Grade)
 ![Python Version](https://img.shields.io/static/v1.svg?message=3.5.6|3.6.3|3.7.1|3.7-dev&color=3776AB&logo=Python&label=Python)
 
 Personal toolkit for manipulating input and output files of various electornic structure calculators for periodic systems.
