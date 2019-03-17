@@ -8,7 +8,8 @@ import numpy as np
 import spglib
 
 from mykit.core.cell import Cell
-from mykit.core.kmesh import _check_valid_ksym_coord_pair, kpath_decoder
+from mykit.core.kmesh import (_check_valid_kpath_dict,
+                              _check_valid_ksym_coord_pair, kpath_decoder)
 from mykit.core.metadata._spk import _special_kpoints
 from mykit.core.numeric import prec
 
@@ -329,8 +330,8 @@ class space_group:
         return identity
 
     @classmethod
-    def get_spg_index(cls, symbol):
-        '''Get the index in ITA from the symbol of space group of symbol
+    def get_spg_id(cls, symbol):
+        '''Get the id in ITA from the symbol of space group of symbol
 
         Args:
             symbol (str): the symbol of space group
@@ -359,7 +360,9 @@ class special_kpoints(prec):
 
     Args:
         id (int): the id of space group
-        alen (array): (3,) array of lattice constant a,b,c
+        alen (array): (3,) array of lattice constant a,b,c of conventional cell
+        isPrimitive: if set True, coordinates in primitive cell
+        will be used.
         custom_symbols (dict): dictionary of custom kpoints, each item
         being a symbol-coordinate pair. The coordinate must be in
         the system of primitive cell.
@@ -472,6 +475,8 @@ class special_kpoints(prec):
             coords = np.dot(coords, np.transpose(self._transMat))
         _ret["symbols"] = decodedSyms
         _ret["coordinates"] = coords
+        # self-check
+        _check_valid_kpath_dict(_ret)
         return _ret
 
     def convert_kpaths_predef(self, ipath=None):
@@ -549,16 +554,19 @@ class special_kpoints(prec):
         return spk.convert_kpath(pathStr)
 
     @classmethod
-    def get_kpaths_predef_from_cell(cls, cell, custom_symbols=None):
+    def get_kpaths_predef_from_cell(cls, cell, ipath=None, custom_symbols=None):
         '''Return coordinates of all predefined kpaths for the space group of the cell
 
         Args:
             cell: instance of Cell or its subclass
+            ipath (int): the index of predefined path.
+            If not specified, all paths will be returned
+            custom_symbols (dict): custom symbol-coordinate pair
         '''
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
         spk = cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
-        return spk.convert_kpaths_predef()
+        return spk.convert_kpaths_predef(ipath=ipath)
 
 
 def _spglib_check_cell_and_coordSys(cellIn):
@@ -580,6 +588,9 @@ def _spglib_check_cell_and_coordSys(cellIn):
 
 def _check_valid_spg_id(id):
     '''Raise if id is not a valid spacegroup id, i.e. 1~230
+
+    Args:
+        id (int): the space group id to check
     '''
     if isinstance(id, str):
         raise SymmetryError("string received. id should be int.")
@@ -592,6 +603,8 @@ def _check_valid_spg_id(id):
 
 
 def _check_valid_custom_ksym_dict(custom_symbols):
+    '''check if a custom symbol dictionary is valid
+    '''
     if custom_symbols != None:
         try:
             assert isinstance(custom_symbols, dict)

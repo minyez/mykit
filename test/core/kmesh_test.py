@@ -3,8 +3,9 @@
 
 import unittest as ut
 
-from mykit.core.kmesh import (KmeshError, _check_valid_ksym_coord_pair,
-                              kmesh_control, kpath_decoder, kpath_encoder)
+from mykit.core.kmesh import (KmeshError, _check_valid_kpath_dict,
+                              _check_valid_ksym_coord_pair, kmesh_control,
+                              kpath_decoder, kpath_encoder)
 
 
 class test_kpath_coder_decoder(ut.TestCase):

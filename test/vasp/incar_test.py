@@ -91,7 +91,7 @@ class test_incar_io(ut.TestCase):
                     _incar = incar.read_from_file(_path)
                     _verifyJson = os.path.join(__incarDir, 'verify_incar_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
-                        print(_incar)
+                        # print(_incar)
                         _vs = _verify_incar_from_json(self, _incar, _verifyJson)
                         if _vs:
                             _countVerified += 1

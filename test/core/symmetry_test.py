@@ -79,15 +79,14 @@ class test_symmetry(ut.TestCase):
 
 class test_space_group(ut.TestCase):
 
+    testPair = [
+        (1, 'P1'), (22, 'F222'), (64, 'Cmce'), (123, 'P4mmm'),
+        (161, 'R3c'), (168, 'P6_3mc'), (208, 'P4232'), (230, 'Ia-3d')
+    ]
+
     def test_get_spg_symbol(self):
-        self.assertEqual(space_group.get_spg_symbol(1), 'P1')
-        self.assertEqual(space_group.get_spg_symbol(22), 'F222')
-        self.assertEqual(space_group.get_spg_symbol(64), 'Cmce')
-        self.assertEqual(space_group.get_spg_symbol(123), 'P4mmm')
-        self.assertEqual(space_group.get_spg_symbol(161), 'R3c')
-        self.assertEqual(space_group.get_spg_symbol(168), 'P6_3mc')
-        self.assertEqual(space_group.get_spg_symbol(208), 'P4232')
-        self.assertEqual(space_group.get_spg_symbol(230), 'Ia-3d')
+        for id, symbol in self.testPair:
+            self.assertEqual(space_group.get_spg_symbol(id), symbol)
         # test raises
         self.assertRaisesRegex(SymmetryError, r"string received. id should be int", \
             space_group.get_spg_symbol, 'P1')
@@ -95,6 +94,17 @@ class test_space_group(ut.TestCase):
             space_group.get_spg_symbol, 231)
         self.assertRaisesRegex(SymmetryError, r"Invalid space group id \(1~230\): -1", \
             space_group.get_spg_symbol, -1)
+
+    def test_get_spg_id(self):
+        for id, symbol in self.testPair:
+            self.assertEqual(space_group.get_spg_id(symbol), id)
+        self.assertRaisesRegex(SymmetryError, \
+            r"int received. symbol should be string", \
+            space_group.get_spg_id, 1)
+        self.assertRaisesRegex(SymmetryError, \
+            r"Space group symbol is not found in ITA: Pxxx", \
+            space_group.get_spg_id, 'Pxxx')
+
 
     def test_get_spg(self):
         at = "C"
@@ -242,6 +252,9 @@ class test_special_kpoints(ut.TestCase):
         # Zincblende (spg 216)
         zb = Cell.zincblende("Zn", "O", a=5.0, primitive=True)
         kp = special_kpoints.get_kpaths_predef_from_cell(zb)
+        self.assertTrue(isinstance(kp, list))
+        kp = special_kpoints.get_kpaths_predef_from_cell(zb, 0)
+        self.assertTrue(isinstance(kp, dict))
         kp = special_kpoints.get_kpath_from_cell("GM-L-X", zb)
         symbols = kp["symbols"]
         coords = kp["coordinates"]

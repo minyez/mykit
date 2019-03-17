@@ -81,7 +81,6 @@ class test_poscar_write(ut.TestCase):
         '''test functionality of print and write of POSCAR
         '''
         dC = poscar.diamond("C")
-        print(dC)
         tf = tempfile.NamedTemporaryFile()
         dC.write(pathPoscar=tf.name)
         tf.close()

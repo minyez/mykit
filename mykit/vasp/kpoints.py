@@ -5,7 +5,7 @@
 import os
 from collections.abc import Iterable
 
-from mykit.core.kmesh import kmesh_control
+from mykit.core.kmesh import _check_valid_kpath_dict, kmesh_control
 from mykit.core.log import verbose
 
 
@@ -73,6 +73,7 @@ class kpoints(verbose):
             if kpoints != None:
                 pass
             elif kpath != None:
+                _check_valid_kpath_dict(kpath)
                 _kmode = "L"
             elif kgrid != None:
                 _kmode = "G"

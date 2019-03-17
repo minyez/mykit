@@ -178,3 +178,18 @@ def _check_valid_ksym_coord_pair(ksym, coord):
     else:
         if _shape != (3,):
             raise ValueError("Invalid kpoint coordinate for symbol {}".format(ksym))
+
+def _check_valid_kpath_dict(kpathDict):
+    try:
+        assert isinstance(kpathDict, dict)
+    except AssertionError:
+        raise TypeError("kpath must be dictionary.")
+    try:
+        assert set(["symbols", "coordinates"]) == set(kpathDict.keys())
+    except AssertionError:
+        raise KeyError("\"symbols\", \"coordinates\" keys not found. Please check")
+    for (ksym, coord) in zip(kpathDict["symbols"],kpathDict["coordinates"]):
+        try:
+            _check_valid_ksym_coord_pair(ksym, coord)
+        except (KeyError, ValueError) as _err:
+            raise _err

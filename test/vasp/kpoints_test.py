@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # coding = utf-8
 
+import tempfile
 import unittest as ut
 
 from mykit.vasp.kpoints import KpointsError, kpoints
@@ -32,19 +33,32 @@ class test_kpoints_init(ut.TestCase):
             kpoints, kmode="M", kdense=10)
 
     def test_auto_mode_check(self):
+        '''Check mode identification. Test print as well
+        '''
+        tf = tempfile.NamedTemporaryFile()
         # use G-mode when kgrid is specified
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kgrid=[5,5,5])
         self.assertEqual("G", kp.mode)
+        kp.write(tf.name)
         # when kdense is positive and kmode is not "L", switch to automatic
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kdense=10)
         self.assertEqual("A", kp.mode)
+        kp.write(tf.name)
         # when kpath is specified, always use line mode
         _kpath = [(0.0,0.0,0.0), (0.0,0.5,0.0)]
+        self.assertRaisesRegex(TypeError, "kpath must be dictionary.", \
+            kpoints, kpath=_kpath, kdense=10)
+        _kpath = {
+                "symbols": ["GM", "X"],
+                "coordinates": [(0.0,0.0,0.0), (0.0,0.5,0.0)],
+                }
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kdense=10, kpath=_kpath)
         self.assertEqual("L", kp.mode)
+        kp.write(tf.name)
+        tf.close()
 
     def test_raise_in_G_M_mode(self):
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
