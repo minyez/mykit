@@ -12,13 +12,13 @@ class test_vasprunxml_read(ut.TestCase):
     def test_static_xml(self):
         dataDir = 'vasprun_static'
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', dataDir)
+            'testdata', 'vasp', dataDir)
         read_all_xml(dataDirPath)
 
     def test_opt_xml(self):
         dataDir = 'vasprun_opt'
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', dataDir)
+            'testdata', 'vasp', dataDir)
         read_all_xml(dataDirPath)
 
 
@@ -30,4 +30,3 @@ def read_all_xml(dirpath):
 
 if __name__ == '__main__':
     ut.main()
-

@@ -84,9 +84,11 @@ class test_potcar(ut.TestCase):
         '''
         self.assertRaisesRegex(PotcarError, r"POTCAR not found: *", \
             Potcar.get_enmin_enmax, "not-exist-path.POTCAR")
-        fakePotPath = os.path.join(os.path.dirname(__file__), '..', 'testdata', 'POTCAR_fake')
+        fakePotPath = os.path.join(os.path.dirname(__file__), \
+            '..', 'testdata', 'vasp', 'POTCAR_fake')
         self.assertTupleEqual((310.494, 413.992), Potcar.get_enmin_enmax(fakePotPath))
-        badPotPath = os.path.join(os.path.dirname(__file__), '..', 'testdata', 'POTCAR_bad_enm')
+        badPotPath = os.path.join(os.path.dirname(__file__), \
+            '..', 'testdata', 'vasp', 'POTCAR_bad_enm')
         self.assertRaisesRegex(PotcarError, r"Bad POTCAR for ENMAX and ENMIN: *", \
             Potcar.get_enmin_enmax, badPotPath)
 

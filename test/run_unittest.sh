@@ -30,11 +30,15 @@ coreTests=(config_test.py
            xc_test.py
            control_test.py
            symmetry_test.py)
+
 vaspTestDir="vasp"
 vaspTests=(poscar_test.py
            incar_test.py
            kpoints_test.py
            potcar_test.py)
+
+w2kTestDir="wien2k"
+w2kTests=(inputs_test.py)
 
 for ct in ${coreTests[@]}
 do
@@ -45,5 +49,11 @@ done
 for vt in ${vaspTests[@]}
 do
     fn=$vaspTestDir/$vt
+    run_one_unittest $fn
+done
+
+for wt in ${w2kTests[@]}
+do
+    fn=$w2kTestDir/$wt
     run_one_unittest $fn
 done

@@ -81,7 +81,7 @@ class test_Incar_io(ut.TestCase):
         _countGood = 0
         _countBad = 0
         _countVerified = 0
-        __IncarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../testdata')
+        __IncarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'testdata', 'vasp')
         if os.path.isdir(__IncarDir):
             for _f in os.listdir(__IncarDir):
                 if re.match('^INCAR_[0-9]+$', _f):
@@ -89,7 +89,7 @@ class test_Incar_io(ut.TestCase):
                     _i = _f.split('_')[1]
                     _path = os.path.join(__IncarDir, _f)
                     _Incar = Incar.read_from_file(_path)
-                    _verifyJson = os.path.join(__IncarDir, 'verify_Incar_'+_i+'.json')
+                    _verifyJson = os.path.join(__IncarDir, 'verify_incar_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
                         # print(_Incar)
                         _vs = _verify_Incar_from_json(self, _Incar, _verifyJson)

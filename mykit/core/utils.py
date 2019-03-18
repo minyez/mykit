@@ -24,34 +24,79 @@ def get_dirpath(filePath):
     return os.path.dirname(_path)
 
 
-def trim_after(string, regex):
+def get_filename_wo_ext(filePath):
+    '''Get the filename without extension
+
+    Args:
+        filePath (str): the path of file
+    '''
+    fnExt = os.path.basename(os.path.abspath(filePath))
+    return os.path.splitext(fnExt)[0]
+
+
+def get_cwd_name():
+    '''Get the name of current working directory
+    '''
+    return os.path.basename(os.getcwd())
+
+
+def trim_after(string, regex, include_pattern=False):
     '''Trim a string after the first match of regex.
+
+    If fail to match any pattern, the original string is returned
 
     The matched pattern is trimed as well.
     
     Args:
         string (str): the string to trim
         regex (regex): the regex to match
+        include_pattern (bool): if the matched pattern is included
+        in the return string
     '''
     _search = re.search(regex, string)
     if _search != None:
-        return string[:_search.start()]
+        if include_pattern:
+            return string[:_search.end()]
+        else:
+            return string[:_search.start()]
     return string
 
 
-def trim_before(string, regex):
+def trim_before(string, regex, include_pattern=False):
     '''Trim a string from the beginning to the first match of regex.
 
-    The matched pattern is not trimed.
+    If fail to match any pattern, the original string is returned.
 
     Args:
         string (str): the string to trim
         regex (regex): the regex to match
+        include_pattern (bool): if the matched pattern is included
+        in the return string
     '''
     _search = re.search(regex, string)
     if _search != None:
-        return string[_search.start():]
+        if include_pattern:
+            return string[_search.start():]
+        else:
+            return string[_search.end():]
     return string
+
+
+def trim_both_sides(string, regex_left, regex_right, include_pattern=False):
+    '''Trim a string from both sides.
+
+    Basically it first tries to match regex_left, trim the characters on the left
+    of the matched pattern, then match regex_right and trim the characters after.
+
+    Args:
+        regex_left (regex):
+        regex_right (regex):
+        include_pattern (bool): if the matched pattern is included
+        in the return string
+    '''
+    _trimed = trim_before(string, regex_left, include_pattern=include_pattern)
+    _trimed = trim_after(_trimed, regex_right, include_pattern=include_pattern)
+    return _trimed
 
 
 def check_duplicates_in_tag_tuple(tagtuple):

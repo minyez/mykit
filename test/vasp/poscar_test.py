@@ -54,7 +54,8 @@ class test_poscar_build(ut.TestCase):
         _countGood = 0
         _countBad = 0
         _countVerified = 0
-        __poscarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../testdata')
+        __poscarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), \
+                                   '..', 'testdata', 'vasp')
         if os.path.isdir(__poscarDir):
             for _f in os.listdir(__poscarDir):
                 if re.match('^POSCAR_[0-9]+$', _f):
@@ -62,7 +63,7 @@ class test_poscar_build(ut.TestCase):
                     _i = _f.split('_')[1]
                     _path = os.path.join(__poscarDir, _f)
                     _poscar = Poscar.read_from_file(_path)
-                    _verifyJson = os.path.join(__poscarDir, 'Cell_'+_i+'.json')
+                    _verifyJson = os.path.join(__poscarDir, '..', 'Cell_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
                         _vs = _verify_poscar_by_json(self, _poscar, _verifyJson)
                         if _vs:
