@@ -17,17 +17,17 @@ class KpointsError(Exception):
 class kpoints(verbose):
     '''class for manipulation KPOINTS, IBZKPT files
 
-    At least one of kgrid, kdense, kpath, kpoints
+    At least one of kdiv, kdense, kpath, kpoints
     should be specified.
 
     Note:
         When auto mode check is triggered (kmode=None),
         the priority to determine the mode is:
-            kpoints > kpath > kgrid > kdense
+            kpoints > kpath > kdiv > kdense
 
     Args:
         comment (str): the comment for KPOINTS
-        kgrid (3-member list): the number of grid on each axis
+        kdiv (3-member list): the number of grid on each axis
         kdense (integer): the density of k grid point
             If set to non-zero value and kmode is "G", "M" or "A", the kmode will automatically be set as "A".
             If kmode is set as "L" and kpath specified, it is the number of kpoints along two special points.
@@ -52,7 +52,7 @@ class kpoints(verbose):
             If specified, the explict mode will be triggered.
     '''
 
-    def __init__(self, comment=None, kmode=None, kgrid=None, kdense=0, kshift=None, kpath=None, kpoints=None):
+    def __init__(self, comment=None, kmode=None, kdiv=None, kdense=0, kshift=None, kpath=None, kpoints=None):
         try:
             assert kdense >= 0
         except AssertionError:
@@ -75,13 +75,13 @@ class kpoints(verbose):
             elif kpath != None:
                 _check_valid_kpath_dict(kpath)
                 _kmode = "L"
-            elif kgrid != None:
+            elif kdiv != None:
                 _kmode = "G"
             elif kdense > 0:
                 # self.print_warn("Length(kdense) set for non-line mode. Switch to \"A\" mode.", level=1)
                 _kmode = "A"
             else:
-                raise KpointsError("Enter at least one of kgrid, kdense, kpath and kpoints")
+                raise KpointsError("Enter at least one of kdiv, kdense, kpath and kpoints")
         # Consistency check for each mode
         if _kmode == "L":
             if kdense == 0:
@@ -90,10 +90,10 @@ class kpoints(verbose):
                 raise KpointsError("kpath should be specified for line mode")
         if _kmode == "A" and kdense == 0:
             raise KpointsError("Fully automatic mode needs positive kdense (e.g. 30)")
-        if _kmode in ["G", "M"] and kgrid == None:
-            raise KpointsError("kgrid should be specified for Gamma or MP mode")
+        if _kmode in ["G", "M"] and kdiv == None:
+            raise KpointsError("kdiv should be specified for Gamma or MP mode")
 
-        self._control = kmesh_control("vasp", kgrid=kgrid, kdense=kdense, \
+        self._control = kmesh_control("vasp", kdiv=kdiv, kdense=kdense, \
             kshift=kshift, kpath=kpath, kpoints=kpoints, kmode=_kmode)
 
     @property
@@ -128,11 +128,11 @@ class kpoints(verbose):
                 kd = 0
             _strs += [str(kd), _modeDict[_mode],]
             if _mode in ["G", "M"]:
-                _kg, _ks = self._control.tag_vals("vasp", "kgrid", "kshift")
+                _kg, _ks = self._control.tag_vals("vasp", "kdiv", "kshift")
                 try:
                     _strs.append("{:2d} {:2d} {:2d}".format(*_kg))
                 except (TypeError, IndexError):
-                    raise KpointsError("Bad kgrid format for G/M mode: {}".format(_kg))
+                    raise KpointsError("Bad kdiv format for G/M mode: {}".format(_kg))
                 if _ks == None:
                     _ks = [0, 0, 0]
                 try:

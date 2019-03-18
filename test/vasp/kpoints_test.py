@@ -18,27 +18,27 @@ class test_kpoints_init(ut.TestCase):
             kpoints)
         self.assertRaisesRegex(KpointsError, \
             r"Unknown KPOINTS mode: *", \
-            kpoints, kmode="D", kgrid=[6,6,6])
+            kpoints, kmode="D", kdiv=[6,6,6])
         self.assertRaisesRegex(KpointsError, \
             r"kpath should be specified for line mode", \
             kpoints, kmode="L", kdense=10)
         self.assertRaisesRegex(KpointsError, \
             r"Fully automatic mode needs positive kdense*", \
-            kpoints, kmode="A", kgrid=[6,6,6])
+            kpoints, kmode="A", kdiv=[6,6,6])
         self.assertRaisesRegex(KpointsError, \
-            r"kgrid should be specified*", \
+            r"kdiv should be specified*", \
             kpoints, kmode="G", kdense=10)
         self.assertRaisesRegex(KpointsError, \
-            r"kgrid should be specified*", \
+            r"kdiv should be specified*", \
             kpoints, kmode="M", kdense=10)
 
     def test_auto_mode_check(self):
         '''Check mode identification. Test print as well
         '''
         tf = tempfile.NamedTemporaryFile()
-        # use G-mode when kgrid is specified
+        # use G-mode when kdiv is specified
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
-            kgrid=[5,5,5])
+            kdiv=[5,5,5])
         self.assertEqual("G", kp.mode)
         kp.write(tf.name)
         # when kdense is positive and kmode is not "L", switch to automatic
@@ -62,9 +62,9 @@ class test_kpoints_init(ut.TestCase):
 
     def test_raise_in_G_M_mode(self):
         kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
-            kgrid=[5,5], kmode="G")
+            kdiv=[5,5], kmode="G")
         self.assertRaisesRegex(KpointsError, \
-            r"Bad kgrid format for G/M mode: *", \
+            r"Bad kdiv format for G/M mode: *", \
             print, kp)
     
     def test_raise_in_L_mode(self):

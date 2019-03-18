@@ -90,6 +90,7 @@
         "NWRITE": "",
         "SYSTEM": "",
         "TIME": "",
-        "SMASS": ""
+        "SMASS": "",
+        "KPOINT_BSE": ""
     }
 }

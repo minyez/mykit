@@ -14,6 +14,7 @@ The ``cell`` class and its subclasses accept the following kwargs when being ins
     - comment (str): message about the cell
 '''
 from collections import OrderedDict
+from collections.abc import Iterable
 # import spglib
 from numbers import Real
 
@@ -189,12 +190,7 @@ class Cell(prec, verbose):
         Args:
             csymbol (str) : chemical-symbol-like identifier
         '''
-        __ind = []
-        _csym = csymbol.capitalize()
-        for _i, _s in enumerate(self.atoms):
-            if _csym == _s:
-                __ind.append(_i)
-        return __ind
+        return get_sym_index(self.atoms, csymbol)
 
     # * Sorting method
     def __bubble_sort_atoms(self, key, indices, reverse=False):
@@ -1060,3 +1056,18 @@ def periodic_duplicates_in_cell(directCoord):
                 _c[i] = 1.0
             _dupcs.extend(_trans)
     return tuple(_dupcs), _n
+
+def get_sym_index(atomsIter, csymbol):
+    '''Return the indices of ``csymbol`` in iterable ``atomsIter``
+
+    Args:
+        atomsIter (Iterable): container of atoms symbols (string)
+        csymbol (str): the chemical symbol of atom to locate
+    '''
+    assert isinstance(atomsIter, Iterable)
+    __ind = []
+    _csym = csymbol.capitalize()
+    for _i, _s in enumerate(atomsIter):
+        if _csym == _s:
+            __ind.append(_i)
+    return __ind

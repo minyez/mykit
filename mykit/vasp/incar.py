@@ -442,15 +442,13 @@ def decode_incar_value(vstr):
     Args:
         vstr (str): value string to decode
     '''
+    boolDict = {'false': False, 'true': True}
     def __convert(v):
         # Bool
         if v.startswith('.'):
             if v.endswith('.'):
                 b = vs[1:-1].lower()
-                if b == 'false':
-                    return False
-                elif b == 'true':
-                    return True
+                return boolDict.get(b, None)
         try:
             return int(v)
         except ValueError:
