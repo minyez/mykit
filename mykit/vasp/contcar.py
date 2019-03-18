@@ -5,9 +5,9 @@
 from mykit.core.cell import Cell
 
 
-class contcarError(Exception):
+class ContcarError(Exception):
     pass
 
 
-class contcar(Cell):
+class Contcar(Cell):
     pass

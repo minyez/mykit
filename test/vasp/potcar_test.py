@@ -7,22 +7,22 @@ import tempfile
 import unittest as ut
 from shutil import copy2, move
 
-from mykit.vasp.potcar import Potcar, PotcarError, potcar_search
+from mykit.vasp.potcar import Potcar, PotcarError, PotcarSearch
 
 
-class test_potcar_search(ut.TestCase):
+class test_PotcarSearch(ut.TestCase):
 
 
     def test_check_names(self):
         # raise first for no element input
-        self.assertRaisesRegex(PotcarError, r"should have at least one element", potcar_search)
-        pts = potcar_search("C")
+        self.assertRaisesRegex(PotcarError, r"should have at least one element", PotcarSearch)
+        pts = PotcarSearch("C")
         self.assertTupleEqual(("C",), pts.names)
-        pts = potcar_search("C", "H", "O")
+        pts = PotcarSearch("C", "H", "O")
         self.assertTupleEqual(("C", "H", "O"), pts.names)
-        pts = potcar_search("C", usegw=True)
+        pts = PotcarSearch("C", usegw=True)
         self.assertTupleEqual(("C_GW",), pts.names)
-        pts = potcar_search("C_GW", "H", usegw=True)
+        pts = PotcarSearch("C_GW", "H", usegw=True)
         self.assertTupleEqual(("C_GW", "H_GW"), pts.names)
 
     def test_xcdir_not_found_when_export(self):
@@ -43,7 +43,7 @@ class test_potcar_search(ut.TestCase):
         with open(_path, 'w') as _f:
             json.dump(_opts, _f, indent=2)
         
-        pts = potcar_search("C")
+        pts = PotcarSearch("C")
         self.assertDictEqual(pts._homePaw, {"PBE": "/Users/pawpbe", "LDA": os.environ["HOME"]})
 
         try:
@@ -71,7 +71,7 @@ class test_potcar_search(ut.TestCase):
                 _tf.close()
 
     def test_change_names(self):
-        pts = potcar_search("C")
+        pts = PotcarSearch("C")
         self.assertTupleEqual(pts.names, ("C",))
         pts.names = ("P", "C_GW")
         self.assertTupleEqual(("P", "C_GW"), pts.names)

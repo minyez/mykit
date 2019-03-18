@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import unittest as ut
-from mykit.core.log import verbose
-from mykit.core.config import global_config
 import tempfile
+import unittest as ut
 
-class direct_verbose_test(ut.TestCase):
+from mykit.core.config import global_config
+from mykit.core.log import Verbose
 
-    _vb = verbose()
+
+class direct_Verbose_test(ut.TestCase):
+
+    _vb = Verbose()
 
     def test_property(self):
         self._vb.warnLevel = 1

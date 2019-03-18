@@ -5,14 +5,14 @@ import os
 
 from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
                                  parse_to_tagdict, prog_mapper, tags_mapping)
-from mykit.core.log import verbose
+from mykit.core.log import Verbose
 
 
 class PlanewaveError(Exception):
     pass
 
 
-class planewave_control(verbose, prog_mapper):
+class planewave_control(Verbose, prog_mapper):
     '''the base class that manage parameters of plane-wave basis.
     '''
 

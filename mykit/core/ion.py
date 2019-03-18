@@ -4,14 +4,14 @@ import os
 
 from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
                                  parse_to_tagdict, prog_mapper, tags_mapping)
-from mykit.core.log import verbose
+from mykit.core.log import Verbose
 
 
 class IonError(Exception):
     pass
 
 
-class ion_control(verbose, prog_mapper):
+class ion_control(Verbose, prog_mapper):
 
     _meta = os.path.join(os.path.dirname(__file__), 'metadata', 'ionmap.json')
     _tagMaps = build_tag_map_obj(_meta, "mykit", "json")

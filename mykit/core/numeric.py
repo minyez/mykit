@@ -9,7 +9,7 @@ npPrec = config.get('numpyPrec')
 del config, global_config
 
 #pylint: disable=too-few-public-methods
-class prec:
+class Prec:
     '''Metaclass to define the precision of numerical calculation and threshold
     '''
     _dtype = 'float'+str(npPrec).strip()

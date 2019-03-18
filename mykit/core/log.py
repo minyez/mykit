@@ -6,7 +6,7 @@ import sys
 from mykit.core.config import global_config
 
 
-class verbose:
+class Verbose:
     '''Class that controls the level of information print.
 
     Warning and information have their own level of verbose.

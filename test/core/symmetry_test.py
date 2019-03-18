@@ -11,11 +11,10 @@ from mykit.core.metadata._spk import (_special_kpoints, cond_a_lt_b,
                                       cond_abc_invsq, cond_any, cond_c_lt_a,
                                       cond_curt_a_lt_sqrt_c,
                                       cond_max_bc_noneq_left)
-from mykit.core.symmetry import (Symmetry, SymmetryError,
-                                 _check_valid_custom_ksym_dict,
+from mykit.core.symmetry import (SpaceGroup, SpecialKpoints, Symmetry,
+                                 SymmetryError, _check_valid_custom_ksym_dict,
                                  _check_valid_spg_id,
-                                 _spglib_check_cell_and_coordSys, space_group,
-                                 special_kpoints)
+                                 _spglib_check_cell_and_coordSys)
 
 NKSETS_COND = {
     cond_any: 1,
@@ -86,24 +85,24 @@ class test_space_group(ut.TestCase):
 
     def test_get_spg_symbol(self):
         for id, symbol in self.testPair:
-            self.assertEqual(space_group.get_spg_symbol(id), symbol)
+            self.assertEqual(SpaceGroup.get_spg_symbol(id), symbol)
         # test raises
         self.assertRaisesRegex(SymmetryError, r"string received. id should be int", \
-            space_group.get_spg_symbol, 'P1')
+            SpaceGroup.get_spg_symbol, 'P1')
         self.assertRaisesRegex(SymmetryError, r"Invalid space group id \(1~230\): 231", \
-            space_group.get_spg_symbol, 231)
+            SpaceGroup.get_spg_symbol, 231)
         self.assertRaisesRegex(SymmetryError, r"Invalid space group id \(1~230\): -1", \
-            space_group.get_spg_symbol, -1)
+            SpaceGroup.get_spg_symbol, -1)
 
     def test_get_spg_id(self):
         for id, symbol in self.testPair:
-            self.assertEqual(space_group.get_spg_id(symbol), id)
+            self.assertEqual(SpaceGroup.get_spg_id(symbol), id)
         self.assertRaisesRegex(SymmetryError, \
             r"int received. symbol should be string", \
-            space_group.get_spg_id, 1)
+            SpaceGroup.get_spg_id, 1)
         self.assertRaisesRegex(SymmetryError, \
             r"Space group symbol is not found in ITA: Pxxx", \
-            space_group.get_spg_id, 'Pxxx')
+            SpaceGroup.get_spg_id, 'Pxxx')
 
 
     def test_get_spg(self):
@@ -222,13 +221,13 @@ class test_special_kpoints(ut.TestCase):
         '''Test initialize directly or from Cell or Symmetry instance
         '''
         # check P1
-        spk = special_kpoints(1, (1.0,1.1,1.2), True)
+        spk = SpecialKpoints(1, (1.0,1.1,1.2), True)
         self.assertEqual(1, len(spk.spkCoord))
         self.assertIn("GM", spk.spkCoord)
 
     def test_convert_kpath(self):
         # check space group 227, primitive
-        spkpts = special_kpoints(227, (5.0, 5.0, 5.0), True)
+        spkpts = SpecialKpoints(227, (5.0, 5.0, 5.0), True)
         pathGM2X2L = spkpts.convert_kpath("GM-X-L")
         self.assertIn("symbols", pathGM2X2L)
         self.assertIn("coordinates", pathGM2X2L)
@@ -241,7 +240,7 @@ class test_special_kpoints(ut.TestCase):
                       [0.5,0.0,0.5],
                       [0.5,0.0,0.5],
                       [0.5,0.5,0.5]])))
-        spkpts = special_kpoints(5, (5.0, 5.0, 5.0), False)
+        spkpts = SpecialKpoints(5, (5.0, 5.0, 5.0), False)
         pathGM2Y = spkpts.convert_kpath("GM-Y")
         # Y = (0.5,0.5,0) in prim, (0,1,0)
         coords = pathGM2Y["coordinates"]
@@ -251,11 +250,11 @@ class test_special_kpoints(ut.TestCase):
     def test_kpath_facotry_methods(self):
         # Zincblende (spg 216)
         zb = Cell.zincblende("Zn", "O", a=5.0, primitive=True)
-        kp = special_kpoints.get_kpaths_predef_from_cell(zb)
+        kp = SpecialKpoints.get_kpaths_predef_from_cell(zb)
         self.assertTrue(isinstance(kp, list))
-        kp = special_kpoints.get_kpaths_predef_from_cell(zb, 0)
+        kp = SpecialKpoints.get_kpaths_predef_from_cell(zb, 0)
         self.assertTrue(isinstance(kp, dict))
-        kp = special_kpoints.get_kpath_from_cell("GM-L-X", zb)
+        kp = SpecialKpoints.get_kpath_from_cell("GM-L-X", zb)
         symbols = kp["symbols"]
         coords = kp["coordinates"]
         self.assertListEqual(["GM", "L", "L", "X"], symbols)
@@ -266,7 +265,7 @@ class test_special_kpoints(ut.TestCase):
                       [0.5,0.0,0.5]])))
 
     def test_magic(self):
-        spkpts = special_kpoints(199, (5.0, 5.0, 5.0), True)
+        spkpts = SpecialKpoints(199, (5.0, 5.0, 5.0), True)
         self.assertListEqual([0.0,0.0,0.0], spkpts["GM"])
         self.assertListEqual([0.0,0.0,0.5], spkpts["N"])
         spkpts["P"] = [0.2,0.2,0.2]
@@ -274,16 +273,16 @@ class test_special_kpoints(ut.TestCase):
 
     def test_init_from_symmetry(self):
         sym = Symmetry(Cell.wurtzite("Zn", "O", a=6.0))
-        spk = special_kpoints.from_symmetry(sym)
+        spk = SpecialKpoints.from_symmetry(sym)
         self.assertEqual(spk.spgId, 186)
 
     def test_init_from_cell(self):
         aTiO2Prim = Cell.anatase("Ti", "O", primitive=True)
-        print(aTiO2Prim)
-        spk = special_kpoints.from_cell(aTiO2Prim)
+        # print(aTiO2Prim)
+        spk = SpecialKpoints.from_cell(aTiO2Prim)
         self.assertEqual(spk.spgId, 141)
         aTiO2Conv = Cell.anatase("Ti", "O", primitive=False)
-        spk = special_kpoints.from_cell(aTiO2Conv)
+        spk = SpecialKpoints.from_cell(aTiO2Conv)
         self.assertEqual(spk.spgId, 141)
 
 
@@ -296,7 +295,7 @@ class test_symmetry_utils(ut.TestCase):
             _spglib_check_cell_and_coordSys, 1)
         cF = Cell.bravais_cF("C", a=5.0)
         cF.coordSys = "C"
-        print(cF)
+        # print(cF)
         self.assertRaisesRegex(SymmetryError, \
             r"The coordinate system should be direct. Cartisian found.", \
             _spglib_check_cell_and_coordSys, cF)

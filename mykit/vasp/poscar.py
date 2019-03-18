@@ -14,14 +14,14 @@ from mykit.core.utils import trim_after
 class PoscarError(Exception):
     pass
 
-class poscar(Cell):
+class Poscar(Cell):
     '''The class to manipulate POSCAR, the VASP lattice input file.
     '''
 
     _error = PoscarError
 
     def __init__(self, cell, atoms, pos, **kwargs):
-        super(poscar, self).__init__(cell, atoms, pos, **kwargs)
+        super(Poscar, self).__init__(cell, atoms, pos, **kwargs)
 
     # ? Rewrite atomType and typeIndex properties, as the element symbol can appear twice in POSCAR
     # ? But it may be good to let user deal with it, such as using "Fe1", "Fe2" to distinguish.

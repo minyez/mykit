@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from mykit.vasp.poscar import poscar
+from mykit.vasp.poscar import Poscar
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
@@ -10,5 +10,5 @@ if __name__ == "__main__":
         sys.exit(-1)
     poscarFiles = sys.argv[1:]
     for pf in poscarFiles:
-        pc = poscar.read_from_file(pf)
+        pc = Poscar.read_from_file(pf)
         pc.write(pf+'_output')

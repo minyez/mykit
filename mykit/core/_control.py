@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from mykit.core.log import verbose
+from mykit.core.log import Verbose
 
 
 class ControllerError(Exception):
@@ -113,8 +113,8 @@ def tags_mapping(mapDict, progFrom, progTo, *tags, getAll=False):
         return tuple()
     if not check_valid_map(mapDict):
         raise ControllerError
-    verbose.print_cm_log("Use mapDict:", mapDict, level=4, depth=1)
-    verbose.print_cm_log("To map tags:", tags, level=4, depth=1)
+    Verbose.print_cm_log("Use mapDict:", mapDict, level=4, depth=1)
+    Verbose.print_cm_log("To map tags:", tags, level=4, depth=1)
     _pF = progFrom
     _pT = progTo
     _d = {}
@@ -185,9 +185,9 @@ def extract_from_tagdict(controlClass, tvDict, progName, *tags, delete=False):
     if len(tags) == 0:
         return []
     mytags = controlClass.map_to_mykit_tags(*tags, progFrom=progName)
-    # verbose.print_cm_log("extract mykit tags: ", _xctags, level=3, depth=2)
+    # Verbose.print_cm_log("extract mykit tags: ", _xctags, level=3, depth=2)
     myvals = list(map(tvDict.get, mytags))
-    # verbose.print_cm_log("      their values: ", _vals, level=3, depth=2)
+    # Verbose.print_cm_log("      their values: ", _vals, level=3, depth=2)
     for i, v in enumerate(myvals):
         if v == None:
             if tags[i] in tvDict:

@@ -4,7 +4,7 @@
 import tempfile
 import unittest as ut
 
-from mykit.vasp.kpoints import KpointsError, kpoints
+from mykit.vasp.kpoints import Kpoints, KpointsError
 
 
 class test_kpoints_init(ut.TestCase):
@@ -12,56 +12,56 @@ class test_kpoints_init(ut.TestCase):
     def test_raise_at_initiate(self):
         self.assertRaisesRegex(KpointsError, \
             r"kdense must not be negative", \
-            kpoints, kdense=-1)
+            Kpoints, kdense=-1)
         self.assertRaisesRegex(KpointsError, \
             r"Enter at least one of *", \
-            kpoints)
+            Kpoints)
         self.assertRaisesRegex(KpointsError, \
             r"Unknown KPOINTS mode: *", \
-            kpoints, kmode="D", kdiv=[6,6,6])
+            Kpoints, kmode="D", kdiv=[6,6,6])
         self.assertRaisesRegex(KpointsError, \
             r"kpath should be specified for line mode", \
-            kpoints, kmode="L", kdense=10)
+            Kpoints, kmode="L", kdense=10)
         self.assertRaisesRegex(KpointsError, \
             r"Fully automatic mode needs positive kdense*", \
-            kpoints, kmode="A", kdiv=[6,6,6])
+            Kpoints, kmode="A", kdiv=[6,6,6])
         self.assertRaisesRegex(KpointsError, \
             r"kdiv should be specified*", \
-            kpoints, kmode="G", kdense=10)
+            Kpoints, kmode="G", kdense=10)
         self.assertRaisesRegex(KpointsError, \
             r"kdiv should be specified*", \
-            kpoints, kmode="M", kdense=10)
+            Kpoints, kmode="M", kdense=10)
 
     def test_auto_mode_check(self):
         '''Check mode identification. Test print as well
         '''
         tf = tempfile.NamedTemporaryFile()
         # use G-mode when kdiv is specified
-        kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
+        kp = Kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kdiv=[5,5,5])
         self.assertEqual("G", kp.mode)
         kp.write(tf.name)
         # when kdense is positive and kmode is not "L", switch to automatic
-        kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
+        kp = Kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kdense=10)
         self.assertEqual("A", kp.mode)
         kp.write(tf.name)
         # when kpath is specified, always use line mode
         _kpath = [(0.0,0.0,0.0), (0.0,0.5,0.0)]
         self.assertRaisesRegex(TypeError, "kpath must be dictionary.", \
-            kpoints, kpath=_kpath, kdense=10)
+            Kpoints, kpath=_kpath, kdense=10)
         _kpath = {
                 "symbols": ["GM", "X"],
                 "coordinates": [(0.0,0.0,0.0), (0.0,0.5,0.0)],
                 }
-        kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
+        kp = Kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kdense=10, kpath=_kpath)
         self.assertEqual("L", kp.mode)
         kp.write(tf.name)
         tf.close()
 
     def test_raise_in_G_M_mode(self):
-        kp = kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
+        kp = Kpoints(comment="KPOINTS for test_raise_in_G_M_mode", \
             kdiv=[5,5], kmode="G")
         self.assertRaisesRegex(KpointsError, \
             r"Bad kdiv format for G/M mode: *", \
@@ -89,13 +89,13 @@ class test_kpoints_init(ut.TestCase):
                 },
             ]
         for _kpath in _kpathsBadDiffLen:
-            kp = kpoints(comment="KPOINTS for test_raise_in_L_mode", \
+            kp = Kpoints(comment="KPOINTS for test_raise_in_L_mode", \
                 kmode="L", kdense=15, kpath=_kpath)
             self.assertRaisesRegex(KpointsError, \
                 "Inconsistent length of symbols and coordiantes", \
                 print, kp)
         for _kpath in _kpathsBadOdd:
-            kp = kpoints(comment="KPOINTS for test_raise_in_L_mode", \
+            kp = Kpoints(comment="KPOINTS for test_raise_in_L_mode", \
                 kmode="L", kdense=15, kpath=_kpath)
             self.assertRaisesRegex(KpointsError, \
                 "Odd length found for symbols/coordiantes, require even.", \

@@ -21,8 +21,8 @@ from numbers import Real
 import numpy as np
 
 from mykit.core.constants import ang2au, au2ang, pi
-from mykit.core.log import verbose
-from mykit.core.numeric import prec
+from mykit.core.log import Verbose
+from mykit.core.numeric import Prec
 
 
 # ==================== classes ====================
@@ -32,7 +32,7 @@ class CellError(Exception):
     pass
 
 
-class Cell(prec, verbose):
+class Cell(Prec, Verbose):
     '''Cell structure class
 
     Args:

@@ -1,12 +1,12 @@
 # coding = utf-8
 '''Class that manipulates WIEN2k main input file struct
 '''
-from mykit.core.lattice import lattice
+from mykit.core.cell import Cell
 
 
-class structError(Exception):
+class StructError(Exception):
     pass
 
 
-class w2kstruct(lattice):
+class Struct(Cell):
     pass

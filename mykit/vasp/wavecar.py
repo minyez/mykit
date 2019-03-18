@@ -4,7 +4,7 @@ class wavecarError(Exception):
     pass
 
 
-class wavecar:
+class Wavecar:
 
     def __init__(self, WavFile='WAVECAR', verbose=True):
         

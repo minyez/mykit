@@ -11,14 +11,14 @@ from mykit.core.cell import Cell
 from mykit.core.kmesh import (_check_valid_kpath_dict,
                               _check_valid_ksym_coord_pair, kpath_decoder)
 from mykit.core.metadata._spk import _special_kpoints
-from mykit.core.numeric import prec
+from mykit.core.numeric import Prec
 
 
 class SymmetryError(Exception):
     pass
 
 
-class Symmetry(prec):
+class Symmetry(Prec):
     '''the class for symmetry information of crystal, powered by spglib
 
     Args:
@@ -213,7 +213,7 @@ class Symmetry(prec):
 
 
 # pylint: disable=bad-whitespace
-class space_group:
+class SpaceGroup:
     '''the space group symbols documented in the international table of crystallography A (ITA)
 
     TODO:
@@ -355,7 +355,7 @@ class space_group:
         return cls.symbols[id-1]
 
 
-class special_kpoints(prec):
+class SpecialKpoints(Prec):
     '''class for special kpoints of space groups
 
     Args:
@@ -384,7 +384,7 @@ class special_kpoints(prec):
             raise SymmetryError(str(_err))
         self._sp = self._spDict["spPrim"][iset]
         self._isPrim = isPrimitive
-        self._transMat = space_group.k_trans_mat_from_prim_to_conv(self.spgId)
+        self._transMat = SpaceGroup.k_trans_mat_from_prim_to_conv(self.spgId)
         self._custom = _check_valid_custom_ksym_dict(custom_symbols)
         try:
             self._kpaths = self._spDict["kpath"][iset]

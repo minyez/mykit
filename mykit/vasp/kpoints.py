@@ -6,7 +6,7 @@ import os
 from collections.abc import Iterable
 
 from mykit.core.kmesh import _check_valid_kpath_dict, kmesh_control
-from mykit.core.log import verbose
+from mykit.core.log import Verbose
 
 
 class KpointsError(Exception):
@@ -14,7 +14,7 @@ class KpointsError(Exception):
 
 # ! kmesh_control instance is used as an attribute,
 # ! since vasp does not have any tag for it
-class kpoints(verbose):
+class Kpoints(Verbose):
     '''class for manipulation KPOINTS, IBZKPT files
 
     At least one of kdiv, kdense, kpath, kpoints

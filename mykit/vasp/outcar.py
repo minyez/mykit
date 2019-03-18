@@ -7,15 +7,15 @@ import subprocess as sp
 import numpy as np
 
 # from mykit.core.lattice import lattice
-from mykit.core.log import verbose
+from mykit.core.log import Verbose
 from mykit.core.utils import common_ss_conv
 
 
-class outcarError(Exception):
+class OutcarError(Exception):
     pass
 
 
-class outcar(verbose):
+class Outcar(Verbose):
     
     def __init__(self, OutFile='OUTCAR', verbose=True):
         

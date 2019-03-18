@@ -7,14 +7,14 @@ from copy import deepcopy
 from fnmatch import fnmatch
 
 from mykit.core.config import global_config
-from mykit.core.log import verbose
+from mykit.core.log import Verbose
 
 
 class PotcarError(Exception):
     pass
 
 
-class potcar_search(verbose):
+class PotcarSearch(Verbose):
     '''Class for locating POTCAR.
 
     Args:

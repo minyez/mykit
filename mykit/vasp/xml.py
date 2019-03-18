@@ -7,10 +7,10 @@ from copy import deepcopy
 import numpy as np
 
 from mykit.core.cell import get_sym_index, sym_nat_from_atoms
-from mykit.core.log import verbose
-from mykit.core.numeric import prec
-from mykit.vasp.incar import incar
-from mykit.vasp.poscar import poscar
+from mykit.core.log import Verbose
+from mykit.core.numeric import Prec
+from mykit.vasp.incar import Incar
+from mykit.vasp.poscar import Poscar
 
 try:
     from lxml import etree
@@ -22,7 +22,7 @@ class VasprunxmlError(Exception):
     pass
 
 
-class Vasprunxml(verbose, prec):
+class Vasprunxml(Verbose, Prec):
     '''Class to read and analyse the data from the vasprun.xml
     '''
 

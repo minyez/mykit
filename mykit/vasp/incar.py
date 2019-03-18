@@ -24,7 +24,7 @@ class IncarError(Exception):
     pass
 
 
-class incar(*_incar_controllers):
+class Incar(*_incar_controllers):
     '''manage tags and IO of VASP input file INCAR
     '''
     _metadata = os.path.join(os.path.dirname(__file__), "metadata", "incartags.json")

@@ -11,41 +11,41 @@ import unittest as ut
 import numpy as np
 
 from mykit.core.cell import Cell
-from mykit.vasp.poscar import PoscarError, poscar
+from mykit.vasp.poscar import Poscar, PoscarError
 
 
 class test_poscar_build(ut.TestCase):
     
     def test_init_from_cell_atoms_pos(self):
         _cell = Cell.bravais_cP("C", a=5.0)
-        _poscar = poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
+        _poscar = Poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
         _latt = _poscar.get_cell()[0]
         self.assertAlmostEqual(_latt[0,0], 5.0)
         self.assertEqual(len(_poscar), 1)
 
         _cell = Cell.bravais_cI("C", a=5.0, unit="au")
-        _poscar = poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
+        _poscar = Poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
         self.assertEqual(_poscar.unit, "au")
         self.assertEqual(len(_poscar), 2)
 
         _cell = Cell.bravais_cF("C", a=5.0, coordSys="C")
-        _poscar = poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
+        _poscar = Poscar(*_cell.get_cell(), coordSys=_cell.coordSys, unit=_cell.unit)
         self.assertEqual(_poscar.coordSys, "D")
         self.assertEqual(len(_poscar), 4)
 
     def test_init_from_cell(self):
         _cell = Cell.bravais_cP("C", a=5.0)
-        _poscar = poscar.create_from_cell(_cell)
+        _poscar = Poscar.create_from_cell(_cell)
         self.assertAlmostEqual(_poscar.get_cell()[0][0,0], 5.0)
         self.assertEqual(len(_poscar), 1)
 
         _cell = Cell.bravais_cI("C", a=5.0, unit="au")
-        _poscar = poscar.create_from_cell(_cell)
+        _poscar = Poscar.create_from_cell(_cell)
         self.assertEqual(_poscar.unit, "au")
         self.assertEqual(len(_poscar), 2)
         
         _cell = Cell.bravais_cF("C", a=5.0, coordSys="C")
-        _poscar = poscar.create_from_cell(_cell)
+        _poscar = Poscar.create_from_cell(_cell)
         self.assertEqual(_poscar.coordSys, "D")
         self.assertEqual(len(_poscar), 4)
 
@@ -61,7 +61,7 @@ class test_poscar_build(ut.TestCase):
                     _countGood += 1
                     _i = _f.split('_')[1]
                     _path = os.path.join(__poscarDir, _f)
-                    _poscar = poscar.read_from_file(_path)
+                    _poscar = Poscar.read_from_file(_path)
                     _verifyJson = os.path.join(__poscarDir, 'Cell_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
                         _vs = _verify_poscar_by_json(self, _poscar, _verifyJson)
@@ -71,7 +71,7 @@ class test_poscar_build(ut.TestCase):
                     _countBad += 1
                     _i = _f.split('_')[2]
                     _path = os.path.join(__poscarDir, _f)
-                    self.assertRaises(PoscarError, poscar.read_from_file, _path)
+                    self.assertRaises(PoscarError, Poscar.read_from_file, _path)
         print("{} good POSCARs readed ({} verified by JSON file). {} bad POSCARs raised.".format(_countGood, _countVerified, _countBad))
 
 
@@ -80,7 +80,7 @@ class test_poscar_write(ut.TestCase):
     def test_print_write(self):
         '''test functionality of print and write of POSCAR
         '''
-        dC = poscar.diamond("C")
+        dC = Poscar.diamond("C")
         tf = tempfile.NamedTemporaryFile()
         dC.write(pathPoscar=tf.name)
         tf.close()
@@ -90,7 +90,7 @@ def _verify_poscar_by_json(tc, pc, pathJson):
     '''
     '''
     assert isinstance(tc, ut.TestCase)
-    assert isinstance(pc, poscar)
+    assert isinstance(pc, Poscar)
     with open(pathJson, 'r') as f:
         _vDict = json.load(f)
 

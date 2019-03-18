@@ -7,19 +7,19 @@ import re
 import tempfile
 import unittest as ut
 
-from mykit.vasp.incar import (IncarError, _get_para_tags_from_nproc,
-                              _get_xc_tags_from_xcname, incar)
+from mykit.vasp.incar import (Incar, IncarError, _get_para_tags_from_nproc,
+                              _get_xc_tags_from_xcname)
 
 
 class test_tag_manipulation(ut.TestCase):
 
     def test_empty_init(self):
-        _ic = incar()
+        _ic = Incar()
         _ic.parse_tags(encutPw=100)
         _ic.parse_tags(ENCUT=100)
 
     def test_parse_tag_and_tag_vals(self):
-        _ic = incar(encutPw=100, ENCUTGW=50, gga="PE", ISTART=1)
+        _ic = Incar(encutPw=100, ENCUTGW=50, gga="PE", ISTART=1)
         # get the same value by either INCAR tag or its "n a" equivalent
         self.assertListEqual([100], _ic.tag_vals("ENCUT"))
         self.assertListEqual([100], _ic.tag_vals("encutPw"))
@@ -50,7 +50,7 @@ class test_tag_manipulation(ut.TestCase):
         self.assertListEqual([3], _ic.tag_vals("IBRION"))
 
     def test_pop_and_delete_tags(self):
-        _ic = incar(ENCUT=100, ENCUTGW=50, gga="PE", ISTART=1, AEXX=0.1, EDIFF=1.0E-6)
+        _ic = Incar(ENCUT=100, ENCUTGW=50, gga="PE", ISTART=1, AEXX=0.1, EDIFF=1.0E-6)
         ecut = _ic.pop_tags("ENCUT")[0]
         self.assertEqual(100, ecut)
         self.assertListEqual([None], _ic.tag_vals("ENCUT"))
@@ -58,7 +58,7 @@ class test_tag_manipulation(ut.TestCase):
         self.assertListEqual([None,]*2, _ic.tag_vals("GGA", "restartWave"))
 
     def test_getitem(self):
-        _ic = incar(ENCUT=100, ENCUTGW=50, gga="PE", ISTART=1, AEXX=0.1, EDIFF=1.0E-6)
+        _ic = Incar(ENCUT=100, ENCUTGW=50, gga="PE", ISTART=1, AEXX=0.1, EDIFF=1.0E-6)
         self.assertEqual(100, _ic["ENCUT"])
         self.assertEqual(50, _ic["ENCUTGW"])
         self.assertEqual("PE", _ic["GGA"])
@@ -66,7 +66,7 @@ class test_tag_manipulation(ut.TestCase):
         self.assertRaises(IncarError, _ic.__getitem__, "gga")
     
     def test_setitem(self):
-        _ic = incar()
+        _ic = Incar()
         _ic["ENCUT"] = 100
         self.assertListEqual([100,], _ic.tag_vals("ENCUT"))
         _ic["GGA"] = "PE"
@@ -74,53 +74,53 @@ class test_tag_manipulation(ut.TestCase):
         self.assertRaises(IncarError, _ic.__setitem__, "gga", "PE")
 
 
-class test_incar_io(ut.TestCase):
+class test_Incar_io(ut.TestCase):
 
     def test_read_from_file(self):
-        _incar = None
+        _Incar = None
         _countGood = 0
         _countBad = 0
         _countVerified = 0
-        __incarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../testdata')
-        if os.path.isdir(__incarDir):
-            for _f in os.listdir(__incarDir):
+        __IncarDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../testdata')
+        if os.path.isdir(__IncarDir):
+            for _f in os.listdir(__IncarDir):
                 if re.match('^INCAR_[0-9]+$', _f):
                     _countGood += 1
                     _i = _f.split('_')[1]
-                    _path = os.path.join(__incarDir, _f)
-                    _incar = incar.read_from_file(_path)
-                    _verifyJson = os.path.join(__incarDir, 'verify_incar_'+_i+'.json')
+                    _path = os.path.join(__IncarDir, _f)
+                    _Incar = Incar.read_from_file(_path)
+                    _verifyJson = os.path.join(__IncarDir, 'verify_Incar_'+_i+'.json')
                     if os.path.isfile(_verifyJson):
-                        # print(_incar)
-                        _vs = _verify_incar_from_json(self, _incar, _verifyJson)
+                        # print(_Incar)
+                        _vs = _verify_Incar_from_json(self, _Incar, _verifyJson)
                         if _vs:
                             _countVerified += 1
                 if re.match('^bad_INCAR_[0-9]+$', _f):
                     _countBad += 1
                     _i = _f.split('_')[2]
-                    _path = os.path.join(__incarDir, _f)
-                    self.assertRaises(IncarError, incar.read_from_file, _path)
+                    _path = os.path.join(__IncarDir, _f)
+                    self.assertRaises(IncarError, Incar.read_from_file, _path)
         print("{} good INCARs readed ({} verified by JSON file). {} bad INCARs raised.".format(_countGood, _countVerified, _countBad))
 
     def test_print_write(self):
-        _ic = incar(comment="Test", ENCUT=200.0)
+        _ic = Incar(comment="Test", ENCUT=200.0)
         self.assertEqual("Test\nENCUT = 200.0", _ic.__str__())
         tf = tempfile.NamedTemporaryFile()
         _ic.write(pathIncar=tf.name)
         tf.close()
 
 
-class test_incar_factory(ut.TestCase):
+class test_Incar_factory(ut.TestCase):
 
     def test_minimal_incar(self):
         self.assertRaisesRegex(IncarError, \
             r"Task name not supported: unknown-task. Should be *", \
-            incar.minimal_incar, "unknown-task")
-        incar.minimal_incar("scf")
-        incar.minimal_incar("opt")
-        incar.minimal_incar("dos")
-        incar.minimal_incar("band")
-        incar.minimal_incar("diag")
+            Incar.minimal_incar, "unknown-task")
+        Incar.minimal_incar("scf")
+        Incar.minimal_incar("opt")
+        Incar.minimal_incar("dos")
+        Incar.minimal_incar("band")
+        Incar.minimal_incar("diag")
 
 
 class test_tag_functions(ut.TestCase):
@@ -152,9 +152,9 @@ class test_tag_functions(ut.TestCase):
         self.assertDictEqual(paratags, {"NPAR": 9, "KPAR": 3})
         
 
-def _verify_incar_from_json(tc, ic, pathJson):
+def _verify_Incar_from_json(tc, ic, pathJson):
     assert isinstance(tc, ut.TestCase)
-    assert isinstance(ic, incar)
+    assert isinstance(ic, Incar)
     with open(pathJson, 'r') as f:
         _vDict = json.load(f)
     verifyMsg = "INCAR verification failed: {}".format(pathJson)

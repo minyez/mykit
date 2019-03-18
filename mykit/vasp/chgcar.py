@@ -1,8 +1,8 @@
 # coding = utf-8
 
-class chgcarError(Exception):
+class ChgcarError(Exception):
     pass
 
 
-class chgcar:
+class Chgcar:
     pass
