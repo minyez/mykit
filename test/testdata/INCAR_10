@@ -1,0 +1,11 @@
+FeS2,exp, PBEsol
+ ISTART = 0
+ ENCUT  = 500
+ PREC   = accurate
+ EDIFF  = 1E-7
+ GGA    = PS
+ NELM   = 200
+ NSW    = 0
+ IBRION = -1
+ ISMEAR = -5
+ NPAR   = 2

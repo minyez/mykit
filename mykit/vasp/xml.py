@@ -17,7 +17,7 @@ from mykit.vasp.poscar import Poscar
 try:
     from lxml import etree
 except ModuleNotFoundError:
-    import elementtree.ElementTree as etree
+    from xml.etree import ElementTree as etree
 
 
 class VasprunxmlError(Exception):
@@ -198,7 +198,10 @@ class Vasprunxml(Verbose, Prec):
             read in the DOS
         '''
         dosSec = self._secCalcLast.find('dos')
-        self.efermi = float(dosSec[0].text)
+        if dosSec != None:
+            self.efermi = float(dosSec[0].text)
+        else:
+            self.efermi = None
         # for spin in range(self.ispin):
         #     dosSp = []
         #     IntDosSp = []
