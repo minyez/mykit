@@ -14,7 +14,7 @@ from mykit.vasp.poscar import Poscar
 
 try:
     from lxml import etree
-except ImportError:
+except ModuleNotFoundError:
     import elementtree.ElementTree as etree
 
 
@@ -43,6 +43,7 @@ class Vasprunxml(Verbose, Prec):
     def _init_sections(self):
         self._secInitStruct = self.__root.find('.//structure[@name="initpos"]')
         self._secFinalStruct = self.__root.find('.//structure[@name="finalpos"]')
+        self._secIncar = self.__root.find('incar')
         # parameters
         self._secPara = self.__root.find('parameters')
         # all ionic calculations
