@@ -280,9 +280,9 @@ def _check_xml(pathXml):
     except FileNotFoundError:
         return None
     if not re.match(r"<\?xml version=\"[\d.]+\" encoding=\"[\w-]+\"\?>", \
-                     first):
+                     first.strip()):
         return None
-    if last == "</modeling>":
+    if last.strip() == "</modeling>":
         return True
     else:
         return False    

@@ -4,6 +4,7 @@
 
 import os
 import re
+from sys import stdout
 
 
 def get_dirpath(filePath):
@@ -129,6 +130,34 @@ def find_vol_dirs(path='.'):
     return _dirs
 
 
+def conv_string(string, conv2, *id, sep=None, strips=None):
+    '''
+    Split the string and convert substrings to a specified type.
+
+    Args:
+        string (str): the string from which to convert value
+        conv2: the type to which the substring will be converted
+        i: if specified, the i-th substring in the splitted string lists will be converted.
+            otherwise, all substring will be converted.
+        sep (regex): the separators used to split the string.
+        strips (str): extra strings to strip for each substring before conversion
+    '''
+    str_tmp = string.strip()
+    if sep is not None:
+        str_list = re.split(r'[%s]'%sep, str_tmp)
+    else:
+        str_list = str_tmp.split()
+    str_list = [x.strip(' '+strips) for x in str_list]
+
+    if len(id) == 0:
+        return tuple(map(conv2, str_list))
+    elif len(id) == 1:
+        return conv2(str_list[id[0]])
+    else:
+        conv_strs = [str_list[i] for i in id]
+        return tuple(map(conv2, conv_strs))
+
+
 def common_ss_conv(string, i, conv2, sep=None):
     '''
     Split the string and convert a single substring to a specified type.
@@ -154,15 +183,15 @@ def common_ss_conv(string, i, conv2, sep=None):
     return conv2(str_list[i])
 
 
-def get_first_last_line(filePath):
+def get_first_last_line(filePath, encoding=stdout.encoding):
     '''Return the first and the last non-empty line of file
 
     The existence of filePath should be check first.
 
     Args:
         filePath (str): the path of the file
+        encoding (str): the encoding of the file
     '''
-    from sys import stdin
     with open(filePath, "rb") as f:
         first = f.readline()        # Read the first line.
         f.seek(-2, os.SEEK_END)     # Jump to the second last byte.
@@ -170,4 +199,4 @@ def get_first_last_line(filePath):
             f.seek(-2, os.SEEK_CUR) # ...jump back the read byte plus one more.
         last = f.readline()         # Read last line.
     # convert to string by stdin encoding
-    return str(first, stdin.encoding).strip(), str(last, stdin.encoding).strip()
+    return str(first, encoding), str(last, encoding)

@@ -8,6 +8,7 @@ from fnmatch import fnmatch
 
 from mykit.core.config import global_config
 from mykit.core.log import Verbose
+from mykit.core.utils import conv_string
 
 
 class PotcarError(Exception):
@@ -165,9 +166,8 @@ class Potcar:
             with open(pathPotcar, 'r') as hpot:
                 for _i in range(14):
                     hpot.readline()
-                words = hpot.readline().split()
-                enmax = float(words[2][:-1])
-                enmin = float(words[5])
+                enmin, enmax = conv_string(hpot.readline(), \
+                    float, 5, 2, strips=";")
         except FileNotFoundError:
             raise PotcarError("POTCAR not found: {}".format(pathPotcar))
         except (IndexError, ValueError):
