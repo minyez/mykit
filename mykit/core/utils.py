@@ -152,3 +152,22 @@ def common_ss_conv(string, i, conv2, sep=None):
     # except ValueError:
     #     return conv2(float(str_list[i]))
     return conv2(str_list[i])
+
+
+def get_first_last_line(filePath):
+    '''Return the first and the last non-empty line of file
+
+    The existence of filePath should be check first.
+
+    Args:
+        filePath (str): the path of the file
+    '''
+    from sys import stdin
+    with open(filePath, "rb") as f:
+        first = f.readline()        # Read the first line.
+        f.seek(-2, os.SEEK_END)     # Jump to the second last byte.
+        while f.read(1) != b"\n":   # Until EOL is found...
+            f.seek(-2, os.SEEK_CUR) # ...jump back the read byte plus one more.
+        last = f.readline()         # Read last line.
+    # convert to string by stdin encoding
+    return str(first, stdin.encoding).strip(), str(last, stdin.encoding).strip()

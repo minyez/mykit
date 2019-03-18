@@ -442,13 +442,8 @@ def decode_incar_value(vstr):
     Args:
         vstr (str): value string to decode
     '''
-    boolDict = {'false': False, 'true': True}
+    boolDict = {'.false.': False, '.true.': True, 't': True, 'f': False}
     def __convert(v):
-        # Bool
-        if v.startswith('.'):
-            if v.endswith('.'):
-                b = vs[1:-1].lower()
-                return boolDict.get(b, None)
         try:
             return int(v)
         except ValueError:
@@ -458,7 +453,8 @@ def decode_incar_value(vstr):
                 _vList = v.split("*")
                 # String
                 if len(_vList) == 1:
-                    return v
+                    # check if the string is bool
+                    return boolDict.get(v.lower(), v)
                 elif len(_vList) == 2:
                     # a single string with * in it, such as MAGMOM
                     try:

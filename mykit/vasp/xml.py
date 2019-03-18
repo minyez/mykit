@@ -2,6 +2,7 @@
 '''
 '''
 
+import re
 from copy import deepcopy
 
 import numpy as np
@@ -9,6 +10,7 @@ import numpy as np
 from mykit.core.cell import get_sym_index, sym_nat_from_atoms
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
+from mykit.core.utils import get_first_last_line
 from mykit.vasp.incar import Incar
 from mykit.vasp.poscar import Poscar
 
@@ -26,14 +28,25 @@ class Vasprunxml(Verbose, Prec):
     '''Class to read and analyse the data from the vasprun.xml
     '''
 
-    def __init__(self, xmlFile='vasprun.xml', *args):
-        tree = etree.parse(xmlFile)
+    def __init__(self, pathXml='vasprun.xml', *args):
+        flag = _check_xml(pathXml)
+        if flag is None:
+            raise VasprunxmlError("Parsed file seems not a vasprun.xml")
+        elif not flag:
+            self.print_warn("the calculation is not finished. Try to read it...")
+        tree = etree.parse(pathXml)
         self.__root = tree.getroot()
         self._init_sections()
         self._read_atoms()
+        self._initPoscar = self._read_pos(self._secInitStruct, \
+            comment="vasprun.xml initialpos")
+        self._finalPoscar = self._read_pos(self._secFinalStruct, \
+            comment="vasprun.xml finalpos")
+        self._read_incar()
         self._read_params()
         self._read_klist()
         self._read_eigen_occ()
+        self._read_dos()
         try:
             if 'pw' in args:
                 self._read_pwdata()
@@ -41,9 +54,9 @@ class Vasprunxml(Verbose, Prec):
             self.print_warn("no PDOS data found")
 
     def _init_sections(self):
-        self._secInitStruct = self.__root.find('.//structure[@name="initpos"]')
-        self._secFinalStruct = self.__root.find('.//structure[@name="finalpos"]')
         self._secIncar = self.__root.find('incar')
+        self._secInitStruct = self.__root.find('.//structure[@name="initialpos"]')
+        self._secFinalStruct = self.__root.find('.//structure[@name="finalpos"]')
         # parameters
         self._secPara = self.__root.find('parameters')
         # all ionic calculations
@@ -52,6 +65,29 @@ class Vasprunxml(Verbose, Prec):
         self._secCalcLast = self._secCalcs[-1]
         self._secAtoms = self.__root.find('atominfo')
         self._secKpoints = self.__root.find('kpoints')
+
+    def _read_pos(self, secStructure, comment=None):
+        '''Return Poscar from a vasprun.xml structure tag section
+
+        TODO:
+            determine the coordinate system
+
+        Returns:
+            Poscar instance
+        '''
+        lattVArray = secStructure.find('crystal').find('.//varray[@name="basis"]')
+        latt = [list(map(float, x.text.split())) for x in lattVArray]
+        posVArray =secStructure.find('varray')
+        pos = [list(map(float, x.text.split())) for x in posVArray]
+        return Poscar(latt, self.atoms, pos, comment=comment)
+        
+
+    def _read_incar(self):
+        tags = {}
+        for i in self._secIncar:
+            incarLine = i.attrib["name"] + "=" + i.text
+            tags.update(Incar.analyze_incar_line(incarLine))
+        self.incar = Incar(**tags)
 
     def _read_params(self):
         # ISPIN: root->parameter->separator name='electronic'->separator name='elecronic spin'->[0]
@@ -156,6 +192,26 @@ class Vasprunxml(Verbose, Prec):
         self._eigen = np.array(self._eigen)
         self._occ = np.array(self._occ)
 
+    def _read_dos(self):
+        '''
+        TODO:
+            read in the DOS
+        '''
+        dosSec = self._secCalcLast.find('dos')
+        self.efermi = float(dosSec[0].text)
+        # for spin in range(self.ispin):
+        #     dosSp = []
+        #     IntDosSp = []
+        #     for kp in range(self._nibzkpt):
+        #         eo = [list(map(float, x.text.split())) for x in eigenSet[spin][kp]]
+        #         eo = np.array(eo)
+        #         eigenSp.append(eo[:, 0])
+        #         occSp.append(eo[:, 1])
+        #     self._eigen.append(eigenSp)
+        #     self._occ.append(occSp)
+        # self._eigen = np.array(self._eigen)
+        # self._occ = np.array(self._occ)
+
     def _read_klist(self):
 #       klist_index is 1 if auto generator is used
 #       or 0 if mannually included
@@ -208,3 +264,25 @@ class Vasprunxml(Verbose, Prec):
 #                     ecbm = self.eigen[spin,kp,cbm-1]
 #         gap = ecbm - evbm
 #         return gap
+
+def _check_xml(pathXml):
+    '''Check if the calculation of vasprun.xml ``pathXml`` has finished itself.
+
+    Args:
+        pathXml (str): the path of vasprun.xml to check
+
+    Returns:
+        None, if pathXml does not exist or is not an vasp XML file
+        True if the calculation finished, otherwise False
+    '''
+    try:
+        first, last = get_first_last_line(pathXml)
+    except FileNotFoundError:
+        return None
+    if not re.match(r"<\?xml version=\"[\d.]+\" encoding=\"[\w-]+\"\?>", \
+                     first):
+        return None
+    if last == "</modeling>":
+        return True
+    else:
+        return False    

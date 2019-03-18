@@ -68,7 +68,7 @@ class Cell(Prec, Verbose):
         # check input consistency
         self.__check_consistency()
         # move all atoms into the lattice (0,0,0)
-        self.__assure_atoms_in_fist_lattice()
+        self.move_atoms_to_fist_lattice()
         # sanitize atoms arrangement
         self.__sanitize_atoms()
 
@@ -98,7 +98,7 @@ class Cell(Prec, Verbose):
         if "selectDyn" in kwargs:
             self.__selectDyn = kwargs["selectDyn"]
         if "comment" in kwargs:
-            self.comment = kwargs["comment"]
+            self.comment = "{}".format(kwargs["comment"])
 
     def get_cell(self):
         '''Purge out the cell, atoms and pos.
@@ -167,7 +167,7 @@ class Cell(Prec, Verbose):
         if _sfd2 != []:
             self.__selectDyn.update({iat1: _sfd2})
 
-    def __assure_atoms_in_fist_lattice(self):
+    def move_atoms_to_fist_lattice(self):
         '''Move all atoms into the lattice (0,0,0).
 
         For Cartisian system, the move is achieved by first
@@ -302,7 +302,7 @@ class Cell(Prec, Verbose):
             self.__set_sdFlags({self.natoms: sdFlag})
         self.__pos = newPos
         self.__atoms.append(atom)
-        self.__assure_atoms_in_fist_lattice()
+        self.move_atoms_to_fist_lattice()
         self.__sanitize_atoms()
 
     # TODO move atom
