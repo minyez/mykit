@@ -40,6 +40,32 @@ def get_cwd_name():
     return os.path.basename(os.getcwd())
 
 
+def get_matched_files(dirPath='.', regex=None):
+    '''Get the abspath of the files whose name matches a regex
+
+    Only files will be returned, and directories are excluded.
+
+    Args:
+        dirPath (str): the directory to search
+        regex (regex): the regular expression to match the filename
+    
+    Returns:
+        tuple of strings
+    '''
+    # check the exisitence of path
+    fns = []
+    _absDir = os.path.abspath(dirPath)
+    if os.path.isdir(_absDir):
+        for i in os.listdir(_absDir):
+            if regex != None:
+                if not re.match(regex, i):
+                    continue
+            _fpath = os.path.join(_absDir, i)
+            if os.path.isfile(_fpath):
+                fns.append(_fpath)
+    return tuple(fns)
+
+
 def trim_after(string, regex, include_pattern=False):
     '''Trim a string after the first match of regex.
 

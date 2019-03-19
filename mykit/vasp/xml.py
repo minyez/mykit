@@ -223,7 +223,7 @@ class Vasprunxml(Verbose, Prec):
     def projs(self):
         if hasattr(self, '_projs'):
             return self._projs
-        return ()
+        return None
 
     def _read_dos(self):
         '''
@@ -356,17 +356,17 @@ class Vasprunxml(Verbose, Prec):
         self._ibzkpt = [conv_string(kp.text, float) for kp in self._secKpoints[ki]]
         self._weight = [int(np.rint(float(kp.text) * self._nkpt)) for kp in self._secKpoints[ki+1]]
 
-    def pwave_index(self,lcomponent):
-        if self.projs == ():
-            raise ValueError("XML does not contain partial wave information.")
-        index_l = []
-        # total wave
-        if lcomponent == 't':
-            index_l = list(range(len(self._projs)))
-        for x in self._projs:
-            if x.startswith(lcomponent):
-                index_l.append(self._projs.index(x))
-        return index_l
+    # def pwave_index(self,lcomponent):
+    #     if self.projs == ():
+    #         raise ValueError("XML does not contain partial wave information.")
+    #     index_l = []
+    #     # total wave
+    #     if lcomponent == 't':
+    #         index_l = list(range(len(self._projs)))
+    #     for x in self._projs:
+    #         if x.startswith(lcomponent):
+    #             index_l.append(self._projs.index(x))
+    #     return index_l
 
 #     def sum_atom_l_comp(self, spin, band, kp, at_index, pw_index):
 #         '''Sum the component of the atoms in at_index and partial waves in pw_index

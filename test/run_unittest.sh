@@ -21,6 +21,7 @@ run_one_unittest() {
 
 coreTestDir="core"
 coreTests=(config_test.py
+           bandstructure_test.py
            cell_test.py
            log_test.py
            ion_test.py
@@ -35,7 +36,8 @@ vaspTestDir="vasp"
 vaspTests=(poscar_test.py
            incar_test.py
            kpoints_test.py
-           potcar_test.py)
+           potcar_test.py
+           xml_test.py)
 
 w2kTestDir="wien2k"
 w2kTests=(inputs_test.py)

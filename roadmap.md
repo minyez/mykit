@@ -51,23 +51,40 @@ and help map name and value of parameter tags between different simulation progr
   - [x] irreducible kpoints
   - [x] return primitive cell
   - [x] return standardized cell
-- `special_kpoints`
+- `SpaceGroup`
+  - [x] space group names (to cross-check with Spglib)
+  - [x] tranformation matrix of kpoints coordinates from primitive to conventional cell
+  - [ ] grouping of space groups according to point groups
+- `SpecialKpoints`
   - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
-  - [ ] k-point path from [Setyawan and Curtarolo](https://doi.org/10.1016/j.commatsci.2010.05.010)
+  - [ ] k-point paths from [Setyawan and Curtarolo](https://doi.org/10.1016/j.commatsci.2010.05.010)
     - [ ] create special kpoints from it, alternative to Bilbao
   - [x] converting primitive to conventional coordinate
     - [x] transformation matrix from primitive to conventional
   - [x] converting kpath string to symbols and coordinates of corresponding points on path line segments
   - [ ] Predefined kpaths for space groups :wrench:
-  - [x] Factory methods for kpath of special kpoints
+  - [x] Factory methods for kpaths of special kpoints
 
 ### `bandstructure` module
 
 - `BandStructure`: analyze band structure
-  - [x] reading in eigenvalues and occ, partial waves as optional keyword argument
-  - [ ] optional `efermi` argument (float)
-  - [ ] optional `kpoints` argument (dict)
+  - [x] reading in eigenvalues and occ
+  - optional keyword arguments
+    - [x] partial waves (dict)
+    - [ ] `efermi` (float)
+    - [ ] `kpoints` (dict)
+  - [ ] compute direct gap, indirect, k-averaged gap
+  - [ ] return a `Dos` object
 
+### `dos` module
+
+- `Dos`: analyze density of states (DOS)
+  - [ ] reading in energy grids, DOS
+  - optional keyword argument
+    - [ ] partial DOS
+    - [ ] fermi level
+    - [ ] number of electrons
+    - [ ] smearing parameters
 
 ## `vasp` package: VASP related
 
@@ -80,10 +97,11 @@ and help map name and value of parameter tags between different simulation progr
   - `Poscar`
     - [x] Read, print and write
 - `potcar`
-  - [x] `potcar_search` for easily searching POTCAR
+  - [x] `PotcarSearch` for easily searching POTCAR
 - `kpoints`
-  - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
-  - [x] `__repr__` and `__str__` magics
+  - `Kpoints`
+    - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
+    - [x] `__repr__` and `__str__` magics
 - `wavecar`
 - `chgcar`
 - `procar`
