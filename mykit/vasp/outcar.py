@@ -8,7 +8,7 @@ import numpy as np
 
 # from mykit.core.lattice import lattice
 from mykit.core.log import Verbose
-from mykit.core.utils import common_ss_conv
+from mykit.core.utils import conv_string
 
 
 class OutcarError(Exception):
@@ -68,17 +68,17 @@ class Outcar(Verbose):
                 self.natoms = int(self.outlines[i+2].split()[-1])
         # Maximum number of planewaves
             if line.startswith('maximum number of plane-waves'):
-                self.mplw = common_ss_conv(line, -1, int)
+                self.mplw = conv_string(line, int, -1)
         # ISPIN
             if line.startswith('ISPIN'):
-                self.ispin = common_ss_conv(line, 2, int)
+                self.ispin = conv_string(line, int, 2)
         # NELECT: number of electrons
             if line.startswith('NELECT'):
-                self.nelect = common_ss_conv(line, 2, int)
+                self.nelect = conv_string(line, int, 2)
         # ISMEAR and SIGMA: broadening information
             if line.startswith('ISMEAR'):
-                self.ismear = common_ss_conv(line.replace(';',''), 2, int)
-                self.sigma  = common_ss_conv(line.replace(';',''), 5, float)
+                self.ismear = conv_string(line.replace(';',''), int, 2)
+                self.sigma  = conv_string(line.replace(';',''), float, 5)
 
         # lattice constants and inner coordinates 
         self.lattice, self.innerpos = self.get_pos(ionstep=0)
@@ -265,7 +265,7 @@ class Outcar(Verbose):
         kpt_block = nbands + 3
         spin_block = kpt_block * nirkp + 2
 
-        self.efermi = common_ss_conv(self.outlines[ln_e_fermi], 2, float)
+        self.efermi = conv_string(self.outlines[ln_e_fermi], float, 2)
         self.eigenene = []
         self.occ = []
         vb = self.nelect / 2 - 1

@@ -31,34 +31,34 @@ from pc_utils import common_run_calc_cmd
 
 # ====================================================
 # need bugfix
-def vasp_io_get_tag_value(tag,n_val=1,ifile='INCAR',eq='=',debug=False):
-    '''
-    Get the value correspondent to the tag in the ifile (default INCAR). The case of tag does not matter.
-    :Return: an object whose type is correspondent to the tag
-    '''
-    tag_upcase = tag.upper()
-    val = None
-    if ifile == 'INCAR':
-        with open(ifile,'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                x = [ y.strip() for y in re.split(r'[%s;]'%eq,line)]
-                if debug: print(x)
-                if '#' in x:
-                    i_comment = x.index('#')
-                    if debug: print(i_comment)
-                    if not i_comment == 0:
-                        del x[i_comment:]
-                    else: # this is just a comment line
-                        continue
-                if tag in x: # usually tags in INCAR are uppercas
-                    i_tag = x.index(tag)
-                    if n_val == 1:
-                        val = x[i_tag+1]
-                    else:
-                        val = x[i_tag+1:i_tag+n_val+1]
+# def vasp_io_get_tag_value(tag,n_val=1,ifile='INCAR',eq='=',debug=False):
+#     '''
+#     Get the value correspondent to the tag in the ifile (default INCAR). The case of tag does not matter.
+#     :Return: an object whose type is correspondent to the tag
+#     '''
+#     tag_upcase = tag.upper()
+#     val = None
+#     if ifile == 'INCAR':
+#         with open(ifile,'r') as f:
+#             lines = f.readlines()
+#             for line in lines:
+#                 x = [ y.strip() for y in re.split(r'[%s;]'%eq,line)]
+#                 if debug: print(x)
+#                 if '#' in x:
+#                     i_comment = x.index('#')
+#                     if debug: print(i_comment)
+#                     if not i_comment == 0:
+#                         del x[i_comment:]
+#                     else: # this is just a comment line
+#                         continue
+#                 if tag in x: # usually tags in INCAR are uppercas
+#                     i_tag = x.index(tag)
+#                     if n_val == 1:
+#                         val = x[i_tag+1]
+#                     else:
+#                         val = x[i_tag+1:i_tag+n_val+1]
 
-    return val
+#     return val
 
 # ====================================================
 

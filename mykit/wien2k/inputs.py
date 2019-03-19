@@ -119,8 +119,10 @@ def read_el_block(elBlock):
     '''
     try:
         assert isinstance(elBlock, (list, tuple))
+        for i in elBlock:
+            assert isinstance(i, str)
     except AssertionError:
-        raise InputError
+        raise InputError("El block should be a list of strings")
     elParams = {}
     globParams = elBlock[0].split()
     elParams["Etrial"] = float(globParams[0])

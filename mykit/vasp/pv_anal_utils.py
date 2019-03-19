@@ -3,11 +3,18 @@
 # This script provide basic analysis tools for vasp output
 #
 from __future__ import print_function
-import sys, os, shutil, copy
+
+import copy
+import os
+import shutil
 import subprocess as sp
+import sys
+
 import numpy as np
-from pv_classes import vasp_read_xml
 from scipy.optimize import curve_fit
+
+from mykit.vasp.xml import Vasprunxml
+
 
 # ====================================================
 def vasp_anal_get_outcar(keyin,index=-1,outcar='OUTCAR'):
@@ -40,7 +47,7 @@ def vasp_anal_get_outcar(keyin,index=-1,outcar='OUTCAR'):
         return nkp
 # band gap. Use vaspxml class to obtain the value
     if key in ['gap','eg']:
-        vaspxml = vasp_read_xml()
+        vaspxml = Vasprunxml()
         gap = vaspxml.get_gap()
         return gap
     if key in ['efermi', 'e-fermi', 'fermi']:
@@ -71,72 +78,6 @@ def vasp_anal_get_Ener_Vol(datatype='DFT'):
 
 # ====================================================
 
-def vasp_anal_fit_EOS(name_ifile='Ener_Vol',nfu=1,eostype='BM',fixBp=False):
-    '''
-    Fit energy-volume data (Ener_Vol) with equation of states
-    and give the fitting parameters
-    Still need test
-
-    :RETURN: fitting parameters, E in eV, V in A3, B in GPa
-    BM: E0, V0, B0, B'
-    '''
-    def BMEOS(V,E0,V0,B0,Bp):
-        return E0+9.0/16.0*V0*B0*((np.power(V0/V,2.0/3.0)-1.0)**3*Bp+(np.power(V0/V,2.0/3.0)-1.0)**2*(6.0-4.0*np.power(V0/V,2.0/3.0)))
-
-# read Ener_Vol. n is the number of formula unit, default 1
-    def read_Ener_Vol(filename,n):
-        with open(filename) as f:
-            lines = f.readlines()
-        i = 0
-        vol = [ ]
-        ene = [ ]
-        while i < len(lines):
-            flag = 1
-            line = lines[i].split()
-    # skip commented line
-            if line[0].startswith("#"):
-                i +=1
-                continue
-    # avoid duplicates
-            for v in vol:
-                if v == float(line[1].strip()):
-                    flag = 0
-                    break
-            if flag:
-                vol.append(float(line[1].strip())/float(n))
-                ene.append(float(line[2].strip())/float(n))
-            i += 1
-        data = [ np.array(vol), np.array(ene) ]
-        return data
-
-    data = read_Ener_Vol(name_ifile,nfu)
-
-    if eostype == 'BM':
-    # initialize fitting parameter
-        E0 = min(data[1])
-        bottom = np.where(data[1] == E0)
-        V0 = data[0][bottom][0]
-        B0 = 1.5
-        if isinstance(fixBp,bool):
-            if fixBp is True:
-                print('fixBp not specified. Will not fix Bp')
-            Bp = 4.0
-            popt, pcov = curve_fit(BMEOS, data[0],data[1], p0 = [E0,V0,B0,Bp])
-            Bp = popt[3]
-        else:
-            try:
-                Bp = float(fitBp)
-            except ValueError:
-                raise "B' should be fixed with a float value"
-            Bp = args.f
-            popt, pcov = curve_fit(lambda V,E0,V0,B0: BMEOS(V,E0,V0,B0,Bp), data[0],data[1], p0 = [E0,V0,B0])
-        opt_para = [popt[0], popt[1], popt[2], popt[3]]
-# need to modify to output the errors
-# return a list containing optimized parameters
-    return opt_para
-
-# ====================================================
-
 def vasp_anal_read_eigen(spinpolarzied=False,debug=False):
     '''
     Read the EIGENVAL file and return the band_structure file
@@ -164,7 +105,7 @@ def vasp_anal_read_eigen(spinpolarzied=False,debug=False):
         # add k-point information
         kpt_band.append(lines[iline].split())
         # add band energy
-        for i in xrange(1,nbands+1):
+        for i in range(1,nbands+1):
             kpt_band.append(float(lines[iline+i].split()[1]))
         band_struct.append(kpt_band)
         iline += nbands + 2
@@ -198,7 +139,7 @@ def vasp_anal_get_BM_info(debug=False):
         klist = []
         VB = []
         CB = []
-        for k in xrange(kpts_tot):
+        for k in range(kpts_tot):
     # get the full kpoint list: kx,ky,kz,weight(normalized)
             klist.append(lines[7+k*(nbands+2)].split())
     # get the valence band extreme
@@ -287,15 +228,15 @@ def vasp_anal_get_gap(band_struct,vb,cb,debug=False):
     if debug:
         print(band_struct[0])
 
-    VBM = max([band_struct[1+ikp][vb] for ikp in xrange(nkp)])
-    VBM_k_index = [band_struct[1+ikp][vb] for ikp in xrange(nkp)].index(VBM)
+    VBM = max([band_struct[1+ikp][vb] for ikp in range(nkp)])
+    VBM_k_index = [band_struct[1+ikp][vb] for ikp in range(nkp)].index(VBM)
     VBM_k = [ float(x) for x in band_struct[1+VBM_k_index][0][0:3]]
     E_gap_at_VBM = band_struct[1+VBM_k_index][cb] - band_struct[1+VBM_k_index][vb]
     if debug:
         print(VBM,VBM_k_index,VBM_k)
 
-    CBM = min([band_struct[1+ikp][cb] for ikp in xrange(nkp)])
-    CBM_k_index = [band_struct[1+ikp][cb] for ikp in xrange(nkp)].index(CBM)
+    CBM = min([band_struct[1+ikp][cb] for ikp in range(nkp)])
+    CBM_k_index = [band_struct[1+ikp][cb] for ikp in range(nkp)].index(CBM)
     CBM_k = [ float(x) for x in band_struct[1+CBM_k_index][0][0:3]]
     E_gap_at_CBM = band_struct[1+CBM_k_index][cb] - band_struct[1+CBM_k_index][vb]
     if debug:
@@ -323,20 +264,20 @@ def vasp_anal_get_kavgap(band_struct,vb,cb,fix_k=-1,inv=False,debug=False):
     nkp      = band_struct[0][1]
     band_max = band_struct[0][2]
 
-    VBM = max([band_struct[1+ikp][vb] for ikp in xrange(nkp)])
-    VBM_k_index = [band_struct[1+ikp][vb] for ikp in xrange(nkp)].index(VBM)
+    VBM = max([band_struct[1+ikp][vb] for ikp in range(nkp)])
+    VBM_k_index = [band_struct[1+ikp][vb] for ikp in range(nkp)].index(VBM)
     VBM_k = [ float(x) for x in band_struct[1+VBM_k_index][0][0:3]]
 
-    CBM = min([band_struct[1+ikp][cb] for ikp in xrange(nkp)])
-    CBM_k_index = [band_struct[1+ikp][cb] for ikp in xrange(nkp)].index(CBM)
+    CBM = min([band_struct[1+ikp][cb] for ikp in range(nkp)])
+    CBM_k_index = [band_struct[1+ikp][cb] for ikp in range(nkp)].index(CBM)
     CBM_k = [ float(x) for x in band_struct[1+CBM_k_index][0][0:3]]
 
     kavgap = 0
     inv_kavgap = 0
 
-    kpts_weigh = np.array([float(band_struct[i+1][0][3]) for i in xrange(nkp)])
-    band_up = np.array([band_struct[1+i][cb] for i in xrange(nkp)])
-    band_low = np.array([band_struct[1+i][vb] for i in xrange(nkp)])
+    kpts_weigh = np.array([float(band_struct[i+1][0][3]) for i in range(nkp)])
+    band_up = np.array([band_struct[1+i][cb] for i in range(nkp)])
+    band_low = np.array([band_struct[1+i][vb] for i in range(nkp)])
     if fix_k == 0:
         band_low = np.fill(nkp,VBM)
     elif fix_k == 1:
