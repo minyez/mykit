@@ -12,7 +12,7 @@ from mykit.core.kmesh import kpath_encoder
 from mykit.core.log import Verbose
 from mykit.core.symmetry import SpecialKpoints
 from mykit.vasp.incar import Incar
-from mykit.vasp.kpoints import kpoints
+from mykit.vasp.kpoints import Kpoints
 from mykit.vasp.poscar import Poscar
 from mykit.vasp.potcar import PotcarSearch
 
@@ -58,12 +58,12 @@ def pv_simple_input():
                 else:
                     for i, kpath in enumerate(kpaths):
                         kpathStr = kpath_encoder(kpath["symbols"])
-                        kp = kpoints(kmode="L", kdense=klen, kpath=kpath, \
+                        kp = Kpoints(kmode="L", kdense=klen, kpath=kpath, \
                             comment="K-point path {}".format(kpathStr))
                         kp.write(pathKpoints="KPOINTS_band_{}".format(i))
             else:
                 nks = [int(klen/x) for x in pos.alen]
-                kp = kpoints(kmode="G", kgrid=nks)
+                kp = Kpoints(kmode="G", kdiv=nks)
                 kp.write()
         if not os.path.isfile('POTCAR') or opts.overwrite:
             pts = PotcarSearch(*pos.atomTypes)

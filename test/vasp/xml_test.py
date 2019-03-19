@@ -45,7 +45,12 @@ class test_vasprunxml_read(ut.TestCase):
                 _vxml.get_atom_index()
                 _vxml.get_atom_index(0)
                 _vxml.get_atom_index(-1)
-                _vxml.load_band()
+                bs = _vxml.load_band()
+                bs.pWave
+                bs.atoms
+                bs.projs
+                self.assertTrue(bs.hasProjection)
+                
 
 
 if __name__ == '__main__':

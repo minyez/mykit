@@ -13,7 +13,7 @@ DIM_EIGEN_OCC = 3
 # pWave (array): shape (nspins, nkpt, nbands, natoms, nprojs)
 KEYS_KPOINTS = ("coordinates", "weights")
 KEYS_PROJECT = ("atoms", "projs", "pWave")
-DIM_PROJECT = 5
+# DIM_PWAVE = 5
 
 
 class BandStructureError(Exception):
@@ -37,13 +37,14 @@ class BandStructure(Prec, Verbose):
         occ (array-like) : the occupation numbers of all bands
 
     Optional args:
+        efermi (float)
         kmesh (dict)
         projected (dict) : has three keys, "atoms, "projs" and "pWave"
 
     TODO:
         check kmesh consistency
     '''
-    def __init__(self, eigen, occ, kmesh=None, projected=None):
+    def __init__(self, eigen, occ, efermi=None, kmesh=None, projected=None):
         try:
             self._nspins, self._nkpts, self._nbands = \
                 _check_eigen_occ_consistency(eigen, occ)
@@ -60,13 +61,22 @@ class BandStructure(Prec, Verbose):
                 self._pWave = np.array(pWave, dtype=self._dtype)
             except ValueError:
                 self.print_warn("Bad projection input. Skip.")
-        
+    
     @property
     def eigen(self):
         return self._eigen
     @property
     def occ(self):
         return self._occ
+    @property
+    def nspins(self):
+        return self._nspins
+    @property
+    def nkpts(self):
+        return self._nkpts
+    @property
+    def nbands(self):
+        return self._nbands
     @property
     def atoms(self):
         if hasattr(self, "_atoms"):
@@ -84,21 +94,20 @@ class BandStructure(Prec, Verbose):
         return None
     @property
     def hasProjection(self):
-        if self.pWave != None:
+        if not self.pWave is None:
             return True
         return False
-    
+
     def __check_project_consistency(self, projected):
-        empty = ()
         try:
             assert isinstance(projected, dict)
         except AssertionError:
-            return empty
+            return ()
         try:
             for key in KEYS_PROJECT:
                 assert key in projected
         except AssertionError:
-            return empty
+            return ()
         # print(projected)
         atoms = projected["atoms"]
         projs = projected["projs"]
@@ -112,7 +121,7 @@ class BandStructure(Prec, Verbose):
             assert np.shape(pWave) == \
                 (self._nspins, self._nkpts, self._nbands, natoms, nprojs)
         except (AssertionError, TypeError):
-            return empty
+            return ()
         return atoms, projs, pWave
 
     # def __check_kmesh_consistency(self, kmesh):
