@@ -81,5 +81,6 @@ class test_BS_projection(ut.TestCase):
                 countGood += 1
         print("Processed {} good band structure projections".format(countGood))
 
+
 if __name__ == '__main__':
     ut.main()

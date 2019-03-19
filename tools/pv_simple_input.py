@@ -32,6 +32,8 @@ def pv_simple_input():
         help="k-mesh density control, i.e. a*k. Negative for not generating KPOINTS")
     parser.add_argument("--spin", dest='ispin', type=int, default=1, \
         help="spin-polarization. 1 for nsp and 2 for sp.")
+    parser.add_argument("--kpath", dest="kpath", type=str, default=None, \
+        help="manual kpath string for band")
     parser.add_argument("--task", dest="task", \
         choices=["scf", "dos", "band", "gw", "opt"], \
         default="scf", \
@@ -52,15 +54,21 @@ def pv_simple_input():
             if klen==0:
                 klen = klenDe.get(opts.task, klenScf)
             if opts.task == "band":
-                kpaths = SpecialKpoints.get_kpaths_predef_from_cell(pos)
-                if kpaths is None:
-                    Verbose.print_cm_warn("No predefined kpath available. Skip writing band KPOINTS.")
+                if opts.kpath is None:
+                    kpaths = SpecialKpoints.get_kpaths_predef_from_cell(pos)
+                    if kpaths is None:
+                        Verbose.print_cm_warn("No predefined kpath available. Skip writing band KPOINTS.")
+                    else:
+                        for i, kpath in enumerate(kpaths):
+                            kpathStr = kpath_encoder(kpath["symbols"])
+                            kp = Kpoints(kmode="L", kdense=klen, kpath=kpath, \
+                                comment="K-point path {}".format(kpathStr))
+                            kp.write(pathKpoints="KPOINTS_band_{}".format(i))
                 else:
-                    for i, kpath in enumerate(kpaths):
-                        kpathStr = kpath_encoder(kpath["symbols"])
-                        kp = Kpoints(kmode="L", kdense=klen, kpath=kpath, \
-                            comment="K-point path {}".format(kpathStr))
-                        kp.write(pathKpoints="KPOINTS_band_{}".format(i))
+                    kpath = SpecialKpoints.get_kpath_from_cell(opts.kpath, pos)
+                    kp = Kpoints(kmode="L", kdense=klen, kpath=kpath, \
+                        comment="K-point path {}".format(opts.kpath))
+                    kp.write(pathKpoints="KPOINTS_band")
             else:
                 nks = [int(klen/x) for x in pos.alen]
                 kp = Kpoints(kmode="G", kdiv=nks)
