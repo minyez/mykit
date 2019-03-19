@@ -3,15 +3,11 @@
 import os
 
 from fortranformat._exceptions import InvalidFormat
-from fortranformat.FortranRecordReader import FortranRecordReader
 
 from mykit.core.utils import (get_cwd_name, get_filename_wo_ext, trim_after,
                               trim_both_sides)
+from mykit.wien2k.constants import EXCEPTION_READER, EXCEPTION_WRITER
 
-EXCEPTION_FORMAT = '(I2,2F10.5,A4,I2)'
-EXCEPTION_READER = FortranRecordReader(EXCEPTION_FORMAT)
-IN1_UNIT_READER_v171 = FortranRecordReader('(20X,I1,2F10.1,I6)')
-IN1_UNIT_READER_v142 = FortranRecordReader('(20X,I1,F7.1,F10.1,I6)')
 
 class InputError(Exception):
     pass
@@ -26,7 +22,7 @@ class In1:
     def __init__(self, casename, switch, efermi, \
                        rkmax, lmax, lnsmax, \
                     #    unit, emin, emax, nband, \
-                       *eparams):
+                       *elparams):
         self.casename = casename
         self.switch = switch
         self.efermi = efermi
@@ -37,7 +33,7 @@ class In1:
         # self.emin = emin
         # self.emax = emax
         # self.nband = nband
-        self.eparams = eparams
+        self.elparams = elparams
 
     def add_exception(self, atomId, l, e, search=0.000, cont=True, lapw=0):
         pass
@@ -71,7 +67,7 @@ class In1:
         rkmax = float(params[0])
         lmax, lnsmax = tuple(map(int, params[1:3]))
 
-        eparams = []
+        elparams = []
         i = 2
         _flagEnergy = True
         _flagInExcept = False
@@ -104,12 +100,12 @@ class In1:
                             exceptions[l] = []
                         exceptions[l].append((e, eIncre, cont, apw))
                     atomExcept["exceptions"] = exceptions
-                    eparams.append(atomExcept)
+                    elparams.append(atomExcept)
                     i += ndiff
             i += 1
         return cls(casename, switch, efermi, rkmax, lmax, lnsmax, \
                     # unit, emin, emax, nband, \
-                    *eparams)
+                    *elparams)
 
 
 def read_el_exception_block(elBlock):

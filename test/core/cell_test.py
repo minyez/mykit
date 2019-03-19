@@ -7,7 +7,7 @@ import numpy as np
 
 from mykit.core.cell import (Cell, CellError, atoms_from_sym_nat, axis_list,
                              periodic_duplicates_in_cell, sym_nat_from_atoms)
-from mykit.core.constants import ang2au, au2ang, pi
+from mykit.core.constants import ANG2AU, AU2ANG, PI
 
 
 class simple_cubic_lattice(ut.TestCase):
@@ -37,8 +37,8 @@ class simple_cubic_lattice(ut.TestCase):
         # Reciprocal
         recpIn2Pi = np.array(self._latt, dtype=self._cell._dtype)/self._a**2
         self.assertTrue(np.allclose(self._cell.bIn2Pi, recpIn2Pi))
-        self.assertTrue(np.allclose(self._cell.b, recpIn2Pi * 2.0 * pi))
-        self.assertTrue(np.allclose(self._cell.blen, (2.0*pi/self._a,)*3))
+        self.assertTrue(np.allclose(self._cell.b, recpIn2Pi * 2.0 * PI))
+        self.assertTrue(np.allclose(self._cell.blen, (2.0*PI/self._a,)*3))
         # atom types
         self.assertEqual(1, self._cell.natoms)
         self.assertListEqual(["C",], self._cell.atomTypes)
@@ -54,9 +54,9 @@ class simple_cubic_lattice(ut.TestCase):
         self._cell.unit = 'au'
         _latt = self._cell.get_cell()[0]
         if self._cell._dtype == 'float32':
-            self.assertAlmostEqual(_latt[0,0], self._a * ang2au, places=5)
+            self.assertAlmostEqual(_latt[0,0], self._a * ANG2AU, places=5)
         else:
-            self.assertAlmostEqual(_latt[0,0], self._a * ang2au)
+            self.assertAlmostEqual(_latt[0,0], self._a * ANG2AU)
         # au2ang
         self._cell.unit = 'ang'
         _latt = self._cell.get_cell()[0]

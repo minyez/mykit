@@ -20,7 +20,7 @@ from numbers import Real
 
 import numpy as np
 
-from mykit.core.constants import ang2au, au2ang, pi
+from mykit.core.constants import ANG2AU, AU2ANG, PI
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 
@@ -277,7 +277,11 @@ class Cell(Prec, Verbose):
     def scale(self, scale):
         '''Scale the lattice, i.e. increase the lattice by ``scale`` time
         '''
-        assert isinstance(scale, Real)
+        try:
+            assert isinstance(scale, Real)
+            assert scale > 0.0
+        except AssertionError:
+            raise self._error("scale must be positive real")
         self.__latt = self.__latt * scale
         if self.__coordSys == "C":
             self.__pos = self.__pos * scale
@@ -389,7 +393,7 @@ class Cell(Prec, Verbose):
             _cos = np.dot(self.__latt[j], self.__latt[k])/_alen[j]/_alen[k]
             _angle.append(np.arccos(_cos))
         # convert to degree
-        _angle = np.array(_angle, dtype=self._dtype) / pi * 180.0
+        _angle = np.array(_angle, dtype=self._dtype) / PI * 180.0
         return (*_alen, *_angle)
 
     @property
@@ -411,7 +415,7 @@ class Cell(Prec, Verbose):
     def unit(self, u):
         _u = u.lower()
         if _u != self.__unit:
-            _convDict = {"ang": au2ang, "au": ang2au}
+            _convDict = {"ang": AU2ANG, "au": ANG2AU}
             _conv = _convDict.get(_u)
             if _conv is not None:
                 if self.__coordSys == "C":
@@ -496,7 +500,7 @@ class Cell(Prec, Verbose):
     def recpLatt(self):
         '''Reciprocal lattice vectors in unit^-1
         '''
-        return self.bIn2Pi * 2.0E0 * pi
+        return self.bIn2Pi * 2.0E0 * PI
 
     @property
     def b(self):

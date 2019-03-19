@@ -5,44 +5,44 @@ Constants from scipy.constants, 2019-03-07
 '''
 #pylint: disable=bad-whitespace
 
-pi = 3.141592653589793
+PI = 3.141592653589793
 # fine stucture constant
-fsca = 0.0072973525664
+FSCA = 0.0072973525664
 # Avogadro constant, in mol^-1
-nav = 6.022140857e+23
+NAV = 6.022140857e+23
 # Planck constant, in J s
-h = 6.62607004e-34
-hbar = 1.0545718001391127e-34
+H = 6.62607004e-34
+HBAR = 1.0545718001391127e-34
 # Planck constant, in eV s
-hInEv = 4.135667662e-15
-hbarInEv = 6.582119514e-16
+HINEV = 4.135667662e-15
+HBARINEV = 6.582119514e-16
 # mass of electron, in kg
-me = 9.10938356e-31
+ME = 9.10938356e-31
 # elementary charge, in C
-e = 1.6021766208e-19
+E = 1.6021766208e-19
 # absolute g factor of electron
-gf = 2.00231930436182
+GF = 2.00231930436182
 # speed of light in vacuum, in meter
-cLight = 2.99792458e8
+CLIGHT = 2.99792458e8
 # Boltzman constant, in J K^-1
-kb = 1.38064852e-23
+KB = 1.38064852e-23
 # Bohr radius, in meter
-au = 5.2917721067e-11
+AU = 5.2917721067e-11
 
 # ==================================================
 # Length conversion
-au2ang  = au * 1.0E10
-ang2au  = 1.0 / au2ang
+AU2ANG  = AU * 1.0E10
+ANG2AU  = 1.0 / AU2ANG
 # Energy conversion
-ev2kcal = 23.060548
-ha2ev   = 27.21138602
-eV2ha   = 1.0 / ha2ev
-ry2ev   = ha2ev / 2.0
-ev2ry   = 1.0 / ry2ev
-ev2j    = e
-ev2kj   = ev2j / 1000.0
-ev2k    = e / kb
+EV2KCAL = 23.060548
+HA2EV   = 27.21138602
+EV2HA   = 1.0 / HA2EV
+RY2EV   = HA2EV / 2.0
+EV2RY   = 1.0 / RY2EV
+EV2J    = E
+EV2KJ   = EV2J / 1000.0
+EV2K    = E / KB
 # kJ/mol to eV/f.u.
-kjPerMol2evPerFu = 1000 /(ev2j * nav)
+KJPERMOL2EVPERFU = 1000 /(EV2J * NAV)
 # eV/A^3 to GPa
-evPerAcub2gpa = e * 1e21
+EVPERACUB2GPA = E * 1e21
