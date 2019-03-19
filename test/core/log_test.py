@@ -4,7 +4,6 @@
 import tempfile
 import unittest as ut
 
-from mykit.core.config import global_config
 from mykit.core.log import Verbose
 
 

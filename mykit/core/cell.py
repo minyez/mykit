@@ -68,7 +68,7 @@ class Cell(Prec, Verbose):
         # check input consistency
         self.__check_consistency()
         # move all atoms into the lattice (0,0,0)
-        self.move_atoms_to_fist_lattice()
+        self.move_atoms_to_first_lattice()
         # sanitize atoms arrangement
         self.__sanitize_atoms()
 
@@ -167,7 +167,7 @@ class Cell(Prec, Verbose):
         if _sfd2 != []:
             self.__selectDyn.update({iat1: _sfd2})
 
-    def move_atoms_to_fist_lattice(self):
+    def move_atoms_to_first_lattice(self):
         '''Move all atoms into the lattice (0,0,0).
 
         For Cartisian system, the move is achieved by first
@@ -306,7 +306,7 @@ class Cell(Prec, Verbose):
             self.__set_sdFlags({self.natoms: sdFlag})
         self.__pos = newPos
         self.__atoms.append(atom)
-        self.move_atoms_to_fist_lattice()
+        self.move_atoms_to_first_lattice()
         self.__sanitize_atoms()
 
     # TODO move atom

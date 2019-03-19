@@ -195,6 +195,9 @@ def conv_string(string, conv2, *id, sep=None, strips=None):
             otherwise, all substring will be converted.
         sep (regex): the separators used to split the string.
         strips (str): extra strings to strip for each substring before conversion
+    
+    Returns:
+        ``conv2``, or list of ``conv2`` type
     '''
     assert conv2 in [str, int, float]
     str_tmp = string.strip()
@@ -208,37 +211,37 @@ def conv_string(string, conv2, *id, sep=None, strips=None):
         str_list = [x.strip(' '+strips) for x in str_list]
 
     if len(id) == 0:
-        return tuple(map(conv2, str_list))
+        return list(map(conv2, str_list))
     elif len(id) == 1:
         return conv2(str_list[id[0]])
     else:
         conv_strs = [str_list[i] for i in id]
-        return tuple(map(conv2, conv_strs))
+        return list(map(conv2, conv_strs))
 
 
-def common_ss_conv(string, i, conv2, sep=None):
-    '''
-    Split the string and convert a single substring to a specified type.
+# def common_ss_conv(string, i, conv2, sep=None):
+#     '''
+#     Split the string and convert a single substring to a specified type.
 
-    Args:
-        string (str): the string from which to convert value
-        i (int): the substring index in the list to be converted after splitting by sep
-        conv2: the type to which the substring will be converted
-        sep (regex): the separators used to split the string.
-    '''
+#     Args:
+#         string (str): the string from which to convert value
+#         i (int): the substring index in the list to be converted after splitting by sep
+#         conv2: the type to which the substring will be converted
+#         sep (regex): the separators used to split the string.
+#     '''
 
-    str_tmp = string.strip()
-    if sep is not None:
-        str_list = re.split(r'[%s]'%sep, str_tmp)
-    #    print(str_list)
-    else:
-        str_list = str_tmp.split()
+#     str_tmp = string.strip()
+#     if sep is not None:
+#         str_list = re.split(r'[%s]'%sep, str_tmp)
+#     #    print(str_list)
+#     else:
+#         str_list = str_tmp.split()
 
-    # try:
-        # return conv2(str_list[i])
-    # except ValueError:
-    #     return conv2(float(str_list[i]))
-    return conv2(str_list[i])
+#     # try:
+#         # return conv2(str_list[i])
+#     # except ValueError:
+#     #     return conv2(float(str_list[i]))
+#     return conv2(str_list[i])
 
 
 def get_first_last_line(filePath, encoding=stdout.encoding):

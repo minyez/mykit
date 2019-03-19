@@ -3,7 +3,6 @@
 '''
 
 import abc
-import functools
 import json
 import logging
 import os
@@ -31,19 +30,30 @@ class global_config:
     _envVar = "MYKIT_CONFIG"
     _configPathDe = os.path.expanduser("~/.mykit_config.json")
     _options = {
-        "vaspStdExec" : [which('vasp_std'), 'Path of `vasp_std` executive'],
-        "mpiExec"     : [which('mpirun'), 'the MPI executable to use'],
-        "numpyPrec"   : ["64", 'NumPy precision'],
-        "symPrec"     : [1.0E-5, 'Symmetry tolerance for SpgLIB'],
-        "vaspPawPbe"  : [os.environ.get("VASP_POT_PBE", None), 'Path of the VASP PBE PAW directory'],
-        "vaspPawLda"  : [os.environ.get("VASP_POT_LDA", None), 'Path of the VASP LDA PAW directory'],
-        "verbWarn"    : [1, 'Verbose level of warnings'],
-        "verbLog"     : [1, 'Verbose level of log information'],
-        "logIndent"   : [4, 'Spaces to differentiate logs at different depth'],
+        "vaspStdExec" : 'Path of `vasp_std` executive',
+        "mpiExec"     : 'the MPI executable to use',
+        "numpyPrec"   : 'NumPy precision',
+        "symPrec"     : 'Symmetry tolerance for SpgLIB',
+        "vaspPawPbe"  : 'Path of the VASP PBE PAW directory',
+        "vaspPawLda"  : 'Path of the VASP LDA PAW directory',
+        "verbWarn"    : 'Verbose level of warnings',
+        "verbLog"     : 'Verbose level of log information',
+        "logIndent"   : 'Spaces to differentiate logs at different depth',
     }
     _optKeys = _options.keys()
 
     def __init__(self):
+        self._options = {
+            "vaspStdExec" : which('vasp_std'),
+            "mpiExec"     : which('mpirun'),
+            "numpyPrec"   : "64",
+            "symPrec"     : 1.0E-5, 
+            "vaspPawPbe"  : os.environ.get("VASP_POT_PBE", None),
+            "vaspPawLda"  : os.environ.get("VASP_POT_LDA", None),
+            "verbWarn"    : 1,
+            "verbLog"     : 1,
+            "logIndent"   : 4,
+        }
         # try manual input config file, otherwise search for the custom file
         try:
             path = os.environ[self._envVar]
@@ -54,8 +64,6 @@ class global_config:
         except FileNotFoundError:
             raise ConfigError("MYKIT_CONFIG file not exist: {}".format(path))
         self._configPath = path
-        # print(self._configPath)
-        # print(os.path.isfile(path))
         if os.path.isfile(path):
             logging.info("Load custom from {}".format(path))
             # print("Load custom from {}".format(path))
@@ -64,21 +72,20 @@ class global_config:
                     _j = json.load(h)
                 for key in _j:
                     if key in self._optKeys:
-                        self._options[key][0] = _j[key]
+                        self._options[key] = _j[key]
             except json.JSONDecodeError as _err:
                 # Error in decoding the JSON config
                 logging.warn("Fail to load custrom configuration from {}. Use default".format(path))
                 # print("Fail to load custrom configuration from {}. Use default".format(path))
 
-    def _get_opt(self, key, doc=False):
-        assert isinstance(doc, bool)
+    def _get_opt(self, key):
         try:
             v = self._options[key]
         except KeyError:
             raise ConfigError("Unknown option: {}".format(key))
-        return v[int(doc)]
+        return v
 
-    def get(self, *opts, doc=False):
+    def get(self, *opts):
         '''Get the option value from the configuration
 
         It supports read in multiple options and returns a tuple of the option values.
@@ -94,10 +101,10 @@ class global_config:
             If ``doc`` is set to True, an empty string instead of None will be returned.
         '''
         if len(opts) == 0:
-            return {True: '', False: None}[doc]
+            return None
         if len(opts) == 1:
-            return self._get_opt(opts[0], doc=doc)
-        return tuple(map(functools.partial(self._get_opt, doc=doc), opts))
+            return self._get_opt(opts[0])
+        return tuple(map(self._get_opt, opts))
 
     @property
     def configFrom(self):
@@ -117,7 +124,7 @@ class global_config:
     def _get_doc_one(cls, key):
         v = cls._options.get(key, None)
         if v is not None:
-            return v[1]
+            return v
         return ''
 
     @classmethod
@@ -143,18 +150,6 @@ class global_config:
         '''print out all configurable options'''
         pprint(cls._options.items())
 
-    # @classmethod
-    # def set_custom(cls, pathJson):
-    #     '''Set the location of the custom configuration file
-    #     '''
-    #     try:
-    #         assert os.path.isfile(pathJson)
-    #     except AssertionError:
-    #         raise ConfigError("Input config JSON not found: {}".format(pathJson))
-    #     cls._configPath = pathJson
-    
-    # @classmethod
-    # def unset_custom(cls):
-    #     '''Unset the custom configuration
-    #     '''
-    #     cls._configPath = None
+
+# used for static configuration
+config = global_config()

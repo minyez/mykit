@@ -22,6 +22,11 @@ class check_glocal_config(ut.TestCase):
         self.assertRaisesRegex(ConfigError, r"Unknown option: opt_not_exist1", _c.get, 'opt_not_exist1')
         self.assertRaisesRegex(ConfigError, r"Unknown option: *", _c.get, 'opt_not_exist1', 'opt_not_exist2')
 
+    def test_docstring(self):
+        self.assertEqual(global_config.get_doc('mpiExec'), "the MPI executable to use")
+        self.assertTupleEqual(global_config.get_doc('mpiExec', 'vaspStdExec'), \
+            ("the MPI executable to use", "Path of `vasp_std` executive"))
+
     def test_defaults(self):
         # back up the custom JSON if there is
         _path = global_config._get_dejson_path()
@@ -34,9 +39,6 @@ class check_glocal_config(ut.TestCase):
         self.assertEqual(which('mpirun'), _c.get('mpiExec'))
         self.assertEqual((which('vasp_std'), which('mpirun')), \
             _c.get('vaspStdExec','mpiExec'))
-        self.assertEqual(_c.get('mpiExec', doc=True), "the MPI executable to use")
-        self.assertEqual(_c.get('mpiExec', 'vaspStdExec', doc=True), \
-            ("the MPI executable to use", "Path of `vasp_std` executive"))
 
         if _hasCustom:
             copy2(_tf.name, _path)
@@ -55,9 +57,7 @@ class check_glocal_config(ut.TestCase):
         _c = global_config()
         # os.unsetenv(global_config.env_var())
         del os.environ[global_config.env_var()]
-        # print(os.environ[global_config.env_var()])
-        # global_config.print_opts()
-        self.assertEqual(_c.get('vaspStdExec', doc=True), "Path of `vasp_std` executive")
+        # self.assertEqual(_c.get('vaspStdExec', doc=True), "Path of `vasp_std` executive")
         self.assertEqual("vasp", _c.get('vaspStdExec'))
         self.assertTupleEqual(("/Users/pbe", "/Users/lda"), _c.get('vaspPawPbe', 'vaspPawLda'))
         # doc string should not be touch

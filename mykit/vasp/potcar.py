@@ -6,7 +6,6 @@ import subprocess as sp
 from copy import deepcopy
 from fnmatch import fnmatch
 
-from mykit.core.config import global_config
 from mykit.core.log import Verbose
 from mykit.core.utils import conv_string
 
@@ -25,8 +24,11 @@ class PotcarSearch(Verbose):
 
     def __init__(self, *names, usegw=False):
         assert isinstance(usegw, bool)
+        # dynamic configuration
+        from mykit.core.config import global_config
         config = global_config()
         _homePawPbe, _homePawLda = config.get("vaspPawPbe", "vaspPawLda")
+        del config, global_config
         self._homePaw = {"PBE": _homePawPbe, "LDA": _homePawLda}
         try:
             assert len(names) > 0

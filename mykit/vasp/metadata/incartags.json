@@ -1,4 +1,8 @@
 {
+    "tagdocInfo": {
+        "SYSTEM": "",
+        "NWRITE": ""
+    },
     "tagdocElecBasic": {
         "ISTART": "", 
         "ICHARG": "",
@@ -6,24 +10,27 @@
         "EDIFF": "", 
         "ENCUT": "", 
         "NBANDS": "",
+        "NSIM": "",
         "ISMEAR": "",
         "SIGMA": "",
         "PREC": "",
         "ISPIN": "",
         "NELM": "",
+        "NELMIN": "",
+        "NELMDL": "",
         "EMIN": "",
         "EMAX": "",
         "NELECT": "",
         "NEDOS": "",
         "LCHARG": "",
-        "NELMIN": "",
         "LORBIT": "",
         "MAGMOM": "",
         "LMAXTAU": "",
         "LMAXMIX": "",
         "LWAVE": "",
         "ALGO": "",
-        "IALGO": ""
+        "IALGO": "",
+        "INIWAV": ""
     },
     "tagdocElecXc": {
         "GGA": "",
@@ -34,6 +41,10 @@
         "AGGAX": "",
         "AGGAC": "",
         "ALDAC": ""
+    },
+    "tagdocBader": {
+        "LAECHG": "",
+        "ADDGRID": ""
     },
     "tagdocElecAdv": {
         "ENCUTGW": "",
@@ -59,9 +70,18 @@
         "OMEGAMAX": "",
         "ANTIRES": "",
         "NBANDSO": "",
-        "NBANDSV": ""
+        "NBANDSV": "",
+        "LSORBIT": ""
     },
-    "tagdocIonBasic" : {
+    "tagdocLDAU": {
+        "LDAU": "",
+        "LDAUTYPE": "",
+        "LDAUPRINT": "",
+        "LDAUL": "",
+        "LDAUU": "",
+        "LDAUJ": ""
+    },
+    "tagdocIonBasic": {
         "NSW": "",
         "IBRION": "",
         "ISIF": "",
@@ -71,9 +91,9 @@
         "NFREE": ""
     },
     "tagdocIonSlab" : {
-        "LDIPOL": "",
         "DIPOL": "",
         "IDIPOL": "",
+        "LDIPOL": "",
         "LVHAR": "",
         "LVTOT": ""
     },
@@ -90,10 +110,9 @@
     },
     "tagdocNotCateg" : {
         "LMIXTAU": "",
-        "NWRITE": "",
-        "SYSTEM": "",
         "TIME": "",
         "SMASS": "",
-        "KPOINT_BSE": ""
+        "KPOINT_BSE": "",
+        "NUPDOWN": ""
     }
 }

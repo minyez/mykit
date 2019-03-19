@@ -9,8 +9,8 @@ import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from mykit.core.utils import trim_after
-from mykit.vasp.poscar import poscar
-from mykit.vasp.potcar import potcar_search
+from mykit.vasp.poscar import Poscar
+from mykit.vasp.potcar import PotcarSearch
 
 
 def pv_addpot():
@@ -34,12 +34,12 @@ def pv_addpot():
     if opts.elements != None:
         ele = opts.elements
     else:
-        _pc = poscar.read_from_file(opts.posin)
+        _pc = Poscar.read_from_file(opts.posin)
         ele = _pc.atomTypes
         # Trim ele to get rid of number
         ele = [trim_after(e, r"\d") for e in ele]
         
-    pts = potcar_search(*ele, usegw=opts.usegw)
+    pts = PotcarSearch(*ele, usegw=opts.usegw)
     # if opts.debug:
     #     print(opts.xc)
     #     print(ele)

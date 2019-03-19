@@ -17,7 +17,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import numpy as np
 from scipy.optimize import curve_fit
 
-from mykit.core.constants import evPerAcub2gpa
+from mykit.core.constants import EV_PER_ANG_CUB2GPA
 from mykit.core.eos import Birch_Murnaghan
 
 
@@ -99,7 +99,7 @@ def fitBMEOS():
         popt, _pcov = curve_fit(lambda V, E0, V0, B0: Birch_Murnaghan(V, E0, V0, B0, Bp), \
                 data[0], data[1], p0=[E0, V0, B0])
 
-    gpaConvDict = {True: evPerAcub2gpa, False: 1.0}
+    gpaConvDict = {True: EV_PER_ANG_CUB2GPA, False: 1.0}
     conv = gpaConvDict[args.gpa]
 
     print("  E0 = ", popt[0])

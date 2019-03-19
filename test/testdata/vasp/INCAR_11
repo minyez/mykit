@@ -1,0 +1,40 @@
+SYSTEM=2dioPd111-k331-e5
+
+ENCUT   =  250                  #cut-off energy
+PREC    =  Accurate             #Accurate NGx=2G(cut) NGxF=2NGx ROPT=-2.5E-4
+ISPIN   =  2                    #spin-polarized calculations
+ISTART  =  0                    #0 Start job: begin "from scratch"
+ICHARG  =  2                    #Take superposition of atomic charge densities
+INIWAV  =  1                    #Fill wavefunction arrays with random numbers
+NWRITE  =  1                    #how much will be written to the file OUTCAR
+NELM    =  1000                 #maximum number of electronic(selfconsistency) steps
+NELMIN  =  2                    #minimum number of electronic SC steps
+NELMDL  =  -5                   #number of non-selfconsistent steps at the beginning
+EDIFF   =  1E-4                 #global break condition for the electronic SC-loop (total free energy change&band structure energy change)
+EDIFFG  =  -0.05                #relaxation will stop if all forces are smaller than |EDIFFG|
+NSW     =  0                 #maximum number of ionic steps
+IBRION  =  2                    #2 conjugate-gradient algorithm 1 quasi-Newton (variable metric) algorithm
+                                #only up to NFREE ionic steps are kept in the iteration history (RMM-DIIS) NFREE=10
+ISYM    =  0                    #switch symmetry on (ISYM=1,2 or 3) or off (ISYM=-1 or 0)
+LORBIT  =  10                   #determination of the spd- and site projected wave function character
+NUPDOWN =  -1                   #difference between number of electrons in up and down spin component full relaxation will be performed
+ISMEAR  =  0                    #tetrahedron method
+                                #width of the smearing (SIGMA) SIGMA=0.15
+LREAL   =  Auto                 #projection operators are evaluated in real space
+GGA     =  PE                   #91 Perdew-Wang 91 PE Perdew-Burke-Ernzerhof RP revised Perdew-Burke-Ernzerhof
+                                #it is desirable to use this interpolation whenever the PW91 functional is applied
+ALGO    =  Fast                 #ALGO = Normal IALGO = 38 (Davidson) ALGO=Very_Fast selects IALGO=48 (RMM-DIIS) ALGO=Fast Davidson (IALGO=38) plus RMM-DIIS (IALGO=48)
+NSIM    =  4                    #In this case, NSIM bands are optimized at the same time
+NPAR    =  1                    #Parallelization over bands
+ISIF    =  2                    #optimize cell
+LSORBIT = .FALSE.
+LDAU    = .TRUE.
+LAECHG  = .T.
+ADDGRID = .T.
+LCHARG  = .T.
+LDAUTYPE= 2
+LDAUPRINT= 0
+LMAXMIX = 4
+LDAUL   = 2 2 2 -1 -1  -1 
+LDAUU   = 3.40 5.30 6.45 0.00 0.00 0.00
+LDAUJ   = 0.00 0.00 0.00 0.00 0.00 0.00 

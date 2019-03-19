@@ -1,6 +1,6 @@
 # Roadmap of `mykit`
 
-## `core`: Base classes
+## `core` package: Base classes
 
 
 ### `_control` module
@@ -29,7 +29,7 @@ They lie the basis for input conversion
 
 ### Input controllers
 
-Input controller classes are named as `*_control`, and are subclasses of abstract base class `prog_mapper` defined in the `_control` module.
+Input controller classes are named after `*_control`, and are subclasses of abstract base class `prog_mapper` defined in the `_control` module.
 They are metaclasses of the class of program-specific input files, 
 and help map name and value of parameter tags between different simulation programs.
 - [x] `planewave_control`: plane-wave basis
@@ -61,14 +61,24 @@ and help map name and value of parameter tags between different simulation progr
   - [ ] Predefined kpaths for space groups :wrench:
   - [x] Factory methods for kpath of special kpoints
 
+### `bandstructure` module
+
+- `BandStructure`: analyze band structure
+  - [x] reading in eigenvalues and occ, partial waves as optional keyword argument
+  - [ ] optional `efermi` argument (float)
+  - [ ] optional `kpoints` argument (dict)
+
+
 ## `vasp` package: VASP related
 
 - `incar`
-  - [x] Read, print and write 
-  - [ ] Tag explanation
-  - [x] Move tags into a metadata file
+  - `Incar`
+    - [x] Read, print and write 
+    - [ ] Tag explanation
+    - [x] Move tags into a metadata file
 - `poscar` 
-  - [x] Read, print and write
+  - `Poscar`
+    - [x] Read, print and write
 - `potcar`
   - [x] `potcar_search` for easily searching POTCAR
 - `kpoints`
@@ -79,6 +89,13 @@ and help map name and value of parameter tags between different simulation progr
 - `procar`
 - `contcar`
 
+## `wien2k` package: WIEN2k related
+
+- `inputs`
+  - `In1`
+    - [x] read from file
+- `struct`
+  - `Struct`
 
 ## tools
 

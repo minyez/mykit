@@ -56,7 +56,7 @@ class test_string_manipulation(ut.TestCase):
         self.assertEqual(1, \
             conv_string(string, int, 0, strips=";"))
         # multiple values
-        self.assertTupleEqual((1, 5), \
+        self.assertListEqual([1, 5], \
             conv_string(string, int, 0, 2, sep=r"[;=]", strips="."))
         # inpropriate value to convert
         self.assertRaises(ValueError, conv_string, \

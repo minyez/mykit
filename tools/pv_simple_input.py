@@ -9,18 +9,18 @@ import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from mykit.core.kmesh import kpath_encoder
-from mykit.core.log import verbose
-from mykit.core.symmetry import special_kpoints
-from mykit.vasp.incar import incar
+from mykit.core.log import Verbose
+from mykit.core.symmetry import SpecialKpoints
+from mykit.vasp.incar import Incar
 from mykit.vasp.kpoints import kpoints
-from mykit.vasp.poscar import poscar
-from mykit.vasp.potcar import potcar_search
+from mykit.vasp.poscar import Poscar
+from mykit.vasp.potcar import PotcarSearch
 
 
 def pv_simple_input():
 
     parser = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-i", dest='poscar', default="POSCAR", \
+    parser.add_argument("-i", dest='Poscar', default="POSCAR", \
         help="input file for KPOINTS and POTCAR generation. POSCAR as default")
     parser.add_argument("-e", dest='encut', type=int, default=None, \
         help="planewave cutoff.")
@@ -45,16 +45,16 @@ def pv_simple_input():
     klenScf = 25
 
     if opts.overwrite:
-        verbose.print_cm_warn("Overwrite switch on.")
-    if os.path.isfile(opts.poscar):
-        pos = poscar.read_from_file(opts.poscar)
+        Verbose.print_cm_warn("Overwrite switch on.")
+    if os.path.isfile(opts.Poscar):
+        pos = Poscar.read_from_file(opts.Poscar)
         if klen >= 0 and (not os.path.isfile('KPOINTS') or opts.overwrite):
             if klen==0:
                 klen = klenDe.get(opts.task, klenScf)
             if opts.task == "band":
-                kpaths = special_kpoints.get_kpaths_from_cell(pos)
+                kpaths = SpecialKpoints.get_kpaths_predef_from_cell(pos)
                 if kpaths is None:
-                    verbose.print_cm_warn("No predefined kpath available. Skip writing band KPOINTS.")
+                    Verbose.print_cm_warn("No predefined kpath available. Skip writing band KPOINTS.")
                 else:
                     for i, kpath in enumerate(kpaths):
                         kpathStr = kpath_encoder(kpath["symbols"])
@@ -66,12 +66,12 @@ def pv_simple_input():
                 kp = kpoints(kmode="G", kgrid=nks)
                 kp.write()
         if not os.path.isfile('POTCAR') or opts.overwrite:
-            pts = potcar_search(*pos.atomTypes)
+            pts = PotcarSearch(*pos.atomTypes)
             pts.export(xc=opts.xc)
 
     # write INCAR
     if not os.path.isfile('INCAR') or opts.overwrite:
-        ic = incar.minimal_incar(opts.task, xc=opts.xc, nproc=opts.nproc, \
+        ic = Incar.minimal_incar(opts.task, xc=opts.xc, nproc=opts.nproc, \
             ISPIN=opts.ispin, ENCUT=opts.encut, comment="Quick {} input by mykit".format(opts.task))
         ic.write()
         

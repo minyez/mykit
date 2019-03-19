@@ -3,8 +3,6 @@
 '''
 import sys
 
-from mykit.core.config import global_config
-
 
 class Verbose:
     '''Class that controls the level of information print.
@@ -21,7 +19,7 @@ class Verbose:
     Level set higher than the above number in configure file is not necessary.
     Level set higher than the above number by calling property will be ignored.
     '''
-    config = global_config()
+    from mykit.core.config import config
     _verbWarn, _verbLog, _indent = config.get('verbWarn', 'verbLog', 'logIndent')
     del config
     _indent = ' ' * _indent
