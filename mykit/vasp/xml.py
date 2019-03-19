@@ -299,7 +299,8 @@ class Vasprunxml(Verbose, Prec):
         projected = None
         if self.pWave != None:
             projected = {"atoms": self._atoms, "projs": self.projs, "pWave": self.pWave}
-        return BandStructure(self._eigen, self._occ, projected=projected)
+        bs = BandStructure(self._eigen, self._occ, projected=projected)
+        return bs
 
     @property
     def nibzkpt(self):
@@ -310,6 +311,21 @@ class Vasprunxml(Verbose, Prec):
     # @property
     # def kpoints(self):
     #     return {"coordinates": self._ibzkpt, "weights": self._weight}
+    @property
+    def kdense(self):
+        if hasattr(self, "_kdense"):
+            return self._kdense
+        return None
+    @property
+    def kmode(self):
+        if hasattr(self, "_kmode"):
+            return self._kmode
+        return None
+    @property
+    def kdiv(self):
+        if hasattr(self, "_kdiv"):
+            return self._kdiv
+        return None
 
     def _read_klist(self):
 #       klist_index is 1 if auto generator is used
@@ -320,13 +336,23 @@ class Vasprunxml(Verbose, Prec):
             ki = 0
         else:
             ki = 1
-            # self._nkpt = np.prod(list(map(int, gen[0].text.split())))
-            self._nkpt = np.prod(conv_string(gen[0].text, int))
+            kmode = gen.attrib["param"]
+            # kdiv is only applicable for G and M
+            if kmode in ["Gamma", "Monkhorst-Pack"]:
+                self._kdiv = conv_string(gen[0].text, int)
+                self._nkpt = np.prod(self._kdiv)
+            elif kmode == "listgenerated":
+                self._kdense = int(gen[0].text)
+            elif kmode == "Auto":
+                self._kdense = int(gen[0].text)
+                self._kdiv = conv_string(gen[1].text, int)
+                self._nkpt = np.prod(self._kdiv)
+            else:
+                raise VasprunxmlError("Unknown kmode")
+            self._kmode = kmode[0].upper()
         self._nibzkpt = len(self._secKpoints[ki])
         if self._nkpt == 0:
             self._nkpt = deepcopy(self._nibzkpt)
-        # self._ibzkpt = [[float(kvec) for kvec in kp.text.split()] for kp in self._secKpoints[ki]]
-        # self._ibzkpt = [list(map(float, kp.text.split())) for kp in self._secKpoints[ki]]
         self._ibzkpt = [conv_string(kp.text, float) for kp in self._secKpoints[ki]]
         self._weight = [int(np.rint(float(kp.text) * self._nkpt)) for kp in self._secKpoints[ki+1]]
 

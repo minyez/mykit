@@ -10,8 +10,8 @@ from mykit.vasp.xml import Vasprunxml, VasprunxmlError
 
 class test_vasprunxml_read(ut.TestCase):
 
-    def test_static_xml(self):
-        dataDir = 'vasprun_static'
+    def test_scf_xml(self):
+        dataDir = 'vasprun_scf'
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
             'testdata', 'vasp', dataDir)
         for fn in os.listdir(dataDirPath):
@@ -21,6 +21,15 @@ class test_vasprunxml_read(ut.TestCase):
                 _vxml.get_atom_index()
                 _vxml.get_atom_index(0)
                 _vxml.get_atom_index(-1)
+
+    def test_band_xml(self):
+        dataDir = 'vasprun_band'
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
+            'testdata', 'vasp', dataDir)
+        for fn in os.listdir(dataDirPath):
+            if fnmatch(fn, r"vasprun*"):
+                path = os.path.join(dataDirPath, fn)
+                _vxml = Vasprunxml(path)
 
     def test_opt_xml(self):
         dataDir = 'vasprun_opt'
@@ -30,9 +39,6 @@ class test_vasprunxml_read(ut.TestCase):
             if fnmatch(fn, r"vasprun*"):
                 path = os.path.join(dataDirPath, fn)
                 _vxml = Vasprunxml(path)
-                _vxml.get_atom_index()
-                _vxml.get_atom_index(0)
-                _vxml.get_atom_index(-1)
 
     def test_pdos_xml(self):
         dataDir = 'vasprun_partial'
@@ -42,9 +48,6 @@ class test_vasprunxml_read(ut.TestCase):
             if fnmatch(fn, r"vasprun*"):
                 path = os.path.join(dataDirPath, fn)
                 _vxml = Vasprunxml(path)
-                _vxml.get_atom_index()
-                _vxml.get_atom_index(0)
-                _vxml.get_atom_index(-1)
                 bs = _vxml.load_band()
                 bs.pWave
                 bs.atoms
