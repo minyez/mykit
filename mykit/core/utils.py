@@ -159,19 +159,28 @@ def find_data_extreme(data):
     pass
 
 
-def find_vol_dirs(path='.'):
+def find_vol_dirs(path='.', pattern=None):
     '''Find names of directories corresponding to calculation with lattice of different volumes
     
-    The searching pattern is "V_x.xx" where x is 0-9
+    Args:
+        path (str): the path to search directories within. Default is CWD.
+        patthern (regex): the pattern of the names of volume directories
+            If not specified, use "V_x.xx" where x is 0-9
+    
+    Returns:
+        list of strings
     '''
-    pat = r'^V_\d.\d+'
+    pat = pattern
+    if pat is None:
+        pat = r'^V_\d.\d+'
     _dirs = []
     for _d in os.listdir(path):
         if re.match(pat, _d):
             _dirs.append(_d)
     def __sort_vol(dirstr):
         return float(dirstr.split('_')[1])
-    _dirs = sorted(_dirs, key=__sort_vol)
+    if pattern is None:
+        _dirs = sorted(_dirs, key=__sort_vol)
     return _dirs
 
 
@@ -187,12 +196,16 @@ def conv_string(string, conv2, *id, sep=None, strips=None):
         sep (regex): the separators used to split the string.
         strips (str): extra strings to strip for each substring before conversion
     '''
+    assert conv2 in [str, int, float]
     str_tmp = string.strip()
     if sep is not None:
-        str_list = re.split(r'[%s]'%sep, str_tmp)
+        str_list = re.split(sep, str_tmp)
     else:
         str_list = str_tmp.split()
-    str_list = [x.strip(' '+strips) for x in str_list]
+    if strips is None:
+        str_list = [x.strip() for x in str_list]
+    else:
+        str_list = [x.strip(' '+strips) for x in str_list]
 
     if len(id) == 0:
         return tuple(map(conv2, str_list))
@@ -229,13 +242,16 @@ def common_ss_conv(string, i, conv2, sep=None):
 
 
 def get_first_last_line(filePath, encoding=stdout.encoding):
-    '''Return the first and the last non-empty line of file
+    '''Return the first and the last lines of file
 
-    The existence of filePath should be check first.
+    The existence of filePath should be check beforehand.
 
     Args:
         filePath (str): the path of the file
-        encoding (str): the encoding of the file
+        encoding (str): the encoding of the file. Default stdout.encoding
+    
+    Returns
+        two strings (unstripped)
     '''
     with open(filePath, "rb") as f:
         first = f.readline()        # Read the first line.
@@ -243,5 +259,5 @@ def get_first_last_line(filePath, encoding=stdout.encoding):
         while f.read(1) != b"\n":   # Until EOL is found...
             f.seek(-2, os.SEEK_CUR) # ...jump back the read byte plus one more.
         last = f.readline()         # Read last line.
-    # convert to string by stdin encoding
+    # encode string
     return str(first, encoding), str(last, encoding)

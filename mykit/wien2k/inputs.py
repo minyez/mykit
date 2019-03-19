@@ -4,16 +4,17 @@ import os
 
 from fortranformat._exceptions import InvalidFormat
 
+from mykit.core.log import Verbose
 from mykit.core.utils import (get_cwd_name, get_filename_wo_ext, trim_after,
                               trim_both_sides)
-from mykit.wien2k.constants import EXCEPTION_READER, EXCEPTION_WRITER
+from mykit.wien2k.constants import EL_READER, EL_WRITER
 
 
 class InputError(Exception):
     pass
 
 
-class In1:
+class In1(Verbose):
     '''class for manipulating WIEN2k in1 file
 
     TODO:
@@ -22,7 +23,7 @@ class In1:
     def __init__(self, casename, switch, efermi, \
                        rkmax, lmax, lnsmax, \
                     #    unit, emin, emax, nband, \
-                       *elparams):
+                       *elparams, **kwargs):
         self.casename = casename
         self.switch = switch
         self.efermi = efermi
@@ -36,9 +37,19 @@ class In1:
         self.elparams = elparams
 
     def add_exception(self, atomId, l, e, search=0.000, cont=True, lapw=0):
-        pass
+        assert isinstance(cont, bool)
+        assert atomId < len(self.elparams)
+        assert lapw in [0, 1]
+        contStr = {True: "CONT", False: "STOP"}[cont]
+        # add to existing item only
+        elparams = self.elparams[atomId]
+        elparams["Ndiff"] += 1
+        if not l in elparams["exceptions"]:
+            elparams["exceptions"][l] = []
+        elparams["exceptions"][l].append([e, search, contStr, lapw])
 
     def write(self):
+        # TODO
         pass
 
     @classmethod
@@ -88,19 +99,9 @@ class In1:
             else:
                 words = line.split()
                 if _flagEnergy and len(words) == 3:
-                    atomExcept = {}
-                    atomExcept["Etrial"] = float(words[0])
                     ndiff = int(words[1])
-                    atomExcept["Ndiff"] = ndiff
-                    atomExcept["Napw"] = int(words[2])
-                    exceptions = {}
-                    for j in range(ndiff):
-                        l, e, eIncre, cont, apw = EXCEPTION_READER.read(w2klines[i+1+j])
-                        if not l in exceptions:
-                            exceptions[l] = []
-                        exceptions[l].append((e, eIncre, cont, apw))
-                    atomExcept["exceptions"] = exceptions
-                    elparams.append(atomExcept)
+                    atomEl = read_el_block(w2klines[i:i+ndiff+1])
+                    elparams.append(atomEl)
                     i += ndiff
             i += 1
         return cls(casename, switch, efermi, rkmax, lmax, lnsmax, \
@@ -108,9 +109,44 @@ class In1:
                     *elparams)
 
 
-def read_el_exception_block(elBlock):
-    pass
+def read_el_block(elBlock):
+    '''
+    Args:
+        elBlock (list or tuple):  strings containing el information
+
+    Returns
+        dict
+    '''
+    try:
+        assert isinstance(elBlock, (list, tuple))
+    except AssertionError:
+        raise InputError
+    elParams = {}
+    globParams = elBlock[0].split()
+    elParams["Etrial"] = float(globParams[0])
+    ndiff = int(globParams[1])
+    if len(elBlock) != ndiff + 1:
+        raise InputError("Inconsistent El block: need {}, parsed {}".format(ndiff, len(elBlock)-1))
+    elParams["Ndiff"] = ndiff
+    elParams["Napw"] = int(globParams[2])
+    exceptions = {}
+    for j in range(ndiff):
+        l, e, eIncre, cont, apw = EL_READER.read(elBlock[1+j])
+        if not l in exceptions:
+            exceptions[l] = []
+        exceptions[l].append([e, eIncre, cont, apw])
+    elParams["exceptions"] = exceptions
+    return elParams
 
 
-def write_el_exception_block(elParams):
-    pass
+def write_el_block(elParams):
+    '''
+    Args:
+        elParams (dict)
+
+    Returns
+        str
+    '''
+    _ret = []
+    # TODO
+    return '\n'.join(_ret)

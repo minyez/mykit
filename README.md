@@ -15,7 +15,9 @@ Personal toolkit for manipulating input and output files of various electornic s
 
 - Python >= 3.5.6
 - NumPy
-- Spglib >= 1.12.0
+- Spglib >= 1.12.0 for symmetry manipulation
+- lxml
+- [fortranformat](https://bitbucket.org/brendanarnold/py-fortranformat) for reading in formatted fortran string
 
 ## Objectives
 
@@ -35,7 +37,13 @@ Clone the repository to some local path, e.g. `/path/to/mykit/`.
 python setup.py install
 ```
 
-and add to environment variables
+Or if you have already install the prerequisites, add to shell configuration
+
+```shell
+export PYTHONPATH="/path/to/mykit/:$PYTHONPATH"
+```
+
+Add `tools` to environment variables
 
 ```shell
 export PATH="/path/to/mykit/tools/:$PATH"

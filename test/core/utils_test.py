@@ -3,8 +3,8 @@
 
 import unittest as ut
 
-from mykit.core.utils import (get_dirpath, trim_after, trim_before,
-                              trim_both_sides)
+from mykit.core.utils import (conv_string, find_vol_dirs, get_dirpath,
+                              trim_after, trim_before, trim_both_sides)
 
 
 class file_and_path(ut.TestCase):
@@ -12,6 +12,10 @@ class file_and_path(ut.TestCase):
     def test_get_dirpath(self):
         self.assertEqual("/usr/bin", get_dirpath("/usr/bin"))
         self.assertEqual("/bin", get_dirpath("/bin/ls"))
+
+    def test_find_vol_dirs(self):
+        # no volume directories at cwd
+        self.assertListEqual([], find_vol_dirs())
 
 
 class test_string_manipulation(ut.TestCase):
@@ -43,6 +47,20 @@ class test_string_manipulation(ut.TestCase):
             trim_both_sides(string, r"=", r"\("))
         self.assertEqual("=0.9725 (", \
             trim_both_sides(string, r"=", r"\(", include_pattern=True))
+
+    def test_conv_string(self):
+        string = "1; ABC=5. "
+        # unsupported conversion type
+        self.assertRaises(AssertionError, conv_string, string, list, 0)
+        # single value
+        self.assertEqual(1, \
+            conv_string(string, int, 0, strips=";"))
+        # multiple values
+        self.assertTupleEqual((1, 5), \
+            conv_string(string, int, 0, 2, sep=r"[;=]", strips="."))
+        # inpropriate value to convert
+        self.assertRaises(ValueError, conv_string, \
+            string, int, 0, 2, sep=r"[;=]")
 
 
 if __name__ == "__main__":
