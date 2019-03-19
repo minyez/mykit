@@ -3,6 +3,8 @@
 Module that defines class and utilities for band structure
 '''
 
+from numbers import Real
+
 import numpy as np
 
 from mykit.core.log import Verbose
@@ -11,8 +13,8 @@ from mykit.core.numeric import Prec
 # eigen, occ (array): shape (nspins, nkpt, nbands)
 DIM_EIGEN_OCC = 3
 # pWave (array): shape (nspins, nkpt, nbands, natoms, nprojs)
-KEYS_KPOINTS = ("coordinates", "weights")
-KEYS_PROJECT = ("atoms", "projs", "pWave")
+KEYS_KMESH = ("coordinates", "weights")
+KEYS_PROJ = ("atoms", "projs", "pWave")
 # DIM_PWAVE = 5
 
 
@@ -40,11 +42,12 @@ class BandStructure(Prec, Verbose):
         efermi (float)
         kmesh (dict)
         projected (dict) : has three keys, "atoms, "projs" and "pWave"
+        b (array-like): reciprocal lattice vectors with shape (3,3)
 
     TODO:
         check kmesh consistency
     '''
-    def __init__(self, eigen, occ, efermi=None, kmesh=None, projected=None):
+    def __init__(self, eigen, occ, efermi=None, kmesh=None, projected=None, b=None):
         try:
             self._nspins, self._nkpts, self._nbands = \
                 _check_eigen_occ_consistency(eigen, occ)
@@ -53,21 +56,63 @@ class BandStructure(Prec, Verbose):
             raise BandStructureError(info)
         self._eigen = np.array(eigen, dtype=self._dtype)
         self._occ = np.array(occ, dtype=self._dtype)
+        self._emulti = {1: 2, 2: 1}[self._nspins]
+        # channel: ispin, ikpt
+        self._nelectPerChannel = np.sum(self._occ, axis=2) * self._emulti
+        self._nelectPerSpin = np.sum(self._nelectPerChannel, axis=1) / self._nkpts
+        self._nelect = np.sum(self._nelectPerSpin)
 
-        if projected != None:
+        self._vbm = None
+        if not efermi is None:
+            assert isinstance(efermi, Real)
+            self._efermi = efermi
+        else:
+            self._efermi = self.vbm
+    
+        self._projParsed = False
+        self.__parse_proj(projected)
+        self._kmeshParsed = False
+        self.__parse_kmesh(kmesh)
+        self._bParsed = False
+        self.__parse_b(b)
+    
+    def __parse_proj(self, projected):
+        '''Parse the partial wave information
+        '''
+        if not projected is None:
             try:
                 self._atoms, self._projs, pWave = \
                     self.__check_project_consistency(projected)
                 self._pWave = np.array(pWave, dtype=self._dtype)
+                self._projParsed = True
             except ValueError:
                 self.print_warn("Bad projection input. Skip.")
-    
+
+    def __parse_kmesh(self, kmesh):
+        '''Parse the kpoints mesh
+        '''
+        pass
+
+    def __parse_b(self, b):
+        '''Parse the reciprocal lattice vector
+        '''
+        if not b is None:
+            try:
+                assert np.shape(b) == (3,3)
+                self._b = np.array(b, dtype=self._dtype)
+                self._bParsed = True
+            except (AssertionError, ValueError):
+                self.print_warn("Bad reciprocal lattice vectors. Skip.")
+
     @property
     def eigen(self):
         return self._eigen
     @property
     def occ(self):
         return self._occ
+    @property
+    def nelect(self):
+        return self._nelect
     @property
     def nspins(self):
         return self._nspins
@@ -104,7 +149,7 @@ class BandStructure(Prec, Verbose):
         except AssertionError:
             return ()
         try:
-            for key in KEYS_PROJECT:
+            for key in KEYS_PROJ:
                 assert key in projected
         except AssertionError:
             return ()
@@ -123,6 +168,16 @@ class BandStructure(Prec, Verbose):
         except (AssertionError, TypeError):
             return ()
         return atoms, projs, pWave
+
+    @property
+    def vbm(self):
+        if self._vbm is None:
+            return self.get_vbm()
+        return self._vbm
+
+    def get_vbm(self):
+        vbm = 0.0
+        return vbm
 
     # def __check_kmesh_consistency(self, kmesh):
     #     try:

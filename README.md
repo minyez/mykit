@@ -31,25 +31,27 @@ This module has its emphasis on the input files generation and tutorial purpose,
 ## Install
 
 Clone the repository to some local path, e.g. `/path/to/mykit/`. 
-`cd` too `/path/to/mykit/`, install the package by
+`cd` to `/path/to/mykit/`, install the package by
 
 ```
 python setup.py install
 ```
 
-Or if you have already install the prerequisites, add to shell configuration
+Or if you have already installed the prerequisites, just add
 
 ```shell
 export PYTHONPATH="/path/to/mykit/:$PYTHONPATH"
 ```
+ 
+to your shell configuration. 
 
-Add `tools` to environment variables
+To use scripts, you also need to add the following line in shell configuration
 
 ```shell
 export PATH="/path/to/mykit/tools/:$PATH"
 ```
 
-Perform a quick test to check the installation
+Afterwards, you may perform a quick test to check the installation
 
 ```shell
 cd /path/to/mykit/test
@@ -68,8 +70,7 @@ After installation, the jupyter notebooks in `doc/examples` may be checked for u
 - Special kpoints are retrieved from [Bilbao Crystallographic Server](http://www.cryst.ehu.es), explicitly by using the `KVEC` program. See [Aroyo2014](https://dx.doi.org/10.1107/S205327331303091X)
 - Version string controlled by using [versioneer](https://github.com/warner/python-versioneer)
 
-<!-- Currently partially supported codes:
+Currently partially supported codes:
 
 - [VASP](http://www.vasp.at/)
-- [WIEN2K](http://susi.theochem.tuwien.ac.at/)
-- [ABINIT](https://www.abinit.org/) -->
+- [WIEN2k](http://susi.theochem.tuwien.ac.at/)

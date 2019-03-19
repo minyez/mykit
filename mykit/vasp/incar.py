@@ -305,6 +305,7 @@ class Incar(*_incar_controllers):
                 "band": (_get_minimal_scf_tags, _get_minimal_band_tags, ),
                 "dos": (_get_minimal_scf_tags, _get_minimal_dos_tags, ),
                 "diag": (_get_minimal_scf_tags, _get_minimal_diag_tags, ),
+                # "gw": (_get_minimal_scf_tags, _get_minimal_gw_tags, ),
             }
         minimals = _taskDict.get(task, None)
         if minimals is None:
@@ -328,6 +329,7 @@ def _get_minimal_scf_tags():
         "EDIFF": 1e-6,
         "PREC": "Normal",
         "LMAXMIX": 6,
+        "ISMEAR": -5,
         }
     return _scftags
 
@@ -336,6 +338,7 @@ def _get_minimal_diag_tags():
     _diatags = {
         "NELM": 1,
         "ALGO": "Exact",
+        "ISMEAR": -5,
     }
     return _diatags
 
@@ -346,6 +349,8 @@ def _get_minimal_dos_tags():
         "LORBIT": 11,
         "ISTART": None,
         "NEDOS": 3000,
+        "ISMEAR": 0,
+        "SIGMA": 0.05,
     }
     return _dostags
 
@@ -355,6 +360,7 @@ def _get_minimal_band_tags():
         "ICHARG": 11,
         "LORBIT": 11,
         "ISTART": None,
+        "ISMEAR": -5,
     }
     return _bandtags
 
@@ -366,6 +372,8 @@ def _get_minimal_ion_opt_tags():
         "ISIF": 3,
         "NSW": 40,
         "MAXMIX": 80,
+        "ISMEAR": 0,
+        "SIGMA": 0.05,
     }
     return _iontags
 

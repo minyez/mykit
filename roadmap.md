@@ -71,8 +71,9 @@ and help map name and value of parameter tags between different simulation progr
   - [x] reading in eigenvalues and occ
   - optional keyword arguments
     - [x] partial waves (dict)
-    - [ ] `efermi` (float)
-    - [ ] `kpoints` (dict)
+    - [ ] Fermi level `efermi` (float)
+    - [ ] kmesh `kmesh` (dict) for plottng bands and computing k-averaged gap 
+    - [x] reciprocal lattice vectors `b` ((3,3) array-like) for computing kpath length
   - [ ] compute direct gap, indirect, k-averaged gap
   - [ ] return a `Dos` object
 

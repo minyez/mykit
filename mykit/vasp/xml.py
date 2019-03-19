@@ -103,6 +103,16 @@ class Vasprunxml(Verbose, Prec):
             tags.update(Incar.analyze_incar_line(incarLine))
         self.incar = Incar(**tags)
 
+    @property
+    def nelect(self):
+        return self._nelect
+    @property
+    def nspins(self):
+        return self._nspins
+    @property
+    def nbands(self):
+        return self._nbands
+
     def _read_params(self):
         '''Read auto-generated parameters
         '''
@@ -110,9 +120,9 @@ class Vasprunxml(Verbose, Prec):
         # NBANDS: root->parameter->separator name='electronic'->i name='NBANDS'
         paramE = self._secPara.find('.//separator[@name="electronic"]')
         spin = paramE.find('.//separator[@name="electronic spin"]')
-        self.nelec = int(float(paramE.find('.//i[@name="NELECT"]').text))
-        self.nspins = int(spin[0].text)
-        self.nbands = int(paramE.find('.//i[@name="NBANDS"]').text)
+        self._nelect = float(paramE.find('.//i[@name="NELECT"]').text)
+        self._nspins = int(spin[0].text)
+        self._nbands = int(paramE.find('.//i[@name="NBANDS"]').text)
 
     @property
     def natoms(self):
@@ -224,6 +234,9 @@ class Vasprunxml(Verbose, Prec):
         if hasattr(self, '_projs'):
             return self._projs
         return None
+    @property
+    def efermi(self):
+        return self._efermi
 
     def _read_dos(self):
         '''
@@ -233,9 +246,9 @@ class Vasprunxml(Verbose, Prec):
         sd = self._secDos
         self._NEDOS = 0
         if sd is None:
-            self.efermi = None
+            self._efermi = None
         else:
-            self.efermi = float(sd[0].text)
+            self._efermi = float(sd[0].text)
             totDosSet = sd.find('total').find('array').find('set')
             self._dosGrid = None
             self._totalDos = []
@@ -294,12 +307,17 @@ class Vasprunxml(Verbose, Prec):
         self._pWave = _pWave
     
     def load_band(self):
-        '''Return a BandStructure instance
+        '''Return a BandStructure instance.
+
+        Note:
+            `BandStructure.nelect` attribute may differ from `Vasprunxml.nelect`, 
+            if the smearing is large when compared with the band gap.
         '''
         projected = None
         if self.pWave != None:
             projected = {"atoms": self._atoms, "projs": self.projs, "pWave": self.pWave}
-        bs = BandStructure(self._eigen, self._occ, projected=projected)
+        bs = BandStructure(self._eigen, self._occ, efermi=self._efermi, \
+            projected=projected, b=self._finalPoscar.bIn2Pi)
         return bs
 
     @property
@@ -382,8 +400,8 @@ class Vasprunxml(Verbose, Prec):
 #         # return the gap from eigenvalue information
 #         ecbm = 100000.0
 #         evbm = -100000.0
-#         vbm = self.nelec/2
-#         cbm = self.nelec/2 + 1
+#         vbm = self.nelect/2
+#         cbm = self.nelect/2 + 1
 #         for spin in range(self.nspins):
 #             for kp in range(self._nibzkpt):
 # #                print self.eigen[spin,kp,vbm-1],self.eigen[spin,kp,cbm-1]

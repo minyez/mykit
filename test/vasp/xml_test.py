@@ -38,13 +38,20 @@ class test_vasprunxml_read(ut.TestCase):
             self.assertTrue(vxml.pWave is None)
 
     def test_band_xml(self):
+        '''Test reading XMLs for band calculations (LORBIT set or not)
+        '''
         dataDir = 'vasprun_band'
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
             'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
-            _vxml = Vasprunxml(fn)
+            vxml = Vasprunxml(fn)
+            _bs = vxml.load_band()
+            # For reasonabl 
+            # self.assertAlmostEqual(bs.nelect, vxml.nelect)
 
     def test_opt_xml(self):
+        '''Test reading XMLs for geometry optimization
+        '''
         dataDir = 'vasprun_opt'
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
             'testdata', 'vasp', dataDir)
@@ -52,6 +59,8 @@ class test_vasprunxml_read(ut.TestCase):
             _vxml = Vasprunxml(fn)
 
     def test_pdos_xml(self):
+        '''Test reading XMLs with LORBIT set
+        '''
         dataDir = 'vasprun_partial'
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
             'testdata', 'vasp', dataDir)
@@ -59,6 +68,7 @@ class test_vasprunxml_read(ut.TestCase):
             vxml = Vasprunxml(fn)
             self.assertFalse(vxml.pDos is None)
             bs = vxml.load_band()
+            # self.assertAlmostEqual(bs.nelect, vxml.nelect)
             bs.pWave
             bs.atoms
             bs.projs
