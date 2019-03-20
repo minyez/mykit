@@ -4,6 +4,8 @@
 
 import os
 import re
+from collections import OrderedDict
+from collections.abc import Iterable
 from sys import stdout
 
 
@@ -290,3 +292,54 @@ def get_first_last_line(filePath, encoding=stdout.encoding):
         last = f.readline()         # Read last line.
     # encode string
     return str(first, encoding), str(last, encoding)
+
+
+def get_str_indices(container, string):
+    '''Return the indices of ``string`` in a list or tuple``container``
+
+    Args:
+        container (list or tuple): container of strings
+        string (str): the string to locate
+    
+    Returns:
+        list
+    '''
+    assert isinstance(container, (list, tuple))
+    ind = []
+    for i, s in enumerate(container):
+        if string == s:
+            ind.append(i)
+    return ind
+
+
+def get_str_indices_by_iden(container, id):
+    '''Return the indices of identified strings in a list or tuple``container``.
+
+    The strings are identified by ``id``, either a str, int, or a Iterable of these types.
+    If ``id`` is int or corresponding Iterable, the value greater or equal to the
+    length of ``container`` will be ignored.
+
+    Args:
+        container (list or tuple): container of strings
+        id (int, str, Iterable): the identifier for string to locate
+    
+    Returns:
+        list, unique indices of identified strings
+    '''
+    ret = []
+    l = len(container)
+    if isinstance(id, int):
+        if id < l:
+            ret.append(id)
+    elif isinstance(id, str):
+        ret.extend(get_str_indices(container, id))
+    elif isinstance(id, Iterable):
+        for i in id:
+            if isinstance(i, int):
+                if i < l:
+                    ret.append(i)
+            elif isinstance(i, str):
+                ret.extend(get_str_indices(container, i))
+    if ret != []:
+        return list(OrderedDict.fromkeys(ret).keys())
+    return ret

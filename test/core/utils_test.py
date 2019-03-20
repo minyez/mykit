@@ -4,6 +4,7 @@
 import unittest as ut
 
 from mykit.core.utils import (conv_string, find_vol_dirs, get_dirpath,
+                              get_str_indices, get_str_indices_by_iden,
                               trim_after, trim_before, trim_both_sides)
 
 
@@ -61,6 +62,24 @@ class test_string_manipulation(ut.TestCase):
         # inpropriate value to convert
         self.assertRaises(ValueError, conv_string, \
             string, int, 0, 2, sep=r"[;=]")
+
+
+class test_indicies_searching(ut.TestCase):
+
+    container = ['A', 'b', 'C', 'M', 'A', 'D', 'b']
+
+    def test_get_str_indices(self):
+        self.assertListEqual([0, 4], get_str_indices(self.container, 'A'))
+        self.assertListEqual([5,], get_str_indices(self.container, 'D'))
+        self.assertListEqual([], get_str_indices(self.container, 'Xz'))
+
+    def test_get_str_indices_by_iden(self):
+        self.assertListEqual([0, 4, 1], \
+            get_str_indices_by_iden(self.container, ['A', 1]))
+        self.assertListEqual([1, 6, 0], \
+            get_str_indices_by_iden(self.container, ['b', 0]))
+        self.assertListEqual([1, 6], \
+            get_str_indices_by_iden(self.container, ['b', 20]))
 
 
 if __name__ == "__main__":

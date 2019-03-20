@@ -23,6 +23,7 @@ import numpy as np
 from mykit.core.constants import ANG2AU, AU2ANG, PI
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
+from mykit.core.utils import get_str_indices
 
 
 # ==================== classes ====================
@@ -190,7 +191,8 @@ class Cell(Prec, Verbose):
         Args:
             csymbol (str) : chemical-symbol-like identifier
         '''
-        return get_sym_index(self.atoms, csymbol)
+        assert isinstance(csymbol, str)
+        return get_str_indices(self.atoms, csymbol.capitalize())
 
     # * Sorting method
     def __bubble_sort_atoms(self, key, indices, reverse=False):
@@ -1120,18 +1122,3 @@ def periodic_duplicates_in_cell(directCoord):
                 _c[i] = 1.0
             _dupcs.extend(_trans)
     return tuple(_dupcs), _n
-
-def get_sym_index(atomsIter, csymbol):
-    '''Return the indices of ``csymbol`` in iterable ``atomsIter``
-
-    Args:
-        atomsIter (Iterable): container of atoms symbols (string)
-        csymbol (str): the chemical symbol of atom to locate
-    '''
-    assert isinstance(atomsIter, Iterable)
-    __ind = []
-    _csym = csymbol.capitalize()
-    for _i, _s in enumerate(atomsIter):
-        if _csym == _s:
-            __ind.append(_i)
-    return __ind

@@ -8,10 +8,10 @@ from copy import deepcopy
 import numpy as np
 
 from mykit.core.bandstructure import BandStructure
-from mykit.core.cell import get_sym_index, sym_nat_from_atoms
+from mykit.core.cell import sym_nat_from_atoms
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
-from mykit.core.utils import conv_string, get_first_last_line
+from mykit.core.utils import conv_string, get_first_last_line, get_str_indices
 from mykit.vasp.incar import Incar
 from mykit.vasp.poscar import Poscar
 
@@ -178,7 +178,7 @@ class Vasprunxml(Verbose, Prec):
         else:
             raise VasprunxmlError("Atomtype should be either int or string.")
         at = self.atomTypes[at]
-        return get_sym_index(self._atoms, at)
+        return get_str_indices(self._atoms, at)
 
     @property
     def eigen(self):

@@ -3,13 +3,13 @@
 Module that defines class and utilities for band structure
 '''
 
-from collections.abc import Iterable
 from numbers import Real
 
 import numpy as np
 
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
+from mykit.core.utils import get_str_indices_by_iden
 
 # eigen, occ (array): shape (nspins, nkpt, nbands)
 DIM_EIGEN_OCC = 3
@@ -347,8 +347,22 @@ class BandStructure(Prec, Verbose):
         Returns:
             (nspins, nkpts, nbands)
         '''
-        pass
+        if not self.hasProjection:
+            return 0.0
+        
 
+    def _get_atom_indices(self, atom):
+        if not self.hasProjection:
+            return []
+        else:
+            return get_str_indices_by_iden(self._atoms, atom)
+
+    def _get_proj_indices(self, proj):
+        if not self.hasProjection:
+            return []
+        else:
+            return get_str_indices_by_iden(self._projs, proj)
+        
 
 def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     '''Check if eigenvalues, occupation number and kweights data have the correct shape
