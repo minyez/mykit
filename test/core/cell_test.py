@@ -151,6 +151,8 @@ class cell_factory_method(ut.TestCase):
         # primitive only
         Cell.perovskite("Ca", "Ti", "O")
         Cell.wurtzite("Zn", "O")
+        Cell.pyrite()
+        Cell.marcasite()
 
     def test_read_from_json(self):
         import os

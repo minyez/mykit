@@ -46,14 +46,14 @@ class BandStructure(Prec, Verbose):
         weight (array-like) : the integer weights of each kpoint, 1-d int array
 
     Optional args:
-        efermi (float)
-        kvec (array-like): kpoints vectors
-        projected (dict) : has three keys, "atoms, "projs" and "pWave"
+        kvec (array-like): kpoints vectors in reciprocal space (N.B. not the coordinate)
+        efermi (float): the Fermi level. If not parsed, the valence band maximum will be used.
+        projected (dict) : partial wave information, which has three keys, "atoms, "projs" and "pWave"
 
     Attributes:
 
     '''
-    def __init__(self, eigen, occ, weight, kvec=None, efermi=None, projected=None, b=None):
+    def __init__(self, eigen, occ, weight, kvec=None, efermi=None, projected=None):
         try:
             self._nspins, self._nkpts, self._nbands = \
                 _check_eigen_occ_weight_consistency(eigen, occ, weight)

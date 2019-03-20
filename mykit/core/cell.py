@@ -41,7 +41,7 @@ class Cell(Prec, Verbose):
         pos (array-like) : The internal coordinates of atoms
 
     Note:
-        Various kwargs are acceptable for ``Cell`` and its subclasses. Check ``cell`` module docstring.
+        see ``cell`` module docstring for acceptable kwargs for ``Cell`` and its subclasses
 
     Examples:
     >>> Cell([[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]], ["C"], [[0.0, 0.0, 0.0]])
@@ -924,7 +924,67 @@ class Cell(Prec, Verbose):
                     [0.5, 0.5, 0.5+u]]
         kwargs.pop("coordSys", None)
         if not "comment" in kwargs:
-            kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})
+            kwargs.update({"comment": "Anatase {}{}2".format(atom1, atom2)})
+        return cls(_latt, _atoms, _pos, **kwargs)
+    
+    @classmethod
+    def pyrite(cls, atom1="Fe", atom2="S", a=5.4183, u=0.1174, **kwargs):
+        '''Generate a standardized pyrite lattice (space group 205).
+
+        Args:
+            atom1 (str): symbol of atom at vertex and face-center
+            atom2 (str): symbol of atom at edges
+            a (float): the lattice constant of the conventional cell.
+            u (float): the internal coordinate
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        _a = abs(a)
+        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+        _atoms = [atom1,]*4 + [atom2,]*8
+        _pos = [[0.0, 0.0, 0.0],
+                [0.0, 0.5, 0.5],
+                [0.5, 0.0, 0.5],
+                [0.5, 0.5, 0.0],
+                [0.5-u,     u,    -u],
+                [0.5+u,    -u,     u],
+                [   -u, 0.5-u,     u],
+                [    u, 0.5+u,    -u],
+                [    u,    -u, 0.5-u],
+                [   -u,     u, 0.5+u],
+                [0.5+u, 0.5+u, 0.5+u],
+                [0.5-u, 0.5-u, 0.5-u],
+               ]
+        kwargs.pop("coordSys", None)
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Pyrite {}{}2".format(atom1, atom2)})
+        return cls(_latt, _atoms, _pos, **kwargs)
+
+    @classmethod
+    def marcasite(cls, atom1="Fe", atom2="S", \
+                  a=4.4450, b=5.4151, c=3.3922, \
+                  v=0.2066, w=0.3750, **kwargs):
+        '''Generate a standardized marcasite lattice (space group 58).
+
+        Args:
+            atom1 (str): symbol of atom at vertex and body-center
+            atom2 (str): symbol of the other atom
+            a, b, c (float): the lattice constants of the cell.
+            v, w(float): the internal coordinates
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        _a = abs(a)
+        _c = abs(c)
+        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
+        _atoms = [atom1,]*2 + [atom2,]*4
+        _pos = [[0.0, 0.0, 0.0],
+                [0.5, 0.5, 0.5],
+                [0.5+v, 0.5-w,    0.5],
+                [0.5-v, 0.5+w,    0.5],
+                [   -v,    -w,    0.0],
+                [    v,     w,    0.0],]
+        kwargs.pop("coordSys", None)
+        if not "comment" in kwargs:
+            kwargs.update({"comment": "Marcasite {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
 

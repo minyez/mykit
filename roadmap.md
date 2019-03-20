@@ -19,10 +19,9 @@ They lie the basis for input conversion
     - [x] cubic cells (cP, cI, cF)
     - [x] orthorhombic cells (oP, oI, oF)
     - [ ] hexagonal and trigonal cells
-    - [x] zincblende
-    - [x] wurtzite
-    - [x] rutile
-    - [x] anatase
+    - [x] zincblende and wurtzite
+    - [x] rutile and anatase
+    - [x] pyrite and marcasite
     - [x] diamond
     - [x] perovskite
   - [x] allow adding atoms 'on the fly'
@@ -68,13 +67,14 @@ and help map name and value of parameter tags between different simulation progr
 ### `bandstructure` module
 
 - `BandStructure`: analyze band structure
-  - [x] reading in eigenvalues and occ
+  - [x] reading in eigenvalues, occupation numbers and kpoints weight
   - optional keyword arguments
     - [x] partial waves (dict)
-    - [ ] Fermi level `efermi` (float)
-    - [ ] kmesh `kmesh` (dict) for plottng bands and computing k-averaged gap 
-    - [x] reciprocal lattice vectors `b` ((3,3) array-like) for computing kpath length
-  - [ ] compute direct gap, indirect, k-averaged gap
+    - [x] Fermi level `efermi` (float)
+    - [x] kpoint vectors `kvec` for evaluating length of kpath
+  - [x] compute direct gap, indirect, k-averaged gap
+  - [ ] extract partial wave coefficients of one or a of projectors on atoms
+  - [ ] compute effective gap
   - [ ] return a `Dos` object
 
 ### `dos` module
@@ -82,7 +82,7 @@ and help map name and value of parameter tags between different simulation progr
 - `Dos`: analyze density of states (DOS)
   - [ ] reading in energy grids, DOS
   - optional keyword argument
-    - [ ] partial DOS
+    - [ ] partial (projected) DOS
     - [ ] fermi level
     - [ ] number of electrons
     - [ ] smearing parameters
