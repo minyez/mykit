@@ -48,7 +48,7 @@ class Kpoints(Verbose):
             ```
             Both keys words should have a value of list with even length.
             If specified, the mode will be changed to "L".
-        kpoints (nx4 array): the explicit kpoints to parse. the fourth column is the kpoint weight.
+        kpoints (nx4 array): the explicit kpoints to parse. the fourth column is the kpoint weight (integer)
             If specified, the explict mode will be triggered.
     '''
 

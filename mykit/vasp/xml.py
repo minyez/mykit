@@ -316,8 +316,10 @@ class Vasprunxml(Verbose, Prec):
         projected = None
         if self.pWave != None:
             projected = {"atoms": self._atoms, "projs": self.projs, "pWave": self.pWave}
-        bs = BandStructure(self._eigen, self._occ, efermi=self._efermi, \
-            projected=projected, b=self._finalPoscar.bIn2Pi)
+        bs = BandStructure(self._eigen, self._occ, self._weight, \
+                efermi=self._efermi, projected=projected, \
+                kvec=self.kvec, \
+                )
         return bs
 
     @property
@@ -326,9 +328,16 @@ class Vasprunxml(Verbose, Prec):
     @property
     def nkpt(self):
         return self._nkpt
-    # @property
-    # def kpoints(self):
-    #     return {"coordinates": self._ibzkpt, "weights": self._weight}
+    @property
+    def kvec(self):
+        '''list. the vectors of all kpoints
+        
+        Reciprocal basis of final lattice is used.
+        '''
+        return np.dot(self._ibzkpt, np.transpose(self._finalPoscar.b))
+    @property
+    def kpoints(self):
+        return [[kpt, w] for kpt, w in zip(self._ibzkpt, self._weight)]
     @property
     def kdense(self):
         if hasattr(self, "_kdense"):

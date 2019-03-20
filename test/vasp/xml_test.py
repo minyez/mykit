@@ -45,9 +45,10 @@ class test_vasprunxml_read(ut.TestCase):
             'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
             vxml = Vasprunxml(fn)
-            _bs = vxml.load_band()
-            # For reasonabl 
-            # self.assertAlmostEqual(bs.nelect, vxml.nelect)
+            bs = vxml.load_band()
+            self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
+            self.assertTrue(bs.hasKvec)
+            bs.kvec
 
     def test_opt_xml(self):
         '''Test reading XMLs for geometry optimization
@@ -68,7 +69,7 @@ class test_vasprunxml_read(ut.TestCase):
             vxml = Vasprunxml(fn)
             self.assertFalse(vxml.pDos is None)
             bs = vxml.load_band()
-            # self.assertAlmostEqual(bs.nelect, vxml.nelect)
+            self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
             bs.pWave
             bs.atoms
             bs.projs

@@ -286,13 +286,14 @@ class Incar(*_incar_controllers):
         return cls(**__incarTags)
         
     @classmethod
-    def minimal_incar(cls, task, xc=None, nproc=1, **kwargs):
+    def minimal_incar(cls, task, xc=None, nproc=1, metal=False, **kwargs):
         '''Create an ``incar`` instance with minimal reasonable tags for particular task
 
         Args:
             task (str): the type of task, "band", "dos", "scf", "opt"
             xc (str): the type of xc.
             nproc (int): number of processors to use
+            metal (bool): flag for metal
             kwargs: other tags you want to set manually.
                 Note that this will overwrite built-in defaults.
 
@@ -451,7 +452,7 @@ def decode_incar_value(vstr):
         vstr (str): value string to decode
     '''
     boolDict = {'.false.': False, '.true.': True, 't': True, 'f': False, '.t.': True, '.f.': False}
-    def __convert(v):
+    def _convert(v):
         try:
             return int(v)
         except ValueError:
@@ -480,13 +481,13 @@ def decode_incar_value(vstr):
         _vList = vs.split()
         if len(_vList) == 1:
             _v = _vList[0]
-            value = __convert(_v)
+            value = _convert(_v)
         else:
             newList = []
             for seg in _vList:
                 if seg == ',':
                     continue
-                vseg = __convert(seg)
+                vseg = _convert(seg)
                 if vseg is None:
                     return None
                 elif isinstance(vseg, list):
