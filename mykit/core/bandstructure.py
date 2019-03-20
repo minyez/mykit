@@ -47,8 +47,10 @@ class BandStructure(Prec, Verbose):
 
     Optional args:
         kvec (array-like): kpoints vectors in reciprocal space (N.B. not the coordinate)
-        efermi (float): the Fermi level. If not parsed, the valence band maximum will be used.
-        projected (dict) : partial wave information, which has three keys, "atoms, "projs" and "pWave"
+        efermi (float): the Fermi level. 
+            If not parsed, the valence band maximum will be used.
+        projected (dict) : partial wave information. 
+            It should have three keys, "atoms, "projs" and "pWave"
 
     Attributes:
 
@@ -320,25 +322,46 @@ class BandStructure(Prec, Verbose):
         return atoms, projs, pWave
 
     # * Projection related functions
-    def effective_gap(self, atomVbm=None, projVbm=None, atomCbm=None, projCbm=None):
-        '''Compute the effective band gap, 
+    def effective_gap(self, ivb=None, atomVbm=None, projVbm=None, \
+            icb=None, atomCbm=None, projCbm=None):
+        '''Compute the effective band gap between ``ivb`` and ``icb``, 
         the responsible transition of which associates projector `projVbm` on `atomVbm` in VB
-        and `projCbm` on atom `atomCbm` in CB
+        and `projCbm` on atom `atomCbm` in CB.
 
-        See paper for more information
+        If projection information was not parsed, the inverse of the k-averaged gap inverse
+        will be returned.
 
         Args:
+            ivb (int): index of the lower band. Use VBM if not specified or is invalid index.
+            icb (int): index of the upper band. Use CBM if not specified or is invalid index.
             atomVbm (int, str, Iterable): atom where the VB projector is located
             atomCbm (int, str, Iterable): atom where the CB projector is located
             projVbm (int, str, Iterable): index of VB projector
             projCbm (int, str, Iterable): index of CB projector
+
+        Note:
+            Spin-polarization is not considered in retriving projection coefficients.
         '''
-        if not self.hasProjection:
-            return None
-        raise NotImplementedError
+        vbCoeffs = self._sum_atom_proj_comp(atomVbm, projVbm)
+        cbCoeffs = self._sum_atom_proj_comp(atomCbm, projCbm)
+        if ivb is None or not ivb in range(self.nbands):
+            vbCoeff = vbCoeffs[:, :, np.max(self.ivbm)]
+        else:
+            vbCoeff = vbCoeffs[:, :, ivb]
+        if icb is None or not icb in range(self.nbands):
+            cbCoeff = cbCoeffs[:, :, np.min(self.icbm)]
+        else:
+            cbCoeff = cbCoeffs[:, :, icb]
+        # ! abs is added in case ivb and icb are put in the opposite 
+        inv = np.sum(np.abs(np.reciprocal(self.directGap) * vbCoeff * cbCoeff))
+        if np.allclose(inv, 0.0):
+            return np.infty
+        return 1.0/inv
 
     def _sum_atom_proj_comp(self, atom, proj):
-        '''Sum the partial wave for projector `proj` on atom `atom`
+        '''Sum the partial wave for projectors `proj` on atoms `atom`
+
+        If the instance does not have projection information, 1 will be returned.
 
         Args:
             atom (int, str, Iterable):
@@ -348,20 +371,30 @@ class BandStructure(Prec, Verbose):
             (nspins, nkpts, nbands)
         '''
         if not self.hasProjection:
-            return 0.0
-        
+            return np.ones((self.nspins, self.nkpts, self.nbands))
+        if atom is None:
+            atInd = list(range(self.natoms))
+        else:
+            atInd = self._get_atom_indices(atom)
+        if proj is None:
+            prInd = list(range(self.nprojs))
+        else:
+            prInd = self._get_proj_indices(proj)
+        coeff = np.zeros((self.nspins, self.nkpts, self.nbands))
+        for a in atInd:
+            for p in prInd:
+                coeff += self.pWave[:, :, :, a, p]
+        return coeff
 
     def _get_atom_indices(self, atom):
-        if not self.hasProjection:
-            return []
-        else:
+        if self.hasProjection:
             return get_str_indices_by_iden(self._atoms, atom)
+        return []
 
     def _get_proj_indices(self, proj):
-        if not self.hasProjection:
-            return []
-        else:
+        if self.hasProjection:
             return get_str_indices_by_iden(self._projs, proj)
+        return []
         
 
 def _check_eigen_occ_weight_consistency(eigen, occ, weight):

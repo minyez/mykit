@@ -13,6 +13,7 @@ from mykit.core.bandstructure import BandStructureError as BSE
 from mykit.core.bandstructure import _check_eigen_occ_weight_consistency
 from mykit.core.utils import get_matched_files
 
+# pylint: disable=bad-whitespace
 goodEigen = [
     [
         [1,2,3],
@@ -96,6 +97,7 @@ class test_BS_projection(ut.TestCase):
             self.assertListEqual(bs.atoms, j["atoms"])
             self.assertListEqual(bs.projs, j["projs"])
             self.assertTrue(bs.hasProjection)
+            bs.effective_gap()
             countGood += 1
         print("Processed {} good band structure projections".format(countGood))
 
