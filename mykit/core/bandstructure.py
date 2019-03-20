@@ -38,7 +38,7 @@ class BandStructure(Prec, Verbose):
 
     Optional keyword arguments, if parsed, should have consistent
     shape with the required arguments.
-    Exception will be raised if their shapes are inconsistent.
+    They will be ignored if their shapes are inconsistent.
     
     Args:
         eigen (array-like) : the energy (eigenvalues) of all bands to be considered
@@ -71,7 +71,11 @@ class BandStructure(Prec, Verbose):
         self._emulti = {1: 2, 2: 1}[self._nspins]
         # channel: ispin, ikpt
         self._nelectPerChannel = np.sum(self._occ, axis=2) * self._emulti
-        self._nelectPerSpin = np.dot(self._nelectPerChannel, self._weight) / sum(self._weight)
+        # In manual mode, one may parse the kpoints with all zero weight for band calculation
+        # Reassign with unit weight
+        if np.isclose(np.sum(self._weight), 0.0):
+            self._weight[:] = 1.0
+        self._nelectPerSpin = np.dot(self._nelectPerChannel, self._weight) / np.sum(self._weight)
         self._nelect = np.sum(self._nelectPerSpin)
 
         self._hasInftyCbm = False
@@ -95,6 +99,10 @@ class BandStructure(Prec, Verbose):
     def occ(self):
         '''Array. Occupation numbers, (nspins, nkpts, nbands)'''
         return self._occ
+    @property
+    def weight(self):
+        '''Array. kpoints weight (int like), (nkpts, )'''
+        return self._weight
     @property
     def nelect(self):
         '''Float. Total number of electrons'''

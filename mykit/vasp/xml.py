@@ -306,20 +306,36 @@ class Vasprunxml(Verbose, Prec):
                     _listKp.append([conv_string(at.text, float) for at in pWaveSet[spin][kp][band]])
         self._pWave = _pWave
     
-    def load_band(self):
+    def load_band(self, kTrimBefore=None, kTrimAfter=None):
         '''Return a BandStructure instance.
 
         Note:
             `BandStructure.nelect` attribute may differ from `Vasprunxml.nelect`, 
             if the smearing is large when compared with the band gap.
+        
+        Args:
+            kTrimBefore (int): the kpoints before `kTrimBefore` will be trimed when parsing to BandStructure
+            kTrimAfter (int): the kpoints after `kTrimAfter` will be trimed when parsing to BandStructure
         '''
+        stk = kTrimBefore
+        if kTrimBefore is None:
+            stk = 0
+        edk = kTrimAfter
+        if edk is None:
+            edk = self.nibzkpt
         projected = None
         if self.pWave != None:
-            projected = {"atoms": self._atoms, "projs": self.projs, "pWave": self.pWave}
-        bs = BandStructure(self._eigen, self._occ, self._weight, \
-                efermi=self._efermi, projected=projected, \
-                kvec=self.kvec, \
-                )
+            projected = {\
+                "atoms": self._atoms, \
+                "projs": self.projs, \
+                "pWave": np.array(self.pWave, dtype=self._dtype)[:,stk:edk,:,:,:]}
+        bs = BandStructure(\
+            np.array(self._eigen, dtype=self._dtype)[:, stk:edk, :], \
+            np.array(self._occ, dtype=self._dtype)[:, stk:edk, :], \
+            np.array(self._weight, dtype=self._dtype)[stk:edk], \
+            efermi=self._efermi, projected=projected, \
+            kvec=np.array(self.kvec, dtype=self._dtype)[stk:edk, :], \
+            )
         return bs
 
     @property

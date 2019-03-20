@@ -4,6 +4,8 @@
 import os
 import unittest as ut
 
+import numpy as np
+
 from mykit.core.utils import get_matched_files
 from mykit.vasp.xml import Vasprunxml, VasprunxmlError
 
@@ -49,6 +51,23 @@ class test_vasprunxml_read(ut.TestCase):
             self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
             self.assertTrue(bs.hasKvec)
             bs.kvec
+            bsTrimed = vxml.load_band(1)
+            self.assertEqual(1, bs.nkpts - bsTrimed.nkpts)
+
+    def test_mixed_k_band_xml(self):
+        '''Test reading XMLs for band calculations with manual input kpoints
+        in case of SCAN and HF band calculations
+        '''
+        dataDir = 'vasprun_mixed_k_band'
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
+            'testdata', 'vasp', dataDir)
+        for fn in get_matched_files(dataDirPath, r"vasprun*"):
+            vxml = Vasprunxml(fn)
+            bsMix = vxml.load_band()
+            bsBand = vxml.load_band(kTrimBefore=20)
+            self.assertEqual(bsMix.nkpts - bsBand.nkpts, 20)
+            self.assertTrue(np.allclose(bsBand.weight, np.ones(bsBand.nkpts)))
+
 
     def test_opt_xml(self):
         '''Test reading XMLs for geometry optimization

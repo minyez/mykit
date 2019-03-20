@@ -73,8 +73,8 @@ and help map name and value of parameter tags between different simulation progr
     - [x] Fermi level `efermi` (float)
     - [x] kpoint vectors `kvec` for evaluating length of kpath
   - [x] compute direct gap, indirect, k-averaged gap
-  - [ ] extract partial wave coefficients of one or a of projectors on atoms
-  - [ ] compute effective gap
+  - [x] extract partial wave coefficients of a or one of projectors on atoms
+  - [x] compute effective gap
   - [ ] return a `Dos` object
 
 ### `dos` module
