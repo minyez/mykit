@@ -53,6 +53,8 @@ class test_PotcarSearch(ut.TestCase):
             # raise for paw directory not found
             self.assertRaisesRegex(PotcarError, r"PBE PAW home directory does not exist: *", \
                 pts.export, xc="pbe")
+            # as home always exists, search is possible, but nothing should be found
+            self.assertTupleEqual((os.environ["HOME"], {'C': {}}), pts.search(xc="lda"))
             # raise for invalid PAW directory structure
             self.assertRaisesRegex(PotcarError, \
                 "POTCAR not found: {}".format(os.path.join(os.environ["HOME"], "C", "POTCAR")), \

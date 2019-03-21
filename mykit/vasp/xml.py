@@ -40,7 +40,7 @@ class Vasprunxml(Verbose, Prec):
     '''
 
     def __init__(self, pathXml='vasprun.xml', *args):
-        flag = _check_xml(pathXml)
+        flag = _check_vasprunxml_status(pathXml)
         if flag is None:
             raise VasprunxmlError("Parsed file seems not a vasprun.xml")
         elif not flag:
@@ -353,7 +353,13 @@ class Vasprunxml(Verbose, Prec):
         return np.dot(self._ibzkpt, np.transpose(self._finalPoscar.b))
     @property
     def kpoints(self):
-        return [[kpt, w] for kpt, w in zip(self._ibzkpt, self._weight)]
+        return self._ibzkpt
+    @property
+    def weight(self):
+        return self._weight
+    @property
+    def kptsWeight(self):
+        return [kpt + [w,] for kpt, w in zip(self._ibzkpt, self._weight)]
     @property
     def kdense(self):
         if hasattr(self, "_kdense"):
@@ -438,7 +444,7 @@ class Vasprunxml(Verbose, Prec):
 #         return gap
 
 
-def _check_xml(pathXml):
+def _check_vasprunxml_status(pathXml):
     '''Check if the calculation of vasprun.xml ``pathXml`` has finished itself.
 
     Args:

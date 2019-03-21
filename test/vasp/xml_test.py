@@ -27,6 +27,8 @@ class test_vasprunxml_read(ut.TestCase):
             self.assertFalse(vxml.dosGrid is None)
             self.assertFalse(vxml.totalDos is None)
             self.assertFalse(vxml.dos is None)
+            vxml.ntypes
+            vxml.natomsPerType
             vxml.get_atom_index(0)
             vxml.get_atom_index(-1)
             vxml.get_atom_index(typeMapping[0])
@@ -47,6 +49,10 @@ class test_vasprunxml_read(ut.TestCase):
             'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
             vxml = Vasprunxml(fn)
+            self.assertEqual(vxml.kmode, "L")
+            self.assertTupleEqual(np.shape(vxml.weight), (vxml.nibzkpt,))
+            self.assertTupleEqual(np.shape(vxml.kpoints), (vxml.nibzkpt, 3))
+            self.assertTupleEqual(np.shape(vxml.kptsWeight), (vxml.nibzkpt, 4))
             bs = vxml.load_band()
             self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
             self.assertTrue(bs.hasKvec)
@@ -89,10 +95,10 @@ class test_vasprunxml_read(ut.TestCase):
             self.assertFalse(vxml.pDos is None)
             bs = vxml.load_band()
             self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
-            bs.pWave
-            bs.atoms
-            bs.projs
             self.assertTrue(bs.hasProjection)
+            # bs.pWave
+            # bs.atoms
+            # bs.projs
                 
 
 if __name__ == '__main__':
