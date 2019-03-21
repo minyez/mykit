@@ -4,8 +4,10 @@
 
 import os
 import re
+import subprocess as sp
 from collections import OrderedDict
 from collections.abc import Iterable
+from shutil import rmtree
 from sys import stdout
 
 from numpy import shape
@@ -69,6 +71,36 @@ def get_matched_files(dirPath='.', regex=None):
             if os.path.isfile(_fpath):
                 fns.append(_fpath)
     return tuple(fns)
+
+
+# def common_io_checkdir(dirname=None, create=True):
+#     '''
+#     check if dirname exists, or create it
+#     return: the full path of target directory
+#     '''
+#     dirname = dirname.strip()
+
+#     if (dirname is None or dirname.strip() == ""):
+#         dirname = os.getcwd()
+#     elif (not os.path.exists(dirname)) and create:
+#         os.mkdir(dirname.strip())
+#     return dirname
+
+
+# def common_io_cleandir(dirname=None):
+#     '''
+#     check if dirname exists and is empty, or create it
+#     and make it contain no files
+#     return: the full path of target directory
+#     '''
+#     if (dirname is None or dirname.strip() == ""):
+#         dirname = os.getcwd()
+#     elif (not os.path.exists(dirname)):
+#         os.mkdir(dirname)
+#     elif (os.path.exists(dirname)):
+#         rmtree(dirname)
+#         os.mkdir(dirname)
+#     return dirname
 
 
 def trim_after(string, regex, include_pattern=False):
@@ -144,64 +176,64 @@ def check_duplicates_in_tag_tuple(tagtuple):
     return _dup
 
 
-def data_normalization(data, scale=1.0, normByPeak=True):
-    '''Normalize the 1D data.
+# def data_normalization(data, scale=1.0, normByPeak=True):
+#     '''Normalize the 1D data.
 
-    Args:
-        data (iterable): the container of 1D data
-        normByPeak (bool) : when set True, the normalization factor will be
-            the peak absolute value. Otherwise, the sum of absolute values 
-            will be used as normalization factor.
+#     Args:
+#         data (iterable): the container of 1D data
+#         normByPeak (bool) : when set True, the normalization factor will be
+#             the peak absolute value. Otherwise, the sum of absolute values 
+#             will be used as normalization factor.
 
-    TODO:
-        Generalize the normalization
+#     TODO:
+#         Generalize the normalization
 
-    Returns:
-        numpy array, the normalized data
-    '''
-    import numpy as np
-    assert len(np.shape(data)) == 1
-    assert isinstance(normByPeak, bool)
+#     Returns:
+#         numpy array, the normalized data
+#     '''
+#     import numpy as np
+#     assert len(np.shape(data)) == 1
+#     assert isinstance(normByPeak, bool)
     
-    _a = []
-    try:
-        _a = np.array(data, dtype="float64")
-    except ValueError:
-        raise ValueError("the data cannot be converted.")
+#     _a = []
+#     try:
+#         _a = np.array(data, dtype="float64")
+#     except ValueError:
+#         raise ValueError("the data cannot be converted.")
     
-    _sum = np.sum(np.abs(_a)) / scale
-    _max = np.max(np.abs(_a)) / scale
-    if normByPeak:
-        return _a / _max
-    return _a / _sum 
+#     _sum = np.sum(np.abs(_a)) / scale
+#     _max = np.max(np.abs(_a)) / scale
+#     if normByPeak:
+#         return _a / _max
+#     return _a / _sum 
 
 
-def find_data_extreme(data):
-    '''Find the point at which the data reaches extrema
+# def find_data_extreme(data):
+#     '''Find the point at which the data reaches extrema
 
-    TODO:
-        Generalize to 2D and 3D coordinate
+#     TODO:
+#         Generalize to 2D and 3D coordinate
 
-    Returns:
-        dict, with two keys, "min" and "max".
-        Either key has a 2-member tuple with its first the min/max value
-        and second the coordinate where it reaches the extreme
-    '''
-    pass
+#     Returns:
+#         dict, with two keys, "min" and "max".
+#         Either key has a 2-member tuple with its first the min/max value
+#         and second the coordinate where it reaches the extreme
+#     '''
+#     pass
 
 
-def find_vol_dirs(path='.', pattern=None):
+def find_vol_dirs(path='.', vdPat=None):
     '''Find names of directories corresponding to calculation with lattice of different volumes
     
     Args:
         path (str): the path to search directories within. Default is CWD.
-        patthern (regex): the pattern of the names of volume directories
+        vdPat (regex): the pattern of the names of volume directories
             If not specified, use "V_x.xx" where x is 0-9
     
     Returns:
         list of strings
     '''
-    pat = pattern
+    pat = vdPat
     if pat is None:
         pat = r'^V_\d.\d+'
     _dirs = []
@@ -210,7 +242,7 @@ def find_vol_dirs(path='.', pattern=None):
             _dirs.append(_d)
     def __sort_vol(dirstr):
         return float(dirstr.split('_')[1])
-    if pattern is None:
+    if vdPat is None:
         _dirs = sorted(_dirs, key=__sort_vol)
     return _dirs
 
@@ -346,3 +378,26 @@ def get_str_indices_by_iden(container, id):
     if ret != []:
         return list(OrderedDict.fromkeys(ret).keys())
     return ret
+
+
+# ====================== PERFORM CALCULATION ======================
+def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
+    '''
+    Run the calculation command by threading a subprocess calling calc_cmd
+    '''
+
+    if fout is None:
+        ofile = sp.PIPE
+    else:
+        ofile = open(fout,'w')
+
+    if ferr is None:
+        efile = sp.PIPE
+    else:
+        efile = open(ferr,'w')
+
+    p=sp.Popen(calc_cmd,stdout=ofile,stderr=efile,shell=True)
+    p.wait()
+
+    if not fout is None: ofile.close()
+    if not ferr is None: efile.close()

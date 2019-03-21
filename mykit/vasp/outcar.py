@@ -359,3 +359,36 @@ def read_fermi(outcar='OUTCAR'):
         print("WARNING: %s is not found. Fermi level is set to 0." % outcar)
 
     return fermi_level
+
+
+def vasp_anal_get_outcar(keyin,index=-1,outcar='OUTCAR'):
+    '''
+    return the value of key in outcar.
+    '''
+    key = keyin.lower()
+# maximum number of plane wave, i.e. the maximum size of representation matrix
+    if key=='mnpw':
+        mnpw = sp.check_output("awk '/maximum number of/ {print $5}' %s | tail -1" % outcar,shell=True)
+        return int(mnpw)
+# NBANDS
+    if key in ['nb', 'nbands']:
+        nb = sp.check_output("awk '/NBANDS/ {print $15}' %s | head -1" % outcar,shell=True)
+        return nb
+# ENCUT
+    if key in ['encut']:
+        encut = sp.check_output("awk '/ENCUT/ {print $3}' %s | head -1" % outcar,shell=True)
+        encut = int(float(encut))
+        return encut
+# converged G.S. energy
+    if key in ['ene', 'energy']:
+        ene = sp.check_output("awk '/without/ {print $7}' %s | tail -1" % outcar,shell=True)
+        ene = float(ene)
+        return ene
+# total number of irreducible k-points
+    if key in ['nkp']:
+        nkp = sp.check_output("awk '/NKPTS/ {print $4}' %s | head -1" % outcar,shell=True)
+        nkp = int(nkp)
+        return nkp
+    if key in ['efermi', 'e-fermi', 'fermi']:
+        efermi = float(sp.check_output("awk '/E-fermi/ {print $3}' %s | tail -1" % outcar, shell=True))
+        return efermi

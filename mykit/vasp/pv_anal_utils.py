@@ -12,71 +12,11 @@ import sys
 
 import numpy as np
 
-from mykit.vasp.xml import Vasprunxml
-
 # from scipy.optimize import curve_fit
 
 
 
 # ====================================================
-def vasp_anal_get_outcar(keyin,index=-1,outcar='OUTCAR'):
-    '''
-    return the value of key in outcar.
-    '''
-    key = keyin.lower()
-# maximum number of plane wave, i.e. the maximum size of representation matrix
-    if key=='mnpw':
-        mnpw = sp.check_output("awk '/maximum number of/ {print $5}' %s | tail -1" % outcar,shell=True)
-        return int(mnpw)
-# NBANDS
-    if key in ['nb', 'nbands']:
-        nb = sp.check_output("awk '/NBANDS/ {print $15}' %s | head -1" % outcar,shell=True)
-        return nb
-# ENCUT
-    if key in ['encut']:
-        encut = sp.check_output("awk '/ENCUT/ {print $3}' %s | head -1" % outcar,shell=True)
-        encut = int(float(encut))
-        return encut
-# converged G.S. energy
-    if key in ['ene', 'energy']:
-        ene = sp.check_output("awk '/without/ {print $7}' %s | tail -1" % outcar,shell=True)
-        ene = float(ene)
-        return ene
-# total number of irreducible k-points
-    if key in ['nkp']:
-        nkp = sp.check_output("awk '/NKPTS/ {print $4}' %s | head -1" % outcar,shell=True)
-        nkp = int(nkp)
-        return nkp
-# band gap. Use vaspxml class to obtain the value
-    if key in ['gap','eg']:
-        vaspxml = Vasprunxml()
-        gap = vaspxml.load_band().fundGap[0]
-        return gap
-    if key in ['efermi', 'e-fermi', 'fermi']:
-        efermi = float(sp.check_output("awk '/E-fermi/ {print $3}' %s | tail -1" % outcar, shell=True))
-        return efermi
-
-
-# def vasp_anal_get_enmax(potcar='POTCAR'):
-#     '''
-#     Get the largest ENMAX in the potcar file (default POTCAR)
-#     '''
-#     if not os.path.exists(potcar):
-#         print(" Error: POTCAR file not found: %s" % potcar)
-#         print(" Exit.")
-#         sys.exit(1)
-
-#     # sort in the increasing order, get the last value
-#     enmax_str = sp.check_output("awk '/ENMAX/ {print $3}' %s | sort | tail -1" % potcar,shell=True)
-#     # for example, ENMAX = 400.000;
-#     enmax = float(enmax_str.split(';')[0])
-#     return enmax
-
-
-# def vasp_anal_get_Ener_Vol(datatype='DFT'):
-#     '''
-#     Get calculated total energy and volume
-#     '''
 
 # ====================================================
 
@@ -188,34 +128,6 @@ def vasp_anal_get_outcar(keyin,index=-1,outcar='OUTCAR'):
 #         n += 1
 # # return band extreme info
 #     return [ klist, VB, CB ]
-
-# ====================================================
-
-# def vasp_anal_get_fund_gap(band_extreme_info,debug=False):   # deprecated
-#     '''
-#     Get fundamental band gap
-#     '''
-#     klist,VB,CB = band_extreme_info[0],\
-#                   band_extreme_info[1],\
-#                   band_extreme_info[2]
-
-#     VBM = max(VB)
-#     VBM_k_index = VB.index(VBM)
-#     VBM_k = [ float(x) for x in klist[VBM_k_index][0:3]]
-#     CBM = min(CB)
-#     CBM_k_index = CB.index(CBM)
-#     CBM_k = [ float(x) for x in klist[CBM_k_index][0:3]]
-#     kpts_tot = 0
-#     flag_metal = False
-#     if debug: print(len(klist))
-
-#     E_fd_gap = CBM - VBM
-#     print(" CBM = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (CBM,CBM_k[0],CBM_k[1],CBM_k[2]))
-#     print(" VBM = %8.4f eV   at (%7.4f,%7.4f,%7.4f)" % (VBM,VBM_k[0],VBM_k[1],VBM_k[2]))
-#     print(" Fundamental gap Eg = %8.4f" % E_fd_gap)
-#     if E_fd_gap <= 0.0:
-#         flag_metal = True
-#     return E_fd_gap,flag_metal
 
 # ====================================================
 
