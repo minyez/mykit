@@ -23,8 +23,8 @@ goodEigen = [
 badEigen = [[100,102,103], [210,212,213]]
 goodOcc = [
     [
-        [2.0,2.0,0.0],
-        [2.0,2.0,0.0],
+        [1.0,1.0,0.0],
+        [1.0,1.0,0.0],
     ],
 ]
 badOcc = [[1.0,1.0,0.0],[1.0,1.0,0.0]]
@@ -60,10 +60,18 @@ class test_BS_no_projection(ut.TestCase):
         self.assertEqual(bs.nspins, nspins)
         self.assertEqual(bs.nkpts, nkpts)
         self.assertEqual(bs.nbands, nbands)
-        self.assertTupleEqual((nspins, nkpts), np.shape(bs.ivbm))
-        self.assertTupleEqual((nspins, nkpts), np.shape(bs.icbm))
-        self.assertTupleEqual((nspins, nkpts), np.shape(bs.vbm))
-        self.assertTupleEqual((nspins, nkpts), np.shape(bs.cbm))
+        self.assertTupleEqual((nspins, nkpts), np.shape(bs.ivbmPerChannel))
+        self.assertTupleEqual((nspins,), np.shape(bs.ivbmPerSpin))
+        self.assertTupleEqual((), np.shape(bs.ivbm))
+        self.assertTupleEqual((nspins, nkpts), np.shape(bs.icbmPerChannel))
+        self.assertTupleEqual((nspins,), np.shape(bs.icbmPerSpin))
+        self.assertTupleEqual((), np.shape(bs.icbm))
+        self.assertTupleEqual((nspins, nkpts), np.shape(bs.vbmPerChannel))
+        self.assertTupleEqual((nspins,), np.shape(bs.vbmPerSpin))
+        self.assertTupleEqual((), np.shape(bs.vbm))
+        self.assertTupleEqual((nspins, nkpts), np.shape(bs.cbmPerChannel))
+        self.assertTupleEqual((nspins,), np.shape(bs.cbmPerSpin))
+        self.assertTupleEqual((), np.shape(bs.cbm))
         self.assertTupleEqual((nspins, nkpts), np.shape(bs.directGap))
         self.assertTupleEqual((nspins,), np.shape(bs.fundGap))
         self.assertTupleEqual((nspins, 2), np.shape(bs.fundTrans))
