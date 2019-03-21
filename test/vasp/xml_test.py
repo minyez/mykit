@@ -56,6 +56,7 @@ class test_vasprunxml_read(ut.TestCase):
             bs = vxml.load_band()
             self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
             self.assertTrue(bs.hasKvec)
+            self.assertTrue(bs.isKpath)
             bs.kvec
             bsTrimed = vxml.load_band(1)
             self.assertEqual(1, bs.nkpts - bsTrimed.nkpts)
@@ -73,6 +74,7 @@ class test_vasprunxml_read(ut.TestCase):
             bsBand = vxml.load_band(kTrimBefore=20)
             self.assertEqual(bsMix.nkpts - bsBand.nkpts, 20)
             self.assertTrue(np.allclose(bsBand.weight, np.ones(bsBand.nkpts)))
+            self.assertTrue(bsBand.isKpath)
 
 
     def test_opt_xml(self):

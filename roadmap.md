@@ -72,9 +72,14 @@ and help map name and value of parameter tags between different simulation progr
     - [x] partial waves (dict)
     - [x] Fermi level `efermi` (float)
     - [x] kpoint vectors `kvec` for evaluating length of kpath
-  - [x] compute direct gap, indirect, k-averaged gap
+  - [x] find values and indices of VBM/CBM
+    - [x] at each spin-kpoint channel
+    - [x] for each spin
+    - [x] overall
+  - [x] compute direct band gap, fundamental gap and k-averaged gap
   - [x] extract partial wave coefficients of a or one of projectors on atoms
-  - [x] compute effective gap
+  - [x] compute effective gap with projections
+  - [ ] if the kvec is parsed, automatically determine if it represents a kpath
   - [ ] return a `Dos` object
 
 ### `dos` module
@@ -84,8 +89,6 @@ and help map name and value of parameter tags between different simulation progr
   - optional keyword argument
     - [ ] partial (projected) DOS
     - [ ] fermi level
-    - [ ] number of electrons
-    - [ ] smearing parameters
 
 ## `vasp` package: VASP related
 
@@ -104,9 +107,15 @@ and help map name and value of parameter tags between different simulation progr
     - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
     - [x] `__repr__` and `__str__` magics
 - `wavecar`
-- `chgcar`
-- `procar`
-- `contcar`
+- `xml`
+  - `Vaspxmlrun`
+    - [x] analyze kpoints
+    - [x] reading eigenvalues and occupation numbers in last calculation section
+    - [x] reading partial DOS and wave function projection
+    - [ ] return a `BandStructure` object from the collected information
+    - [x] generate `Incar` object from incar section
+    - [x] generate `Poscar` objects from initpos and finalpos section
+
 
 ## `wien2k` package: WIEN2k related
 
@@ -115,6 +124,11 @@ and help map name and value of parameter tags between different simulation progr
     - [x] read from file
 - `struct`
   - `Struct`
+
+## `visualize` package: visualizing results
+
+- Matplotlib
+- XmGrace
 
 ## tools
 

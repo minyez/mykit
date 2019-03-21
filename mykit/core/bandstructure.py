@@ -7,6 +7,7 @@ from numbers import Real
 
 import numpy as np
 
+from mykit.core.kmesh import check_kvecs_form_kpath
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.utils import get_str_indices_by_iden
@@ -84,7 +85,7 @@ class BandStructure(Prec, Verbose):
             assert isinstance(efermi, Real)
             self._efermi = efermi
         else:
-            self._efermi = np.max(self.vbm)
+            self._efermi = self.vbm
     
         self._projParsed = False
         self._parse_proj(projected)
@@ -181,6 +182,7 @@ class BandStructure(Prec, Verbose):
     def _parse_kvec(self, kvec):
         '''Parse the kpoints vectors
         '''
+        self._isKpath = None
         if not kvec is None:
             try:
                 assert np.shape(kvec) == (self._nkpts, 3)
@@ -189,12 +191,24 @@ class BandStructure(Prec, Verbose):
                 ind = self._kvec < 1.0E-10  # where values are low
                 self._kvec[ind] = 0.0
                 self._kvecParsed = True
+                self._isKpath = False
+                kSegments = check_kvecs_form_kpath(self._kvec)
+                if kSegments != []:
+                    self._isKpath = True
             except (AssertionError, ValueError):
                 self.print_warn("Bad kpoint vectors input. Skip")
+
     @property
     def hasKvec(self):
         '''Bool'''
         return self._kvecParsed
+    @property
+    def isKpath(self):
+        '''Bool. If the parsed kpoint vectors form a path in reciprocal space.
+        
+        None if kvec was not parsed.
+        '''
+        return self._isKpath
     @property
     def kvec(self):
         '''Array. kpoints vectors.

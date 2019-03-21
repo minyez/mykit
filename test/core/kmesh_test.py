@@ -4,7 +4,8 @@
 import unittest as ut
 
 from mykit.core.kmesh import (KmeshError, _check_valid_kpath_dict,
-                              _check_valid_ksym_coord_pair, kmesh_control,
+                              _check_valid_ksym_coord_pair,
+                              check_kvecs_form_kpath, kmesh_control,
                               kpath_decoder, kpath_encoder)
 
 
@@ -81,6 +82,48 @@ class test_kpath_coder_decoder(ut.TestCase):
             self.assertRaisesRegex(ValueError, \
                 "Invalid kpoint coordinate for symbol {}".format(badCoord[0]), \
                 _check_valid_ksym_coord_pair, *badCoord)
+
+
+class test_check_kvec_forms_kpath(ut.TestCase):
+
+    def test_check_kvec_forms_kpath(self):
+        validKseg1 = [
+            [0, 0, 0],
+            [0, 0, 1],
+            [0, 0, 2],
+            [0, 0, 3],
+            [0, 0, 4],
+        ]
+        validKseg2 = [
+            [0, 2, 4],
+            [0, 4, 4],
+            [0, 5, 4],
+            [0, 6, 4],
+        ]
+        validKseg3 = [
+            [4, 2, 3],
+            [3, 3, 3],
+            [2, 4, 3],
+        ]
+        # valid kpaths
+        self.assertListEqual([(0, 4),], \
+            check_kvecs_form_kpath(validKseg1))
+        self.assertListEqual([(0, 3),], \
+            check_kvecs_form_kpath(validKseg2))
+        self.assertListEqual([(0, 2),], \
+            check_kvecs_form_kpath(validKseg3))
+        self.assertListEqual([(0, 4), (4, 8)], \
+            check_kvecs_form_kpath(validKseg1 + validKseg2))
+        self.assertListEqual([(0, 4), (5, 9), (10, 13)], \
+            check_kvecs_form_kpath(validKseg1 + validKseg1[::-1] + validKseg2))
+        self.assertListEqual([(0, 4), (5, 9)], \
+            check_kvecs_form_kpath(validKseg1 + [validKseg1[-1],] + validKseg2))
+        # should have a length larger than 3
+        self.assertListEqual([], \
+            check_kvecs_form_kpath(validKseg1[:2]))
+        # only segments that have more than 2 points on it will be counted.
+        self.assertListEqual([], \
+            check_kvecs_form_kpath(validKseg1[:2] + validKseg2[:2]))
 
 
 if __name__ == '__main__':

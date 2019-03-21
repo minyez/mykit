@@ -3,12 +3,16 @@
 '''
 import os
 import re
+from copy import deepcopy
 
-from numpy import shape
+import numpy as np
 
 from mykit.core._control import (build_tag_map_obj, extract_from_tagdict,
                                  parse_to_tagdict, prog_mapper, tags_mapping)
 from mykit.core.log import Verbose
+from mykit.core.numeric import Prec
+
+# from mykit.core.utils import if_vec_same_direction
 
 # Allowed pattern for kpoint symbols and kpath string
 KSYM_PATTERN = r'[A-Z]{1,2}'
@@ -172,11 +176,11 @@ def _check_valid_ksym_coord_pair(ksym, coord):
     if not re.match(r"^" + KSYM_PATTERN + r"$", ksym):
         raise KeyError("Invalid kpoint symbol: {}".format(ksym))
     try:
-        _shape = shape(coord)
+        shape = np.shape(coord)
     except ValueError:
         raise ValueError("Invalid kpoint coordinate for symbol {}".format(ksym))
     else:
-        if _shape != (3,):
+        if shape != (3,):
             raise ValueError("Invalid kpoint coordinate for symbol {}".format(ksym))
 
 def _check_valid_kpath_dict(kpathDict):
@@ -193,3 +197,50 @@ def _check_valid_kpath_dict(kpathDict):
             _check_valid_ksym_coord_pair(ksym, coord)
         except (KeyError, ValueError) as _err:
             raise _err
+
+def check_kvecs_form_kpath(kvec):
+    '''Check if the kpoint vectors form several line segments in the reciprocal space
+
+    Usually, the number of kpoints on one line segments is no less than 3.
+
+    Args:
+        kvec (array-like): the kpoint vectors to analysis, shape, (n,3) 
+
+    Returns:
+        list, with tuple as members. Each tuple has 2 int members,
+        the indices of kpoint vectors at the beginning and end of 
+        a line segment
+    '''
+    segs = []
+    # check the shape of kvec
+    try:
+        shape = np.shape(kvec)
+        assert len(shape) == 2
+        assert shape[1] == 3
+    except (TypeError, AssertionError):
+        return segs
+    nkpt = shape[0]
+    if nkpt < 3:
+        return segs
+
+    _kvec = np.array(kvec, dtype=Prec._dtype)
+    dkvec = _kvec[1:, :] - _kvec[:-1, :]
+    # normalize the dkvec, 
+    n = np.linalg.norm(dkvec, axis=1)
+    for i in range(nkpt-1):
+        if np.isclose(n[i], 0):
+            dkvec[i,:] = 1000.0
+        else:
+            dkvec[i,:] = dkvec[i,:]/n[i]
+    dp = np.sum(dkvec[:-1,:] * dkvec[1:,:], axis=1)
+    st = 0
+    ed = 2
+    while ed < nkpt:
+        if not np.isclose(dp[ed-2], 1):
+            if ed - st > 2:
+                segs.append((st, ed-1))
+            st = ed - 1
+        ed = ed + 1
+    if ed - st > 2:
+        segs.append((st, ed-1))
+    return segs

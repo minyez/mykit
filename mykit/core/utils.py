@@ -8,6 +8,9 @@ from collections import OrderedDict
 from collections.abc import Iterable
 from sys import stdout
 
+from numpy import shape
+from numpy.linalg import norm
+
 
 def get_dirpath(filePath):
     '''get the name of directory with filePath
