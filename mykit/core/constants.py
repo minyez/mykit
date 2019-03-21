@@ -31,18 +31,18 @@ AU = 5.2917721067e-11
 
 # ==================================================
 # Length conversion
-AU2ANG  = AU * 1.0E10
-ANG2AU  = 1.0 / AU2ANG
+AU2ANG = AU * 1.0E10
+ANG2AU = 1.0 / AU2ANG
 # Energy conversion
 EV2KCAL = 23.060548
-HA2EV   = 27.21138602
-EV2HA   = 1.0 / HA2EV
-RY2EV   = HA2EV / 2.0
-EV2RY   = 1.0 / RY2EV
-EV2J    = E
-EV2KJ   = EV2J / 1000.0
-EV2K    = E / KB
+HA2EV = 27.21138602
+EV2HA = 1.0 / HA2EV
+RY2EV = HA2EV / 2.0
+EV2RY = 1.0 / RY2EV
+EV2J = E
+EV2KJ = EV2J / 1000.0
+EV2K = E / KB
 # kJ/mol to eV/f.u.
-KJ_PER_MOL2EV_PER_FU = 1000 /(EV2J * NAV)
+KJ_PER_MOL2EV_PER_FU = 1000 / (EV2J * NAV)
 # eV/A^3 to GPa
 EV_PER_ANG_CUB2GPA = E * 1e21

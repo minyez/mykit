@@ -53,7 +53,7 @@ class Cell(Prec, Verbose):
 
     def __init__(self, latt, atoms, pos, **kwargs):
 
-        self.comment= 'Default Cell class'
+        self.comment = 'Default Cell class'
         self.__allRelax = True
         self.__selectDyn = {}
         self.__unit = 'ang'
@@ -63,7 +63,8 @@ class Cell(Prec, Verbose):
             self.__latt = np.array(latt, dtype=self._dtype)
             self.__pos = np.array(pos, dtype=self._dtype)
         except ValueError as _err:
-            raise self._error("Fail to create cell and pos array. Please check.")
+            raise self._error(
+                "Fail to create cell and pos array. Please check.")
         self.__atoms = [_a.capitalize() for _a in atoms]
         self.__parse_cellkw(**kwargs)
         # check input consistency
@@ -84,7 +85,7 @@ class Cell(Prec, Verbose):
         raise self._error("atom index or symbol {} not found".format(index))
 
     def __str__(self):
-        return "{}\nLattice:\n{}\nAtoms: {}\nPositions:\n{}\nUnit: {}\nCoordinates in {}".format(\
+        return "{}\nLattice:\n{}\nAtoms: {}\nPositions:\n{}\nUnit: {}\nCoordinates in {}".format(
             self.comment, self.latt, self.atoms, self.pos, self.unit, self.coordSys)
 
     def __repr__(self):
@@ -118,12 +119,12 @@ class Cell(Prec, Verbose):
             dictionary that can be parsed to ``create_from_cell`` class method.
         '''
         _d = {
-                "unit" : self.__unit,
-                "coordSys" : self.__coordSys,
-                "comment": self.comment,
-                "allRelax" : self.__allRelax,
-                "selectDyn" : self.__selectDyn
-             }
+            "unit": self.__unit,
+            "coordSys": self.__coordSys,
+            "comment": self.comment,
+            "allRelax": self.__allRelax,
+            "selectDyn": self.__selectDyn
+        }
         return _d
 
     def __check_consistency(self):
@@ -139,7 +140,8 @@ class Cell(Prec, Verbose):
         try:
             assert self.vol > 0
         except AssertionError:
-            raise self._error("Left-handed system found (vol<0). Switch two vector.")
+            raise self._error(
+                "Left-handed system found (vol<0). Switch two vector.")
 
     def _switch_two_atom_index(self, iat1, iat2):
         '''switch the index of atoms with index iat1 and iat2
@@ -158,13 +160,14 @@ class Cell(Prec, Verbose):
             assert iat2 in range(self.natoms)
             assert iat1 != iat2
         except AssertionError:
-            raise self._error("Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
+            raise self._error(
+                "Fail to switch two atoms with indices {} and {}".format(iat1, iat2))
 
         self.__pos[[iat1, iat2]] = self.__pos[[iat2, iat1]]
         self.__atoms[iat1], self.__atoms[iat2] = self.__atoms[iat2], self.__atoms[iat1]
 
-        _sfd1 = self.__selectDyn.pop(iat1,[])
-        _sfd2 = self.__selectDyn.pop(iat2,[])
+        _sfd1 = self.__selectDyn.pop(iat1, [])
+        _sfd2 = self.__selectDyn.pop(iat2, [])
         if _sfd1 != []:
             self.__selectDyn.update({iat2: _sfd1})
         if _sfd2 != []:
@@ -216,7 +219,7 @@ class Cell(Prec, Verbose):
         __key = [key[_i] for _i in __ind]
         _n = len(__ind)
         __sorted = True
-        for _i in range(_n -1):
+        for _i in range(_n - 1):
             _li = _i
             _ri = _i+1
             # self.print_log("Check index: ", _i, level=3, depth=_depth+2)
@@ -267,7 +270,7 @@ class Cell(Prec, Verbose):
             reverse (bool)
         '''
         try:
-            assert axis in range(1,4)
+            assert axis in range(1, 4)
             assert isinstance(reverse, bool)
         except AssertionError:
             raise self._error()
@@ -301,7 +304,8 @@ class Cell(Prec, Verbose):
         try:
             assert isinstance(atom, str)
         except:
-            raise self._error("atom should be string, received {}".format(type(atom)))
+            raise self._error(
+                "atom should be string, received {}".format(type(atom)))
         try:
             newPos = np.vstack([self.__pos, coord])
         except ValueError:
@@ -357,7 +361,7 @@ class Cell(Prec, Verbose):
             self.coordSys = "D"
         # get the geometric center of all atoms
         _center = self.center
-        _shift = np.array([0.5,0.5,0.5], dtype=self._dtype) - _center
+        _shift = np.array([0.5, 0.5, 0.5], dtype=self._dtype) - _center
 
         for i in range(3):
             ia = i + 1
@@ -392,8 +396,8 @@ class Cell(Prec, Verbose):
         _alen = self.alen
         _angle = []
         for i in range(3):
-            j = (i+1)%3
-            k = (i+2)%3
+            j = (i+1) % 3
+            k = (i+2) % 3
             _cos = np.dot(self.__latt[j], self.__latt[k])/_alen[j]/_alen[k]
             _angle.append(np.arccos(_cos))
         # convert to degree
@@ -418,6 +422,7 @@ class Cell(Prec, Verbose):
     def unit(self):
         '''str. "D" or "C".'''
         return self.__unit
+
     @unit.setter
     def unit(self, u):
         _u = u.lower()
@@ -436,6 +441,7 @@ class Cell(Prec, Verbose):
     @property
     def coordSys(self):
         return self.__coordSys
+
     @coordSys.setter
     def coordSys(self, s):
         _s = s.upper()
@@ -498,7 +504,7 @@ class Cell(Prec, Verbose):
         for i in range(3):
             j = (i + 1) % 3
             k = (i + 2) % 3
-            b.append(np.cross(self.latt[j,:], self.latt[k,:]))
+            b.append(np.cross(self.latt[j, :], self.latt[k, :]))
         return np.array(b, dtype=self._dtype) / self.vol
 
     @property
@@ -546,7 +552,8 @@ class Cell(Prec, Verbose):
             _new = {}
             for _ia in iats:
                 if _ia in range(self.natoms):
-                    _new.update({_ia: select_dyn_flag_from_axis(axis, relax=False)})
+                    _new.update(
+                        {_ia: select_dyn_flag_from_axis(axis, relax=False)})
             self.__set_sdFlags(_new)
 
     def set_relax(self, *iats, axis=0):
@@ -561,7 +568,8 @@ class Cell(Prec, Verbose):
             _new = {}
             for _ia in iats:
                 if _ia in range(self.natoms):
-                    _new.update({_ia: select_dyn_flag_from_axis(axis, relax=True)})
+                    _new.update(
+                        {_ia: select_dyn_flag_from_axis(axis, relax=True)})
             self.__set_sdFlags(_new)
 
     def relax_from_top(self, n, axis=3):
@@ -605,9 +613,9 @@ class Cell(Prec, Verbose):
             _flag = self.__selectDyn[ia]
         elif ia in range(self.natoms):
             # self.print_log("Use global flag for atom {}".format(ia), level=3, depth=1)
-            _flag = [self.__allRelax,] *3
+            _flag = [self.__allRelax, ] * 3
         else:
-            _flag = [[self.__allRelax,]*3 for _i in range(self.natoms)]
+            _flag = [[self.__allRelax, ]*3 for _i in range(self.natoms)]
             for i in self.__selectDyn:
                 _flag[i] = self.__selectDyn[i]
         return _flag
@@ -633,14 +641,16 @@ class Cell(Prec, Verbose):
             try:
                 _j = json.load(h)
             except json.JSONDecodeError:
-                raise cls._error("invalid JSON file for cell: {}".format(pathJson))
+                raise cls._error(
+                    "invalid JSON file for cell: {}".format(pathJson))
 
         _argList = ["latt", "atoms", "pos"]
         _args = []
         for _i, arg in enumerate(_argList):
             v = _j.pop(arg, None)
             if v is None:
-                raise cls._error("invalid JSON file for cell: {}. No {}".format(pathJson, arg))
+                raise cls._error(
+                    "invalid JSON file for cell: {}. No {}".format(pathJson, arg))
             _args.append(v)
         return cls(*_args, **_j)
 
@@ -649,14 +659,15 @@ class Cell(Prec, Verbose):
         assert kind in ["P", "I", "F"]
         _latt = [[a, 0.0, 0.0], [0.0, b, 0.0], [0.0, 0.0, c]]
         if kind == "P":
-            _atoms = [atom,]
+            _atoms = [atom, ]
             _pos = [[0.0, 0.0, 0.0]]
         if kind == "I":
-            _atoms = [atom,]*2
-            _pos = [[0.0, 0.0, 0.0],[0.5,0.5,0.5]]
+            _atoms = [atom, ]*2
+            _pos = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
         if kind == "F":
-            _atoms = [atom,]*4
-            _pos = [[0.0, 0.0, 0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+            _atoms = [atom, ]*4
+            _pos = [[0.0, 0.0, 0.0], [0.0, 0.5, 0.5],
+                    [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
         kwargs.pop("coordSys", None)
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -670,7 +681,8 @@ class Cell(Prec, Verbose):
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         if "comment" not in kwargs:
-            kwargs.update({"comment": "Simple orthorhombic lattice {}".format(atom)})
+            kwargs.update(
+                {"comment": "Simple orthorhombic lattice {}".format(atom)})
         return cls._bravais_o("P", atom, a, b, c, **kwargs)
 
     @classmethod
@@ -683,7 +695,8 @@ class Cell(Prec, Verbose):
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         if "comment" not in kwargs:
-            kwargs.update({"comment": "Body-centered orthorhombic lattice {}".format(atom)})
+            kwargs.update(
+                {"comment": "Body-centered orthorhombic lattice {}".format(atom)})
         return cls._bravais_o("I", atom, a, b, c, **kwargs)
 
     @classmethod
@@ -696,7 +709,8 @@ class Cell(Prec, Verbose):
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         if "comment" not in kwargs:
-            kwargs.update({"comment": "Face-centered orthorhombic lattice {}".format(atom)})
+            kwargs.update(
+                {"comment": "Face-centered orthorhombic lattice {}".format(atom)})
         return cls._bravais_o("F", atom, a, b, c, **kwargs)
 
     @classmethod
@@ -709,9 +723,9 @@ class Cell(Prec, Verbose):
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(a)
-        _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
-        _atoms =[atom]
-        _pos = [[0.0,0.0,0.0]]
+        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+        _atoms = [atom]
+        _pos = [[0.0, 0.0, 0.0]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "Simple cubic lattice {}".format(atom)})
@@ -729,13 +743,14 @@ class Cell(Prec, Verbose):
         '''
         _a = abs(a)
         if primitive:
-            _latt = [[-_a/2.0,_a/2.0,_a/2.0],[_a/2.0,-_a/2.0,_a/2.0],[_a/2.0,_a/2.0,-_a/2.0]]
-            _atoms =[atom]
-            _pos = [[0.0,0.0,0.0]]
+            _latt = [[-_a/2.0, _a/2.0, _a/2.0],
+                     [_a/2.0, -_a/2.0, _a/2.0], [_a/2.0, _a/2.0, -_a/2.0]]
+            _atoms = [atom]
+            _pos = [[0.0, 0.0, 0.0]]
         else:
-            _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
-            _atoms =[atom,]*2
-            _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
+            _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+            _atoms = [atom, ]*2
+            _pos = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "BCC {}".format(atom)})
@@ -753,13 +768,15 @@ class Cell(Prec, Verbose):
         '''
         _a = abs(a)
         if primitive:
-            _latt = [[0.0,_a/2.0,_a/2.0],[_a/2.0,0.0,_a/2.0],[_a/2.0,_a/2.0,0.0]]
-            _atoms =[atom]
-            _pos = [[0.0,0.0,0.0]]
+            _latt = [[0.0, _a/2.0, _a/2.0],
+                     [_a/2.0, 0.0, _a/2.0], [_a/2.0, _a/2.0, 0.0]]
+            _atoms = [atom]
+            _pos = [[0.0, 0.0, 0.0]]
         else:
-            _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
-            _atoms =[atom,]*4
-            _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+            _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+            _atoms = [atom, ]*4
+            _pos = [[0.0, 0.0, 0.0], [0.0, 0.5, 0.5],
+                    [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "FCC {}".format(atom)})
@@ -778,12 +795,14 @@ class Cell(Prec, Verbose):
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(a)
-        _latt = [[_a,0.0,0.0],[0.0,_a,0.0],[0.0,0.0,_a]]
-        _atoms =[atom1,atom2,] + [atom3,]*3
-        _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
+        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+        _atoms = [atom1, atom2, ] + [atom3, ]*3
+        _pos = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5], [
+            0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
-            kwargs.update({"comment": "Perovskite {}{}{}3".format(atom1,atom2,atom3)})
+            kwargs.update(
+                {"comment": "Perovskite {}{}{}3".format(atom1, atom2, atom3)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
@@ -801,13 +820,14 @@ class Cell(Prec, Verbose):
         '''
         _a = abs(a)
         if primitive:
-            _latt = [[0.0, _a/2.0, _a/2.0], [_a/2.0, 0.0, _a/2.0], [_a/2.0, _a/2.0, 0.0]]
+            _latt = [[0.0, _a/2.0, _a/2.0],
+                     [_a/2.0, 0.0, _a/2.0], [_a/2.0, _a/2.0, 0.0]]
             _atoms = [atom1, atom2]
             _pos = [[0.0, 0.0, 0.0],
                     [0.25, 0.25, 0.25]]
         else:
             _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
-            _atoms = [atom1,]*4 + [atom2,]*4
+            _atoms = [atom1, ]*4 + [atom2, ]*4
             _pos = [[0.0, 0.0, 0.0],
                     [0.0, 0.5, 0.5],
                     [0.5, 0.0, 0.5],
@@ -846,8 +866,9 @@ class Cell(Prec, Verbose):
         _a = abs(a)
         _halfa = _a/2.0
         _c = _a * np.sqrt(8.0/3)
-        _latt = [[_a, 0.0, 0.0], [-_halfa, np.sqrt(3)*_halfa, 0.0], [0.0, 0.0, _c]]
-        _atoms = [atom1,]*2 + [atom2,]*2
+        _latt = [[_a, 0.0, 0.0],
+                 [-_halfa, np.sqrt(3)*_halfa, 0.0], [0.0, 0.0, _c]]
+        _atoms = [atom1, ]*2 + [atom2, ]*2
         _pos = [[0.0, 0.0, 0.0],
                 [2.0/3, 1.0/3, 0.5],
                 [0.0, 0.0, 2.0/3],
@@ -871,25 +892,26 @@ class Cell(Prec, Verbose):
         try:
             assert 0.0 < u < 1.0
         except AssertionError:
-            raise cls._error("Internal coordinate should be in (0,1), get {}".format(u))
+            raise cls._error(
+                "Internal coordinate should be in (0,1), get {}".format(u))
         _a = abs(a)
         _c = abs(c)
         _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
-        _atoms = [atom1,]*2 + [atom2,]*4
+        _atoms = [atom1, ]*2 + [atom2, ]*4
         _pos = [[0.0, 0.0, 0.0],
                 [0.5, 0.5, 0.5],
-                [ u, u, 0.0],
-                [-u,-u, 0.0],
-                [0.5-u,0.5+u,0.5],
-                [0.5+u,0.5-u,0.5]]
+                [u, u, 0.0],
+                [-u, -u, 0.0],
+                [0.5-u, 0.5+u, 0.5],
+                [0.5+u, 0.5-u, 0.5]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def anatase(cls, atom1="Ti", atom2="O", a=3.7845, c=9.5143, u=0.2199, \
-            primitive=False, **kwargs):
+    def anatase(cls, atom1="Ti", atom2="O", a=3.7845, c=9.5143, u=0.2199,
+                primitive=False, **kwargs):
         '''Generate a anatase lattice (space group 141).
 
         Note:
@@ -905,38 +927,40 @@ class Cell(Prec, Verbose):
         try:
             assert 0.0 < u < 1.0
         except AssertionError:
-            raise cls._error("Internal coordinate should be in (0,1), get {}".format(u))
+            raise cls._error(
+                "Internal coordinate should be in (0,1), get {}".format(u))
         _a = abs(a)
         _c = abs(c)
         if primitive:
-            _latt = [[-_a/2, _a/2, _c/2], [_a/2, -_a/2, _c/2], [_a/2, _a/2, -_c/2]]
-            _atoms = [atom1,]*2 + [atom2,]*4
+            _latt = [[-_a/2, _a/2, _c/2],
+                     [_a/2, -_a/2, _c/2], [_a/2, _a/2, -_c/2]]
+            _atoms = [atom1, ]*2 + [atom2, ]*4
             _pos = [[0.0, 0.0, 0.0],
-                    [0.75,0.25,0.5],
+                    [0.75, 0.25, 0.5],
                     [0.25-u, 0.75-u, 0.5],
                     [0.25+u, 0.75+u, 0.5],
-                    [ 0.5+u,  0.5+u, 0.0],
-                    [ 0.5-u,  0.5-u, 0.0],]
+                    [0.5+u,  0.5+u, 0.0],
+                    [0.5-u,  0.5-u, 0.0], ]
         else:
             _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
-            _atoms = [atom1,]*4 + [atom2,]*8
+            _atoms = [atom1, ]*4 + [atom2, ]*8
             _pos = [[0.0, 0.0, 0.0],
-                    [0.5, 0.0,0.25],
-                    [0.0, 0.5,0.75],
+                    [0.5, 0.0, 0.25],
+                    [0.0, 0.5, 0.75],
                     [0.5, 0.5, 0.5],
                     [0.0, 0.0,   u],
                     [0.0, 0.0,  -u],
-                    [0.5, 0.0,0.25-u],
-                    [0.5, 0.0,0.25+u],
-                    [0.0, 0.5,0.75-u],
-                    [0.0, 0.5,0.75+u],
+                    [0.5, 0.0, 0.25-u],
+                    [0.5, 0.0, 0.25+u],
+                    [0.0, 0.5, 0.75-u],
+                    [0.0, 0.5, 0.75+u],
                     [0.5, 0.5, 0.5-u],
                     [0.5, 0.5, 0.5+u]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "Anatase {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
-    
+
     @classmethod
     def pyrite(cls, atom1="Fe", atom2="S", a=5.4183, u=0.1174, **kwargs):
         '''Generate a standardized pyrite lattice (space group 205).
@@ -950,28 +974,28 @@ class Cell(Prec, Verbose):
         '''
         _a = abs(a)
         _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
-        _atoms = [atom1,]*4 + [atom2,]*8
+        _atoms = [atom1, ]*4 + [atom2, ]*8
         _pos = [[0.0, 0.0, 0.0],
                 [0.0, 0.5, 0.5],
                 [0.5, 0.0, 0.5],
                 [0.5, 0.5, 0.0],
                 [0.5-u,     u,    -u],
                 [0.5+u,    -u,     u],
-                [   -u, 0.5-u,     u],
-                [    u, 0.5+u,    -u],
-                [    u,    -u, 0.5-u],
-                [   -u,     u, 0.5+u],
+                [-u, 0.5-u,     u],
+                [u, 0.5+u,    -u],
+                [u,    -u, 0.5-u],
+                [-u,     u, 0.5+u],
                 [0.5+u, 0.5+u, 0.5+u],
                 [0.5-u, 0.5-u, 0.5-u],
-               ]
+                ]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "Pyrite {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def marcasite(cls, atom1="Fe", atom2="S", \
-                  a=4.4450, b=5.4151, c=3.3922, \
+    def marcasite(cls, atom1="Fe", atom2="S",
+                  a=4.4450, b=5.4151, c=3.3922,
                   v=0.2066, w=0.3750, **kwargs):
         '''Generate a standardized marcasite lattice (space group 58).
 
@@ -986,13 +1010,13 @@ class Cell(Prec, Verbose):
         _b = abs(b)
         _c = abs(c)
         _latt = [[_a, 0.0, 0.0], [0.0, _b, 0.0], [0.0, 0.0, _c]]
-        _atoms = [atom1,]*2 + [atom2,]*4
+        _atoms = [atom1, ]*2 + [atom2, ]*4
         _pos = [[0.0, 0.0, 0.0],
                 [0.5, 0.5, 0.5],
                 [0.5+v, 0.5-w,    0.5],
                 [0.5-v, 0.5+w,    0.5],
-                [   -v,    -w,    0.0],
-                [    v,     w,    0.0],]
+                [-v,    -w,    0.0],
+                [v,     w,    0.0], ]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "Marcasite {}{}2".format(atom1, atom2)})
@@ -1017,7 +1041,7 @@ def atoms_from_sym_nat(syms, nats):
     assert len(syms) == len(nats)
     _list = []
     for _s, _n in zip(syms, nats):
-        _list.extend([_s,] * _n)
+        _list.extend([_s, ] * _n)
     return _list
 
 
@@ -1076,7 +1100,7 @@ def axis_list(axis):
     if isinstance(axis, int):
         if axis == 0:
             _aList = [1, 2, 3]
-        if axis in range(1,4):
+        if axis in range(1, 4):
             _aList = [axis]
     elif isinstance(axis, (list, tuple)):
         _aSet = list(set(axis))
@@ -1089,7 +1113,7 @@ def axis_list(axis):
                 if _a == 0:
                     _aList = [1, 2, 3]
                     break
-                if _a in range(1,4):
+                if _a in range(1, 4):
                     _aList.append(_a)
     return tuple(_aList)
 

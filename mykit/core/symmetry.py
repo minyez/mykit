@@ -24,12 +24,12 @@ class Symmetry(Prec):
     Args:
         cell (Cell or its subclasses)
     '''
-    
+
     def __init__(self, cell):
         # convert to direct coordinate system
         self._cell = cell
-        _spg = spglib.get_spacegroup(self._cell.get_spglib_input(), \
-            symprec=self._symprec).split()
+        _spg = spglib.get_spacegroup(self._cell.get_spglib_input(),
+                                     symprec=self._symprec).split()
         self._spgSym = _spg[0]
         self._spgId = int(_spg[1][1:-1])
         self._isPrim = None
@@ -38,7 +38,8 @@ class Symmetry(Prec):
     def operations(self):
         '''Symmetry operations. See spglib get_symmetry docstring
         '''
-        _ops = spglib.get_symmetry(self._cell.get_spglib_input(), symprec=self._symprec)
+        _ops = spglib.get_symmetry(
+            self._cell.get_spglib_input(), symprec=self._symprec)
         return [(r, t) for r, t in zip(_ops["rotations"], _ops["translations"])]
 
     @property
@@ -70,17 +71,17 @@ class Symmetry(Prec):
             kgrid (int array): the kpoint grid
             frac (bool): if True, the fractional coordinate will be returned,
                 otherwise the integer grid
-        
+
         Returns:
             Two arrays, with n the number of IBZK
             (n,3) the coordinate of IBZK
             (n,) the un-normalized weight of each IBZK
         '''
         _kgrid = np.array(kgrid)
-        _mapping, _grid = spglib.get_ir_reciprocal_mesh(_kgrid, \
-            self._cell.get_spglib_input(), is_shift=shift)
-        
-        _div = {True: _kgrid, False: np.array([1,1,1])}[frac]
+        _mapping, _grid = spglib.get_ir_reciprocal_mesh(_kgrid,
+                                                        self._cell.get_spglib_input(), is_shift=shift)
+
+        _div = {True: _kgrid, False: np.array([1, 1, 1])}[frac]
         # All k-points and mapping to ir-grid points
         # ind_ibzk = list(set(_mapping))
         ind_ibzk = list(OrderedDict.fromkeys(_mapping, 0).keys())
@@ -92,7 +93,7 @@ class Symmetry(Prec):
         for _i, v in enumerate(_mapping):
             weight[v] += 1
         return ibzk, np.array(list(weight.values()))
-        
+
     def get_primitive(self, store=False):
         '''Return the primitive cell of the input cell.
 
@@ -116,13 +117,13 @@ class Symmetry(Prec):
         flag = None
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
-        primCell = spglib.find_primitive(self._cell.get_spglib_input(), \
-            symprec=self._symprec)
+        primCell = spglib.find_primitive(self._cell.get_spglib_input(),
+                                         symprec=self._symprec)
         if primCell != None:
             _latt, _pos, _indice = primCell
             _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
-            _newCell = _type(_latt, _atoms, _pos, \
-                unit=self._cell.unit, coordSys=self._cell.coordSys)
+            _newCell = _type(_latt, _atoms, _pos,
+                             unit=self._cell.unit, coordSys=self._cell.coordSys)
             # determine if the original cell is primitive
             if abs(_newCell.vol - self._cell.vol) < 0.1:
                 flag = True
@@ -143,7 +144,7 @@ class Symmetry(Prec):
                 cell will be returned
             store (bool): if set True, the returned cell will be assign
                 to the symmetry instance.
-        
+
         Returns:
             False if fail to standardize the cell, otherwise True 
 
@@ -154,14 +155,14 @@ class Symmetry(Prec):
         flag = False
         _type = type(self._cell)
         _typeMap = self._cell.typeMapping
-        stdCell = spglib.standardize_cell(self._cell.get_spglib_input(), \
-            to_primitive=primitive, symprec=self._symprec)
+        stdCell = spglib.standardize_cell(self._cell.get_spglib_input(),
+                                          to_primitive=primitive, symprec=self._symprec)
         if stdCell != None:
             flag = True
             _latt, _pos, _indice = stdCell
             _atoms = [_typeMap[v] for _i, v in enumerate(_indice)]
-            _newCell = _type(_latt, _atoms, _pos, \
-                unit=self._cell.unit, coordSys=self._cell.coordSys)
+            _newCell = _type(_latt, _atoms, _pos,
+                             unit=self._cell.unit, coordSys=self._cell.coordSys)
         else:
             _newCell = self._cell
         if store:
@@ -185,8 +186,8 @@ class Symmetry(Prec):
         '''
         _spglib_check_cell_and_coordSys(cell)
         flag = None
-        primCell = spglib.find_primitive(cell.get_spglib_input(), \
-            symprec=cls._symprec)
+        primCell = spglib.find_primitive(cell.get_spglib_input(),
+                                         symprec=cls._symprec)
         if primCell != None:
             _vol = np.linalg.det(primCell[0])
             if abs(_vol - cell.vol) < 0.1:
@@ -198,7 +199,7 @@ class Symmetry(Prec):
     @classmethod
     def get_spg(cls, cell):
         '''Return the space group id and symbol from a Cell instance
-        
+
         Args:
             cell: instance of ``Cell`` or its subclasses
 
@@ -207,8 +208,8 @@ class Symmetry(Prec):
             str, space group symbol
         '''
         _spglib_check_cell_and_coordSys(cell)
-        _spg = spglib.get_spacegroup(cell.get_spglib_input(), \
-            symprec=cls._symprec).split()
+        _spg = spglib.get_spacegroup(cell.get_spglib_input(),
+                                     symprec=cls._symprec).split()
         return int(_spg[1][1:-1]), _spg[0]
 
 
@@ -221,58 +222,58 @@ class SpaceGroup:
     '''
 
     symbols = (
-            'P1'      , 'P-1'   , 'P2'    , 'P21'    , 'C2'    , #1
-            'Pm'      , 'Pc'    , 'Cm'    , 'Cc'     , 'P2m'   ,
-            'P21m'    , 'C2m'   , 'P2c'   , 'P21c'   , 'C2c'   , #11
-            'P222'    , 'P2221' , 'P21212', 'P212121', 'C2221' ,
-            'C222'    , 'F222'  , 'I222'  , 'I212121', 'Pmm2'  , #21
-            'Pmc21'   , 'Pcc2'  , 'Pma2'  , 'Pca21'  , 'Pnc2'  ,
-            'Pmn21'   , 'Pba2'  , 'Pna21' , 'Pnn2'   , 'Cmm2'  , #31
-            'Cmc21'   , 'Ccc2'  , 'Amm2'  , 'Aem2'   , 'Ama2'  ,
-            'Aea2'    , 'Fmm2'  , 'Fdd2'  , 'Imm2'   , 'Iba2'  , #41
-            'Ima2'    , 'Pmmm'  , 'Pnnn'  , 'Pccm'   , 'Pban'  ,
-            'Pmma'    , 'Pnna'  , 'Pmna'  , 'Pcca'   , 'Pbam'  , #51
-            'Pccn'    , 'Pbcm'  , 'Pnnm'  , 'Pmmn'   , 'Pbcn'  ,
-            'Pbca'    , 'Pnma'  , 'Cmcm'  , 'Cmce'   , 'Cmmm'  , #61
-            'Cccm'    , 'Cmme'  , 'Ccce'  , 'Fmmm'   , 'Fddd'  ,
-            'Immm'    , 'Ibam'  , 'Ibca'  , 'Imma'   , 'P4'    , #71
-            'P41'     , 'P42'   , 'P43'   , 'I4'     , 'I41'   ,
-            'P-4'     , 'I-4'   , 'P4m'   , 'P42m'   , 'P4n'   , #81
-            'P42n'    , 'I4m'   , 'I41a'  , 'P422'   , 'P4212' ,
-            'P4122'   , 'P41212', 'P4222' , 'P42212' , 'P4322' , #91
-            'P43212'  , 'I422'  , 'I4122' , 'P4mm'   , 'P4bm'  ,
-            'P42cm'   , 'P42nm' , 'P4cc'  , 'P4nc'   , 'P42mc' , #101
-            'P42bc'   , 'I4mm'  , 'I4cm'  , 'I41md'  , 'I41cd' ,
-            'P-42m'   , 'P-42c' , 'P-421m', 'P-421c' , 'P-4m2' , #111
-            'P-4c2'   , 'P-4b2' , 'P-4n2' , 'I-4m2'  , 'I-4c2' ,
-            'I-42m'   , 'I-42d' , 'P4mmm' , 'P4mcc'  , 'P4nbm' , #121
-            'P4nnc'   , 'P4mbm' , 'P4mnc' , 'P4nmm'  , 'P4ncc' ,
-            'P42mmc'  , 'P42mcm', 'P42nbc', 'P42nnm' , 'P42mbc', #131
-            'P4_2/mnm', 'P42nmc', 'P42ncm', 'I4mmm'  , 'I4mcm' ,
-            'I4_1/amd', 'I41acd', 'P3'    , 'P31'    , 'P32'   , #141
-            'R3'      , 'P-3'   , 'R-3'   , 'P312'   , 'P321'  ,
-            'P3112'   , 'P3121' , 'P3212' , 'P3221'  , 'R32'   , #151
-            'P3m1'    , 'P31m'  , 'P3c1'  , 'P31c'   , 'R3m'   ,
-            'R3c'     , 'P-31m' , 'P-31c' , 'P-3m1'  , 'P-3c1' , #161
-            'R-3m'    , 'R-3c'  , 'P6_3mc', 'P61'    , 'P65'   ,
-            'P62'     , 'P64'   , 'P63'   , 'P-6'    , 'P6m'   , #171
-            'P63m'    , 'P622'  , 'P6122' , 'P6522'  , 'P6222' ,
-            'P6422'   , 'P6322' , 'P6mm'  , 'P6cc'   , 'P63cm' , #181
-            'P6_3mc'  , 'P-6m2' , 'P-6c2' , 'P-62m'  , 'P-62c' ,
-            'P6mmm'   , 'P6mcc' , 'P63mcm', 'P63mmc' , 'P23'   , #191
-            'F23'     , 'I23'   , 'P213'  , 'I2_13'  , 'Pm-3'  ,
-            'Pn-3'    , 'Fm-3'  , 'Fd-3'  , 'Im-3'   , 'Pa-3'  , #201
-            'Ia-3'    , 'P432'  , 'P4232' , 'F432'   , 'F4132' ,
-            'I432'    , 'P4332' , 'P4132' , 'I4132'  , 'P-43m' , #211
-            'F-43m'   , 'I-43m' , 'P-43n' , 'F-43c'  , 'I-43d' ,
-            'Pm-3m'   , 'Pn-3n' , 'Pm-3n' , 'Pn-3m'  , 'Fm-3m' , #221
-            'Fm-3c'   , 'Fd-3m' , 'Fd-3c' , 'Im-3m'  , 'Ia-3d' ,
-            )
+        'P1', 'P-1', 'P2', 'P21', 'C2',  # 1
+        'Pm', 'Pc', 'Cm', 'Cc', 'P2m',
+        'P21m', 'C2m', 'P2c', 'P21c', 'C2c',  # 11
+        'P222', 'P2221', 'P21212', 'P212121', 'C2221',
+        'C222', 'F222', 'I222', 'I212121', 'Pmm2',  # 21
+        'Pmc21', 'Pcc2', 'Pma2', 'Pca21', 'Pnc2',
+        'Pmn21', 'Pba2', 'Pna21', 'Pnn2', 'Cmm2',  # 31
+        'Cmc21', 'Ccc2', 'Amm2', 'Aem2', 'Ama2',
+        'Aea2', 'Fmm2', 'Fdd2', 'Imm2', 'Iba2',  # 41
+        'Ima2', 'Pmmm', 'Pnnn', 'Pccm', 'Pban',
+        'Pmma', 'Pnna', 'Pmna', 'Pcca', 'Pbam',  # 51
+        'Pccn', 'Pbcm', 'Pnnm', 'Pmmn', 'Pbcn',
+        'Pbca', 'Pnma', 'Cmcm', 'Cmce', 'Cmmm',  # 61
+        'Cccm', 'Cmme', 'Ccce', 'Fmmm', 'Fddd',
+        'Immm', 'Ibam', 'Ibca', 'Imma', 'P4',  # 71
+        'P41', 'P42', 'P43', 'I4', 'I41',
+        'P-4', 'I-4', 'P4m', 'P42m', 'P4n',  # 81
+        'P42n', 'I4m', 'I41a', 'P422', 'P4212',
+        'P4122', 'P41212', 'P4222', 'P42212', 'P4322',  # 91
+        'P43212', 'I422', 'I4122', 'P4mm', 'P4bm',
+        'P42cm', 'P42nm', 'P4cc', 'P4nc', 'P42mc',  # 101
+        'P42bc', 'I4mm', 'I4cm', 'I41md', 'I41cd',
+        'P-42m', 'P-42c', 'P-421m', 'P-421c', 'P-4m2',  # 111
+        'P-4c2', 'P-4b2', 'P-4n2', 'I-4m2', 'I-4c2',
+        'I-42m', 'I-42d', 'P4mmm', 'P4mcc', 'P4nbm',  # 121
+        'P4nnc', 'P4mbm', 'P4mnc', 'P4nmm', 'P4ncc',
+        'P42mmc', 'P42mcm', 'P42nbc', 'P42nnm', 'P42mbc',  # 131
+        'P4_2/mnm', 'P42nmc', 'P42ncm', 'I4mmm', 'I4mcm',
+        'I4_1/amd', 'I41acd', 'P3', 'P31', 'P32',  # 141
+        'R3', 'P-3', 'R-3', 'P312', 'P321',
+        'P3112', 'P3121', 'P3212', 'P3221', 'R32',  # 151
+        'P3m1', 'P31m', 'P3c1', 'P31c', 'R3m',
+        'R3c', 'P-31m', 'P-31c', 'P-3m1', 'P-3c1',  # 161
+        'R-3m', 'R-3c', 'P6_3mc', 'P61', 'P65',
+        'P62', 'P64', 'P63', 'P-6', 'P6m',  # 171
+        'P63m', 'P622', 'P6122', 'P6522', 'P6222',
+        'P6422', 'P6322', 'P6mm', 'P6cc', 'P63cm',  # 181
+        'P6_3mc', 'P-6m2', 'P-6c2', 'P-62m', 'P-62c',
+        'P6mmm', 'P6mcc', 'P63mcm', 'P63mmc', 'P23',  # 191
+        'F23', 'I23', 'P213', 'I2_13', 'Pm-3',
+        'Pn-3', 'Fm-3', 'Fd-3', 'Im-3', 'Pa-3',  # 201
+        'Ia-3', 'P432', 'P4232', 'F432', 'F4132',
+        'I432', 'P4332', 'P4132', 'I4132', 'P-43m',  # 211
+        'F-43m', 'I-43m', 'P-43n', 'F-43c', 'I-43d',
+        'Pm-3m', 'Pn-3n', 'Pm-3n', 'Pn-3m', 'Fm-3m',  # 221
+        'Fm-3c', 'Fd-3m', 'Fd-3c', 'Im-3m', 'Ia-3d',
+    )
     try:
         assert len(symbols) == 230
     except AssertionError:
         raise SymmetryError("Bad space group table. Contact developer.")
-    
+
     @staticmethod
     def k_trans_mat_from_prim_to_conv(iden):
         '''Return transformation matrix to convert k-point coordinate in 
@@ -297,32 +298,33 @@ class SpaceGroup:
         '''
         _check_valid_spg_id(iden)
         # primitive and conventional cells coincide.
-        identity = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
+        identity = np.array(
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
         _dict = {
-            (5,8,9,12,15,):
-                    np.array([[ 1.0,-1.0, 0.0],
-                              [ 1.0, 1.0, 0.0],
-                              [ 0.0, 0.0, 1.0]]), # u-v, u+v, w
-            (20,21,35,36,37,38,39,40,41,63,64,65,66,67,68,):
-                    np.array([[ 1.0, 1.0, 0.0],
-                              [-1.0, 1.0, 0.0],
-                              [ 0.0, 0.0, 1.0]]), # u+v, -u+v, w
-            (22,42,43,69,70,196,202,203,209,210,216,219,225,\
-            226,227,228):
-                    np.array([[-1.0, 1.0, 1.0],
-                              [ 1.0,-1.0, 1.0],
-                              [ 1.0, 1.0,-1.0]]), # -u+v+w, u-v+w, u+v-w
-            (23,24,44,45,46,71,72,73,74,79,80,82,87,88,97,98,\
-            107,108,109,110,119,120,121,122,139,140,141,142,\
-            197,204,206,211,214,217,220,229,230):
-                    np.array([[ 0.0, 1.0, 1.0],
-                              [ 1.0, 0.0, 1.0],
-                              [ 1.0, 1.0, 0.0]]), # v+w, u+w, u+v
-            (146,148,155,160,161,166,167):
-                    np.array([[ 1.0,-1.0, 0.0],
-                              [ 0.0, 1.0,-1.0],
-                              [ 1.0, 1.0, 1.0]]), # u-v, v-w, u+v+w
+            (5, 8, 9, 12, 15,):
+            np.array([[1.0, -1.0, 0.0],
+                      [1.0, 1.0, 0.0],
+                      [0.0, 0.0, 1.0]]),  # u-v, u+v, w
+            (20, 21, 35, 36, 37, 38, 39, 40, 41, 63, 64, 65, 66, 67, 68,):
+            np.array([[1.0, 1.0, 0.0],
+                      [-1.0, 1.0, 0.0],
+                      [0.0, 0.0, 1.0]]),  # u+v, -u+v, w
+            (22, 42, 43, 69, 70, 196, 202, 203, 209, 210, 216, 219, 225,\
+             226, 227, 228):
+            np.array([[-1.0, 1.0, 1.0],
+                      [1.0, -1.0, 1.0],
+                      [1.0, 1.0, -1.0]]),  # -u+v+w, u-v+w, u+v-w
+            (23, 24, 44, 45, 46, 71, 72, 73, 74, 79, 80, 82, 87, 88, 97, 98,\
+             107, 108, 109, 110, 119, 120, 121, 122, 139, 140, 141, 142,\
+             197, 204, 206, 211, 214, 217, 220, 229, 230):
+            np.array([[0.0, 1.0, 1.0],
+                      [1.0, 0.0, 1.0],
+                      [1.0, 1.0, 0.0]]),  # v+w, u+w, u+v
+            (146, 148, 155, 160, 161, 166, 167):
+            np.array([[1.0, -1.0, 0.0],
+                      [0.0, 1.0, -1.0],
+                      [1.0, 1.0, 1.0]]),  # u-v, v-w, u+v+w
         }
         for k, v in _dict.items():
             if iden in k:
@@ -341,9 +343,10 @@ class SpaceGroup:
         try:
             _id = 1 + cls.symbols.index(symbol)
         except ValueError:
-            raise SymmetryError("Space group symbol is not found in ITA: {}".format(symbol))
+            raise SymmetryError(
+                "Space group symbol is not found in ITA: {}".format(symbol))
         return _id
-    
+
     @classmethod
     def get_spg_symbol(cls, iden):
         '''Get the symbol of space group with index ``id`` in ITA
@@ -374,8 +377,9 @@ class SpecialKpoints(Prec):
         try:
             assert np.shape(alen) == (3,)
         except AssertionError:
-            raise SymmetryError("Invalid lattice constant shape: {}".format(alen))
-    
+            raise SymmetryError(
+                "Invalid lattice constant shape: {}".format(alen))
+
         self.spgId = iden
         self._spDict = _special_kpoints[iden]
         try:
@@ -393,7 +397,7 @@ class SpecialKpoints(Prec):
 
     def __getitem__(self, ksym):
         '''Get the coordinate of kpoint symbol.
-        
+
         Custom symbols will be searched first.
         '''
         coord = self._custom.get(ksym, None)
@@ -431,7 +435,7 @@ class SpecialKpoints(Prec):
             ipath (int): the index of predefined kpath string to check.
             None to return all kpath strings in a list.
             If ipath is not found, an empty string will be returned.
-        
+
         Returns:
             list if ipath is None, otherwise string
         '''
@@ -459,8 +463,9 @@ class SpecialKpoints(Prec):
         try:
             assert isinstance(kpathStr, str)
         except AssertionError:
-            raise ValueError("input kpath should be a str, not {}".format(type(kpathStr)))
-        _ret = {} 
+            raise ValueError(
+                "input kpath should be a str, not {}".format(type(kpathStr)))
+        _ret = {}
         decodedSyms = kpath_decoder(kpathStr)
         coords = []
         for ksym in decodedSyms:
@@ -469,7 +474,8 @@ class SpecialKpoints(Prec):
             elif ksym in self.spkCoord:
                 coords.append(self.spkCoord[ksym])
             else:
-                raise SymmetryError("kpoint symbol not defined: {}".format(ksym))
+                raise SymmetryError(
+                    "kpoint symbol not defined: {}".format(ksym))
         coords = np.array(coords, dtype=self._dtype)
         if not self._isPrim:
             coords = np.dot(coords, np.transpose(self._transMat))
@@ -492,7 +498,7 @@ class SpecialKpoints(Prec):
             if isinstance(kpathPredef, list):
                 return list(map(self.convert_kpath, kpathPredef))
         return None
-    
+
     @classmethod
     def from_symmetry(cls, sym, custom_symbols=None):
         '''Create special kpoints instance from a Symmetry instance
@@ -509,18 +515,20 @@ class SpecialKpoints(Prec):
             assert isinstance(sym, Symmetry)
         except:
             raise SymmetryError("The input should be Symmetry instance.")
-        # when primitive cell is meeted, need to extract the 
+        # when primitive cell is meeted, need to extract the
         # lattice constants of conventional or standard cell
         isPrim = sym.isPrimitive
         if isPrim is None:
-            raise SymmetryError("Fail to determine whether the cell is primitive. Check the cell")
+            raise SymmetryError(
+                "Fail to determine whether the cell is primitive. Check the cell")
         elif isPrim:
             flag, stdCell = sym.get_standard()
             # I think the exception is redudant, since if the cell cannot
             # be standardized, isPrim flag is None and should be captured
             # above. But anyway it is put here for safety.
             if not flag:
-                raise SymmetryError("Fail to standardize the cell to obtain lattice constants")
+                raise SymmetryError(
+                    "Fail to standardize the cell to obtain lattice constants")
             alen = stdCell.alen
         else:
             alen = sym.alen
@@ -550,7 +558,8 @@ class SpecialKpoints(Prec):
         '''
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
-        spk = cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
+        spk = cls(sym.spgId, sym.alen, sym.isPrimitive,
+                  custom_symbols=custom_symbols)
         return spk.convert_kpath(pathStr)
 
     @classmethod
@@ -565,7 +574,8 @@ class SpecialKpoints(Prec):
         '''
         _spglib_check_cell_and_coordSys(cell)
         sym = Symmetry(cell)
-        spk = cls(sym.spgId, sym.alen, sym.isPrimitive, custom_symbols=custom_symbols)
+        spk = cls(sym.spgId, sym.alen, sym.isPrimitive,
+                  custom_symbols=custom_symbols)
         return spk.convert_kpaths_predef(ipath=ipath)
 
 
@@ -579,11 +589,13 @@ def _spglib_check_cell_and_coordSys(cellIn):
     try:
         assert isinstance(cellIn, Cell)
     except AssertionError:
-        raise SymmetryError("The input should be instance of Cell or its subclass.")
+        raise SymmetryError(
+            "The input should be instance of Cell or its subclass.")
     try:
         assert cellIn.coordSys == "D"
     except AssertionError:
-        raise SymmetryError("The coordinate system should be direct. Cartisian found.")
+        raise SymmetryError(
+            "The coordinate system should be direct. Cartisian found.")
 
 
 def _check_valid_spg_id(iden):
@@ -609,7 +621,8 @@ def _check_valid_custom_ksym_dict(custom_symbols):
         try:
             assert isinstance(custom_symbols, dict)
         except:
-            raise TypeError("custom_symbols must be dict, received {}".format(type(custom_symbols)))
+            raise TypeError(
+                "custom_symbols must be dict, received {}".format(type(custom_symbols)))
         for k, v in custom_symbols.items():
             _check_valid_ksym_coord_pair(k, v)
         return custom_symbols

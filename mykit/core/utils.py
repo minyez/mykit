@@ -55,7 +55,7 @@ def get_matched_files(dirPath='.', regex=None):
     Args:
         dirPath (str): the directory to search
         regex (regex): the regular expression to match the filename
-    
+
     Returns:
         tuple of strings
     '''
@@ -109,7 +109,7 @@ def trim_after(string, regex, include_pattern=False):
     If fail to match any pattern, the original string is returned
 
     The matched pattern is trimed as well.
-    
+
     Args:
         string (str): the string to trim
         regex (regex): the regex to match
@@ -164,7 +164,7 @@ def trim_both_sides(string, regex_left, regex_right, include_pattern=False):
 
 def check_duplicates_in_tag_tuple(tagtuple):
     '''Check if there is duplicate in a tag tuple, case sensitive
-    
+
     Args:
         tagTuple (tuple) : the tag tuple to check
     '''
@@ -182,7 +182,7 @@ def check_duplicates_in_tag_tuple(tagtuple):
 #     Args:
 #         data (iterable): the container of 1D data
 #         normByPeak (bool) : when set True, the normalization factor will be
-#             the peak absolute value. Otherwise, the sum of absolute values 
+#             the peak absolute value. Otherwise, the sum of absolute values
 #             will be used as normalization factor.
 
 #     TODO:
@@ -194,18 +194,18 @@ def check_duplicates_in_tag_tuple(tagtuple):
 #     import numpy as np
 #     assert len(np.shape(data)) == 1
 #     assert isinstance(normByPeak, bool)
-    
+
 #     _a = []
 #     try:
 #         _a = np.array(data, dtype="float64")
 #     except ValueError:
 #         raise ValueError("the data cannot be converted.")
-    
+
 #     _sum = np.sum(np.abs(_a)) / scale
 #     _max = np.max(np.abs(_a)) / scale
 #     if normByPeak:
 #         return _a / _max
-#     return _a / _sum 
+#     return _a / _sum
 
 
 # def find_data_extreme(data):
@@ -224,12 +224,12 @@ def check_duplicates_in_tag_tuple(tagtuple):
 
 def find_vol_dirs(path='.', vdPat=None):
     '''Find names of directories corresponding to calculation with lattice of different volumes
-    
+
     Args:
         path (str): the path to search directories within. Default is CWD.
         vdPat (regex): the pattern of the names of volume directories
             If not specified, use "V_x.xx" where x is 0-9
-    
+
     Returns:
         list of strings
     '''
@@ -240,6 +240,7 @@ def find_vol_dirs(path='.', vdPat=None):
     for _d in os.listdir(path):
         if re.match(pat, _d):
             _dirs.append(_d)
+
     def __sort_vol(dirstr):
         return float(dirstr.split('_')[1])
     if vdPat is None:
@@ -258,7 +259,7 @@ def conv_string(string, conv2, *indices, sep=None, strips=None):
             otherwise, all substring will be converted.
         sep (regex): the separators used to split the string.
         strips (str): extra strings to strip for each substring before conversion
-    
+
     Returns:
         ``conv2``, or list of ``conv2`` type
     '''
@@ -315,7 +316,7 @@ def get_first_last_line(filePath, encoding=stdout.encoding):
     Args:
         filePath (str): the path of the file
         encoding (str): the encoding of the file. Default stdout.encoding
-    
+
     Returns
         two strings (unstripped)
     '''
@@ -323,7 +324,8 @@ def get_first_last_line(filePath, encoding=stdout.encoding):
         first = f.readline()        # Read the first line.
         f.seek(-2, os.SEEK_END)     # Jump to the second last byte.
         while f.read(1) != b"\n":   # Until EOL is found...
-            f.seek(-2, os.SEEK_CUR) # ...jump back the read byte plus one more.
+            # ...jump back the read byte plus one more.
+            f.seek(-2, os.SEEK_CUR)
         last = f.readline()         # Read last line.
     # encode string
     return str(first, encoding), str(last, encoding)
@@ -335,7 +337,7 @@ def get_str_indices(container, string):
     Args:
         container (list or tuple): container of strings
         string (str): the string to locate
-    
+
     Returns:
         list
     '''
@@ -357,7 +359,7 @@ def get_str_indices_by_iden(container, iden):
     Args:
         container (list or tuple): container of strings
         iden (int, str, Iterable): the identifier for string to locate
-    
+
     Returns:
         list, unique indices of identified strings
     '''
@@ -381,23 +383,25 @@ def get_str_indices_by_iden(container, iden):
 
 
 # ====================== PERFORM CALCULATION ======================
-def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
-    '''
-    Run the calculation command by threading a subprocess calling calc_cmd
-    '''
+# def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
+#     '''
+#     Run the calculation command by threading a subprocess calling calc_cmd
+#     '''
 
-    if fout is None:
-        ofile = sp.PIPE
-    else:
-        ofile = open(fout,'w')
+#     if fout is None:
+#         ofile = sp.PIPE
+#     else:
+#         ofile = open(fout, 'w')
 
-    if ferr is None:
-        efile = sp.PIPE
-    else:
-        efile = open(ferr,'w')
+#     if ferr is None:
+#         efile = sp.PIPE
+#     else:
+#         efile = open(ferr, 'w')
 
-    p=sp.Popen(calc_cmd,stdout=ofile,stderr=efile,shell=True)
-    p.wait()
+#     p = sp.Popen(calc_cmd, stdout=ofile, stderr=efile, shell=True)
+#     p.wait()
 
-    if not fout is None: ofile.close()
-    if not ferr is None: efile.close()
+#     if not fout is None:
+#         ofile.close()
+#     if not ferr is None:
+#         efile.close()

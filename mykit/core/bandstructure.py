@@ -40,7 +40,7 @@ class BandStructure(Prec, Verbose):
     Optional keyword arguments, if parsed, should have consistent
     shape with the required arguments.
     They will be ignored if their shapes are inconsistent.
-    
+
     Args:
         eigen (array-like) : the energy (eigenvalues) of all bands to be considered
         occ (array-like) : the occupation numbers of all bands
@@ -56,12 +56,14 @@ class BandStructure(Prec, Verbose):
     Attributes:
 
     '''
+
     def __init__(self, eigen, occ, weight, kvec=None, efermi=None, projected=None):
         try:
             self._nspins, self._nkpts, self._nbands = \
                 _check_eigen_occ_weight_consistency(eigen, occ, weight)
         except ValueError:
-            info = "Bad eigen, occ and weight shapes: {}, {}, {}".format(*map(np.shape, (eigen, occ, weight)))
+            info = "Bad eigen, occ and weight shapes: {}, {}, {}".format(
+                *map(np.shape, (eigen, occ, weight)))
             raise BandStructureError(info)
         try:
             self._eigen = np.array(eigen, dtype=self._dtype)
@@ -76,7 +78,8 @@ class BandStructure(Prec, Verbose):
         # Reassign with unit weight
         if np.isclose(np.sum(self._weight), 0.0):
             self._weight[:] = 1.0
-        self._nelectPerSpin = np.dot(self._nelectPerChannel, self._weight) / np.sum(self._weight)
+        self._nelectPerSpin = np.dot(
+            self._nelectPerChannel, self._weight) / np.sum(self._weight)
         self._nelect = np.sum(self._nelectPerSpin)
 
         self._hasInftyCbm = False
@@ -86,36 +89,42 @@ class BandStructure(Prec, Verbose):
             self._efermi = efermi
         else:
             self._efermi = self.vbm
-    
+
         self._projParsed = False
         self._parse_proj(projected)
         self._kvecParsed = False
         self._parse_kvec(kvec)
-    
+
     @property
     def eigen(self):
         '''Array. Eigenvalues, (nspins, nkpts, nbands)'''
         return self._eigen
+
     @property
     def occ(self):
         '''Array. Occupation numbers, (nspins, nkpts, nbands)'''
         return self._occ
+
     @property
     def weight(self):
         '''Array. kpoints weight (int like), (nkpts, )'''
         return self._weight
+
     @property
     def nelect(self):
         '''Float. Total number of electrons'''
         return self._nelect
+
     @property
     def nspins(self):
         '''Int. number of spin channels'''
         return self._nspins
+
     @property
     def nkpts(self):
         '''Int. number of kpoints'''
         return self._nkpts
+
     @property
     def nbands(self):
         '''Int. number of bands'''
@@ -137,36 +146,41 @@ class BandStructure(Prec, Verbose):
     def hasProjection(self):
         '''Bool'''
         return self._projParsed
+
     @property
     def atoms(self):
         '''list of strings, types of each atom. 
-        
+
         None if no projection information was parsed
         '''
         if self.hasProjection:
             return self._atoms
         return None
+
     @property
     def natoms(self):
         try:
             return len(self.atoms)
         except TypeError:
             return 0
+
     @property
     def projs(self):
         '''list of strings, names of atomic projectors
-        
-        None if no projection information wa parsed
+
+        None if no projection information was parsed
         '''
         if self.hasProjection:
             return self._projs
         return None
+
     @property
     def nprojs(self):
         try:
             return len(self.projs)
         except TypeError:
             return 0
+
     @property
     def pWave(self):
         '''Array, partial waves for each projector on each atom.
@@ -202,17 +216,19 @@ class BandStructure(Prec, Verbose):
     def hasKvec(self):
         '''Bool'''
         return self._kvecParsed
+
     @property
     def isKpath(self):
         '''Bool. If the parsed kpoint vectors form a path in reciprocal space.
-        
+
         None if kvec was not parsed.
         '''
         return self._isKpath
+
     @property
     def kvec(self):
         '''Array. kpoints vectors.
-        
+
         None if kvec was not parsed.
         '''
         if self.hasKvec:
@@ -230,7 +246,7 @@ class BandStructure(Prec, Verbose):
             get CB value from `icbm` attributes
         '''
         isOcc = self._occ > self._thresOcc
-        
+
         self._ivbmPerChannel = np.sum(isOcc, axis=2) - 1
         # when any two indices of ivbm differ, the system is metal
         if np.max(self._ivbmPerChannel) == np.min(self._ivbmPerChannel):
@@ -241,11 +257,14 @@ class BandStructure(Prec, Verbose):
         # avoid IndexError when ivbm is the last band by imposing icbm = ivbm in this case
         ivbIsLast = self._ivbmPerChannel == self.nbands - 1
         if np.any(ivbIsLast):
-            self.print_warn("nbands {} is too small to get CB".format(self.nbands))
+            self.print_warn(
+                "nbands {} is too small to get CB".format(self.nbands))
             self._icbmPerChannel[ivbIsLast] = self.nbands - 1
 
-        self._vbmPerChannel = np.zeros((self.nspins, self.nkpts), dtype=self._dtype)
-        self._cbmPerChannel = np.zeros((self.nspins, self.nkpts), dtype=self._dtype)
+        self._vbmPerChannel = np.zeros(
+            (self.nspins, self.nkpts), dtype=self._dtype)
+        self._cbmPerChannel = np.zeros(
+            (self.nspins, self.nkpts), dtype=self._dtype)
         # ? maybe optimize
         for i in range(self.nspins):
             for j in range(self.nkpts):
@@ -253,33 +272,36 @@ class BandStructure(Prec, Verbose):
                 self._vbmPerChannel[i, j] = self.eigen[i, j, vb]
                 if vb == self.nbands - 1:
                     self._hasInftyCbm = True
-                    info = "VBM index for spin-kpt channel ({},{}) equals nbands.".format(i+1, j+1)
-                    self.print_warn(info, "CBM for this channel set to infinity")
+                    info = "VBM index for spin-kpt channel ({},{}) equals nbands.".format(
+                        i+1, j+1)
+                    self.print_warn(
+                        info, "CBM for this channel set to infinity")
                     self._cbmPerChannel[i, j] = np.infty
                 else:
                     self._cbmPerChannel[i, j] = self.eigen[i, j, vb+1]
-        self._bandWidth = np.zeros((self.nspins, self.nbands, 2), dtype=self._dtype)
+        self._bandWidth = np.zeros(
+            (self.nspins, self.nbands, 2), dtype=self._dtype)
         self._bandWidth[:, :, 0] = np.min(self._eigen, axis=1)
         self._bandWidth[:, :, 1] = np.max(self._eigen, axis=1)
         # VB indices
-        self._ivbmPerSpin = np.array(((0,0),)*self.nspins)
+        self._ivbmPerSpin = np.array(((0, 0),)*self.nspins)
         self._vbmPerSpin = np.max(self._vbmPerChannel, axis=1)
         self._ivbmPerSpin[:, 0] = np.argmax(self._vbmPerChannel, axis=1)
         for i in range(self.nspins):
             ik = int(self._ivbmPerSpin[i, 0])
             self._ivbmPerSpin[i, 1] = self._ivbmPerChannel[i, ik]
-        self._ivbm = np.array((0,0,0))
+        self._ivbm = np.array((0, 0, 0))
         self._ivbm[0] = int(np.argmax(self._vbmPerSpin))
         self._ivbm[1:3] = self._ivbmPerSpin[self._ivbm[0], :]
         self._vbm = self._vbmPerSpin[self._ivbm[0]]
         # CB indices
-        self._icbmPerSpin = np.array(((0,0),)*self.nspins)
+        self._icbmPerSpin = np.array(((0, 0),)*self.nspins)
         self._cbmPerSpin = np.min(self._cbmPerChannel, axis=1)
         self._icbmPerSpin[:, 0] = np.argmin(self._cbmPerChannel, axis=1)
         for i in range(self.nspins):
             ik = int(self._icbmPerSpin[i, 0])
             self._icbmPerSpin[i, 1] = self._icbmPerChannel[i, ik]
-        self._icbm = np.array((0,0,0))
+        self._icbm = np.array((0, 0, 0))
         self._icbm[0] = int(np.argmin(self._cbmPerSpin))
         self._icbm[1:3] = self._icbmPerSpin[self._icbm[0], :]
         self._cbm = self._cbmPerSpin[self._icbm[0]]
@@ -287,94 +309,107 @@ class BandStructure(Prec, Verbose):
     @property
     def isMetal(self):
         '''bool.
-        
+
         True if the bandstructure belongs to a metal, False otherwise
         '''
         return self._isMetal
+
     @property
     def ivbmPerChannel(self):
         '''indices of valence band maximum at each spin-kpt channel
-        
+
         int, shape (nspins, nkpts)
         '''
         return self._ivbmPerChannel
+
     @property
     def icbmPerChannel(self):
         '''indices of conduction band minimum at each spin-kpt channel
-        
+
         int, shape (nspins, nkpts)
         '''
         return self._icbmPerChannel
+
     @property
     def ivbmPerSpin(self):
         '''indices of valence band maximum per spin
-        
+
         int, shape (nspins, 2), ikpt, iband
         '''
         return self._ivbmPerSpin
+
     @property
     def icbmPerSpin(self):
         '''indices of conduction band minimum per spin
-        
+
         int, shape (nspins, 2), ikpt, iband
         '''
         return self._icbmPerSpin
+
     @property
     def ivbm(self):
         '''index of valence band maximum
-        
+
         int, shape (3,), ispin, ikpt, iband
         '''
         return self._ivbm
+
     @property
     def icbm(self):
         '''index of conduction band minimum
-        
+
         int, shape (3,), ispin, ikpt, iband
         '''
         return self._icbm
+
     @property
     def vbmPerChannel(self):
         '''valiues of valence band maximum at each spin-kpt channel
-        
+
         float, shape (nspins, nkpts)
         '''
         return self._vbmPerChannel
+
     @property
     def cbmPerChannel(self):
         '''values of conduction band minimum at each spin-kpt channel
-        
+
         float, shape (nspins, nkpts)
         '''
         return self._cbmPerChannel
+
     @property
     def vbmPerSpin(self):
         '''valiues of valence band maximum per spin
-        
+
         float, shape (nspins,)
         '''
         return self._vbmPerSpin
+
     @property
     def cbmPerSpin(self):
         '''values of conduction band minimum per spin
-        
+
         float, shape (nspins,)
         '''
         return self._cbmPerSpin
+
     @property
     def vbm(self):
         '''value of valence band maximum
-        
+
         float
         '''
         return self._vbm
+
     @property
     def cbm(self):
         '''value of conduction band minimum
-        
+
         float
         '''
         return self._cbm
+
     @property
     def bandWidth(self):
         '''the lower and upper bound of a band
@@ -390,15 +425,17 @@ class BandStructure(Prec, Verbose):
         float, shape (nspins, nkpts)
         '''
         return self._cbmPerChannel - self._vbmPerChannel
+
     @property
     def fundGap(self):
         '''Fundamental gap for each spin channel.
-        
+
         float, shape (nspins,)
         If it is metal, it is equivalent to the negative value of bandwidth
         of the unfilled band.
         '''
         return self._cbmPerSpin - self._vbmPerSpin
+
     @property
     def fundTrans(self):
         '''Transition responsible for the fundamental gap
@@ -408,6 +445,7 @@ class BandStructure(Prec, Verbose):
         vb = np.argmax(self._vbmPerChannel, axis=1)
         cb = np.argmin(self._vbmPerChannel, axis=1)
         return tuple(zip(vb, cb))
+
     @property
     def kAvgGap(self):
         '''direct band gap averaged over kpoints
@@ -433,9 +471,10 @@ class BandStructure(Prec, Verbose):
         try:
             natoms = len(atoms)
             nprojs = len(projs)
-            self.print_warn(np.shape(pWave), \
-                (self._nspins, self._nkpts, self._nbands, natoms, nprojs),\
-                level=3)
+            self.print_warn(np.shape(pWave),
+                            (self._nspins, self._nkpts,
+                             self._nbands, natoms, nprojs),
+                            level=3)
             assert np.shape(pWave) == \
                 (self._nspins, self._nkpts, self._nbands, natoms, nprojs)
         except (AssertionError, TypeError):
@@ -443,8 +482,8 @@ class BandStructure(Prec, Verbose):
         return atoms, projs, pWave
 
     # * Projection related functions
-    def effective_gap(self, ivb=None, atomVbm=None, projVbm=None, \
-            icb=None, atomCbm=None, projCbm=None):
+    def effective_gap(self, ivb=None, atomVbm=None, projVbm=None,
+                      icb=None, atomCbm=None, projCbm=None):
         '''Compute the effective band gap between ``ivb`` and ``icb``, 
         the responsible transition of which associates projector `projVbm` on `atomVbm` in VB
         and `projCbm` on atom `atomCbm` in CB.
@@ -473,7 +512,7 @@ class BandStructure(Prec, Verbose):
             cbCoeff = cbCoeffs[:, :, np.min(self.icbm)]
         else:
             cbCoeff = cbCoeffs[:, :, icb]
-        # ! abs is added in case ivb and icb are put in the opposite 
+        # ! abs is added in case ivb and icb are put in the opposite
         inv = np.sum(np.abs(np.reciprocal(self.directGap) * vbCoeff * cbCoeff))
         if np.allclose(inv, 0.0):
             return np.infty
@@ -516,7 +555,7 @@ class BandStructure(Prec, Verbose):
         if self.hasProjection:
             return get_str_indices_by_iden(self._projs, proj)
         return []
-        
+
 
 def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     '''Check if eigenvalues, occupation number and kweights data have the correct shape
@@ -529,10 +568,10 @@ def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     shapeOcc = np.shape(occ)
     shapeKw = np.shape(weight)
     consist = len(shapeEigen) == DIM_EIGEN_OCC and \
-                len(shapeOcc) == DIM_EIGEN_OCC and \
-                        shapeEigen == shapeOcc and \
-                             len(shapeKw) == 1 and \
-                  len(weight) == shapeEigen[1]
+        len(shapeOcc) == DIM_EIGEN_OCC and \
+        shapeEigen == shapeOcc and \
+        len(shapeKw) == 1 and \
+        len(weight) == shapeEigen[1]
     if consist:
         return shapeEigen
     return ()

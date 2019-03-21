@@ -44,15 +44,16 @@ class Vasprunxml(Verbose, Prec):
         if flag is None:
             raise VasprunxmlError("Parsed file seems not a vasprun.xml")
         elif not flag:
-            self.print_warn("the calculation is not finished. Try to read it...")
+            self.print_warn(
+                "the calculation is not finished. Try to read it...")
         tree = etree.parse(pathXml)
         self.__root = tree.getroot()
         self._init_sections()
         self._read_atoms()
-        self._initPoscar = self._read_pos(self._secInitStruct, \
-            comment="vasprun.xml initialpos")
-        self._finalPoscar = self._read_pos(self._secFinalStruct, \
-            comment="vasprun.xml finalpos")
+        self._initPoscar = self._read_pos(self._secInitStruct,
+                                          comment="vasprun.xml initialpos")
+        self._finalPoscar = self._read_pos(self._secFinalStruct,
+                                           comment="vasprun.xml finalpos")
         self._read_incar()
         self._read_params()
         self._read_klist()
@@ -68,8 +69,10 @@ class Vasprunxml(Verbose, Prec):
         # Manual parameters by INCAR
         self._secIncar = self.__root.find('incar')
         # Initial and final structures
-        self._secInitStruct = self.__root.find('.//structure[@name="initialpos"]')
-        self._secFinalStruct = self.__root.find('.//structure[@name="finalpos"]')
+        self._secInitStruct = self.__root.find(
+            './/structure[@name="initialpos"]')
+        self._secFinalStruct = self.__root.find(
+            './/structure[@name="finalpos"]')
         # auto-generated parameters
         self._secPara = self.__root.find('parameters')
         # all ionic iterations
@@ -88,12 +91,13 @@ class Vasprunxml(Verbose, Prec):
         Returns:
             Poscar instance
         '''
-        lattVArray = secStructure.find('crystal').find('.//varray[@name="basis"]')
+        lattVArray = secStructure.find(
+            'crystal').find('.//varray[@name="basis"]')
         latt = [list(map(float, x.text.split())) for x in lattVArray]
-        posVArray =secStructure.find('varray')
+        posVArray = secStructure.find('varray')
         pos = [list(map(float, x.text.split())) for x in posVArray]
         return Poscar(latt, self.atoms, pos, coordSys="D", comment=comment)
-        
+
     def _read_incar(self):
         '''Read manual parameters from incar section
         '''
@@ -106,9 +110,11 @@ class Vasprunxml(Verbose, Prec):
     @property
     def nelect(self):
         return self._nelect
+
     @property
     def nspins(self):
         return self._nspins
+
     @property
     def nbands(self):
         return self._nbands
@@ -127,9 +133,11 @@ class Vasprunxml(Verbose, Prec):
     @property
     def natoms(self):
         return len(self._atoms)
+
     @property
     def atoms(self):
         return self._atoms
+
     @property
     def typeMapping(self):
         '''Map index (int) to atom type (str)
@@ -139,12 +147,15 @@ class Vasprunxml(Verbose, Prec):
         for i, _at in enumerate(_ats):
             _dict.update({i: _at})
         return _dict
+
     @property
     def atomTypes(self):
         return self._atomTypes
+
     @property
     def natomsPerType(self):
         return self._natomsPerType
+
     @property
     def ntypes(self):
         return len(self._atomTypes)
@@ -183,6 +194,7 @@ class Vasprunxml(Verbose, Prec):
     @property
     def eigen(self):
         return self._eigen
+
     @property
     def occ(self):
         return self._occ
@@ -191,7 +203,8 @@ class Vasprunxml(Verbose, Prec):
         # self._eigen = np.zeros([self.nspins,self._nibzkpt,self.nbands])
         self._eigen = []
         self._occ = []
-        eigenSet= self._secCalcLast.find('eigenvalues').find('array').find('set')
+        eigenSet = self._secCalcLast.find(
+            'eigenvalues').find('array').find('set')
         for spin in range(self.nspins):
             eigenSp = []
             occSp = []
@@ -211,29 +224,35 @@ class Vasprunxml(Verbose, Prec):
         if hasattr(self, '_pDos'):
             return self._pDos
         return None
+
     @property
     def dosGrid(self):
         if hasattr(self, '_dosGrid'):
             return self._dosGrid
         return None
+
     @property
     def totalDos(self):
         if hasattr(self, '_totalDos'):
             return self._totalDos
         return None
+
     @property
     def dos(self):
         return self.totalDos
+
     @property
     def nprojs(self):
         if hasattr(self, '_projs'):
             return len(self._projs)
         return 0
+
     @property
     def projs(self):
         if hasattr(self, '_projs'):
             return self._projs
         return None
+
     @property
     def efermi(self):
         return self._efermi
@@ -267,15 +286,17 @@ class Vasprunxml(Verbose, Prec):
                 self._hasProjected = True
             if self._hasProjected:
                 pDosArray = pDosRoot.find('array')
-                # projector strings: root->dos->partial->array->field[1:] 
+                # projector strings: root->dos->partial->array->field[1:]
                 # the first is energy label
-                self._projs = [i.text.strip() for i in pDosArray.findall('field')[1:]]
+                self._projs = [i.text.strip()
+                               for i in pDosArray.findall('field')[1:]]
                 pDosSet = pDosArray.find('set')
                 _pDos = []
                 for ia in range(self.natoms):
                     _pDos.append([])
                     for spin in range(self.nspins):
-                        v = [conv_string(x.text, float)[1:] for x in pDosSet[ia][spin]]
+                        v = [conv_string(x.text, float)[1:]
+                             for x in pDosSet[ia][spin]]
                         _pDos[-1].append(v)
                 # original shape (natoms, nspins, nedos, nprojs)
                 # swap axis for  (nspins, nedos, natoms, nprojs)
@@ -288,9 +309,10 @@ class Vasprunxml(Verbose, Prec):
         return None
 
     def _read_projected(self):
-        projSec =  self._secCalcLast.find('projected')
+        projSec = self._secCalcLast.find('projected')
         # pWave data: root->calculation->projected->array->set
-        pWaveSet = projSec.find('array').find('set') # contains ISPIN dataset(s)
+        pWaveSet = projSec.find('array').find(
+            'set')  # contains ISPIN dataset(s)
 
         # initialize the pWave data
         # self._pWave = np.zeros([self.nspins,self._nibzkpt,self.nbands,self.natoms,len(self._projs)])
@@ -303,16 +325,17 @@ class Vasprunxml(Verbose, Prec):
                 _listSp.append([])
                 _listKp = _listSp[-1]
                 for band in range(self.nbands):
-                    _listKp.append([conv_string(at.text, float) for at in pWaveSet[spin][kp][band]])
+                    _listKp.append([conv_string(at.text, float)
+                                    for at in pWaveSet[spin][kp][band]])
         self._pWave = _pWave
-    
+
     def load_band(self, kTrimBefore=None, kTrimAfter=None):
         '''Return a BandStructure instance.
 
         Note:
             `BandStructure.nelect` attribute may differ from `Vasprunxml.nelect`, 
             if the smearing is large when compared with the band gap.
-        
+
         Args:
             kTrimBefore (int): the kpoints before `kTrimBefore` will be trimed when parsing to BandStructure
             kTrimAfter (int): the kpoints after `kTrimAfter` will be trimed when parsing to BandStructure
@@ -325,51 +348,59 @@ class Vasprunxml(Verbose, Prec):
             edk = self.nibzkpt
         projected = None
         if self.pWave != None:
-            projected = {\
-                "atoms": self._atoms, \
-                "projs": self.projs, \
-                "pWave": np.array(self.pWave, dtype=self._dtype)[:,stk:edk,:,:,:]}
-        bs = BandStructure(\
-            np.array(self._eigen, dtype=self._dtype)[:, stk:edk, :], \
-            np.array(self._occ, dtype=self._dtype)[:, stk:edk, :], \
-            np.array(self._weight, dtype=self._dtype)[stk:edk], \
-            efermi=self._efermi, projected=projected, \
-            kvec=np.array(self.kvec, dtype=self._dtype)[stk:edk, :], \
-            )
+            projected = {
+                "atoms": self._atoms,
+                "projs": self.projs,
+                "pWave": np.array(self.pWave, dtype=self._dtype)[:, stk:edk, :, :, :]}
+        bs = BandStructure(
+            np.array(self._eigen, dtype=self._dtype)[:, stk:edk, :],
+            np.array(self._occ, dtype=self._dtype)[:, stk:edk, :],
+            np.array(self._weight, dtype=self._dtype)[stk:edk],
+            efermi=self._efermi, projected=projected,
+            kvec=np.array(self.kvec, dtype=self._dtype)[stk:edk, :],
+        )
         return bs
 
     @property
     def nibzkpt(self):
         return self._nibzkpt
+
     @property
     def nkpt(self):
         return self._nkpt
+
     @property
     def kvec(self):
         '''list. the vectors of all kpoints
-        
+
         Reciprocal basis of final lattice is used.
         '''
         return np.dot(self._ibzkpt, np.transpose(self._finalPoscar.b))
+
     @property
     def kpoints(self):
         return self._ibzkpt
+
     @property
     def weight(self):
         return self._weight
+
     @property
     def kptsWeight(self):
-        return [kpt + [w,] for kpt, w in zip(self._ibzkpt, self._weight)]
+        return [kpt + [w, ] for kpt, w in zip(self._ibzkpt, self._weight)]
+
     @property
     def kdense(self):
         if hasattr(self, "_kdense"):
             return self._kdense
         return None
+
     @property
     def kmode(self):
         if hasattr(self, "_kmode"):
             return self._kmode
         return None
+
     @property
     def kdiv(self):
         if hasattr(self, "_kdiv"):
@@ -377,8 +408,8 @@ class Vasprunxml(Verbose, Prec):
         return None
 
     def _read_klist(self):
-#       klist_index is 1 if auto generator is used
-#       or 0 if mannually included
+        #       klist_index is 1 if auto generator is used
+        #       or 0 if mannually included
         self._nkpt = 0
         gen = self._secKpoints.find('generation')
         if gen is None:
@@ -402,8 +433,10 @@ class Vasprunxml(Verbose, Prec):
         self._nibzkpt = len(self._secKpoints[ki])
         if self._nkpt == 0:
             self._nkpt = deepcopy(self._nibzkpt)
-        self._ibzkpt = [conv_string(kp.text, float) for kp in self._secKpoints[ki]]
-        self._weight = [int(np.rint(float(kp.text) * self._nkpt)) for kp in self._secKpoints[ki+1]]
+        self._ibzkpt = [conv_string(kp.text, float)
+                        for kp in self._secKpoints[ki]]
+        self._weight = [int(np.rint(float(kp.text) * self._nkpt))
+                        for kp in self._secKpoints[ki+1]]
 
     # def pwave_index(self,lcomponent):
     #     if self.projs == ():
@@ -458,10 +491,10 @@ def _check_vasprunxml_status(pathXml):
         first, last = get_first_last_line(pathXml)
     except FileNotFoundError:
         return None
-    if not re.match(r"<\?xml version=\"[\d.]+\" encoding=\"[\w-]+\"\?>", \
-                     first.strip()):
+    if not re.match(r"<\?xml version=\"[\d.]+\" encoding=\"[\w-]+\"\?>",
+                    first.strip()):
         return None
     if last.strip() == "</modeling>":
         return True
     else:
-        return False    
+        return False
