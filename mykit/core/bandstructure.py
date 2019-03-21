@@ -218,25 +218,17 @@ class BandStructure(Prec, Verbose):
         isOcc = self._occ > self._thresOcc
         
         self._ivbmPerChannel = np.sum(isOcc, axis=2) - 1
-        self._ivbmPerSpin = np.max(self._ivbmPerChannel, axis=1)
-        self._ivbm = np.max(self._ivbmPerSpin)
         # when any two indices of ivbm differ, the system is metal
         if np.max(self._ivbmPerChannel) == np.min(self._ivbmPerChannel):
             self._isMetal = False
         else:
             self._isMetal = True
-
-        # determine CB indices
         self._icbmPerChannel = self._ivbmPerChannel + 1
         # avoid IndexError when ivbm is the last band by imposing icbm = ivbm in this case
         ivbIsLast = self._ivbmPerChannel == self.nbands - 1
         if np.any(ivbIsLast):
-            self.print_warn("nbands is too small to get CB")
+            self.print_warn("nbands {} is too small to get CB".format(self.nbands))
             self._icbmPerChannel[ivbIsLast] = self.nbands - 1
-        # self._icbmPerSpin = self._ivbmPerSpin + 1
-        self._icbmPerSpin = np.min(self._icbmPerChannel, axis=1)
-        # self._icbm = self._ivbm + 1
-        self._icbm = np.min(self._icbmPerSpin)
 
         self._vbmPerChannel = np.zeros((self.nspins, self.nkpts), dtype=self._dtype)
         self._cbmPerChannel = np.zeros((self.nspins, self.nkpts), dtype=self._dtype)
@@ -252,16 +244,31 @@ class BandStructure(Prec, Verbose):
                     self._cbmPerChannel[i, j] = np.infty
                 else:
                     self._cbmPerChannel[i, j] = self.eigen[i, j, vb+1]
-
-        # self._vbmPerSpin = np.max(self._vbmPerChannel, axis=1)
-        # self._cbmPerSpin = np.min(self._cbmPerChannel, axis=1)
-        self._vbmPerSpin = np.zeros(self.nspins, dtype=self._dtype)
-        self._cbmPerSpin = np.zeros(self.nspins, dtype=self._dtype)
+        self._bandWidth = np.zeros((self.nspins, self.nbands, 2), dtype=self._dtype)
+        self._bandWidth[:, :, 0] = np.min(self._eigen, axis=1)
+        self._bandWidth[:, :, 1] = np.max(self._eigen, axis=1)
+        # VB indices
+        self._ivbmPerSpin = np.array(((0,0),)*self.nspins)
+        self._vbmPerSpin = np.max(self._vbmPerChannel, axis=1)
+        self._ivbmPerSpin[:, 0] = np.argmax(self._vbmPerChannel, axis=1)
         for i in range(self.nspins):
-            self._vbmPerSpin[i] = np.max(self._eigen[i, :, self._ivbmPerSpin[i]])
-            self._cbmPerSpin[i] = np.min(self._eigen[i, :, self._icbmPerSpin[i]])
-        self._vbm = np.max(self._vbmPerSpin)
-        self._cbm = np.min(self._cbmPerSpin)
+            ik = int(self._ivbmPerSpin[i, 0])
+            self._ivbmPerSpin[i, 1] = self._ivbmPerChannel[i, ik]
+        self._ivbm = np.array((0,0,0))
+        self._ivbm[0] = int(np.argmax(self._vbmPerSpin))
+        self._ivbm[1:3] = self._ivbmPerSpin[self._ivbm[0], :]
+        self._vbm = self._vbmPerSpin[self._ivbm[0]]
+        # CB indices
+        self._icbmPerSpin = np.array(((0,0),)*self.nspins)
+        self._cbmPerSpin = np.min(self._cbmPerChannel, axis=1)
+        self._icbmPerSpin[:, 0] = np.argmin(self._cbmPerChannel, axis=1)
+        for i in range(self.nspins):
+            ik = int(self._icbmPerSpin[i, 0])
+            self._icbmPerSpin[i, 1] = self._icbmPerChannel[i, ik]
+        self._icbm = np.array((0,0,0))
+        self._icbm[0] = int(np.argmin(self._cbmPerSpin))
+        self._icbm[1:3] = self._icbmPerSpin[self._icbm[0], :]
+        self._cbm = self._cbmPerSpin[self._icbm[0]]
 
     @property
     def isMetal(self):
@@ -288,28 +295,28 @@ class BandStructure(Prec, Verbose):
     def ivbmPerSpin(self):
         '''indices of valence band maximum per spin
         
-        int, shape (nspins,)
+        int, shape (nspins, 2), ikpt, iband
         '''
         return self._ivbmPerSpin
     @property
     def icbmPerSpin(self):
         '''indices of conduction band minimum per spin
         
-        int, shape (nspins,)
+        int, shape (nspins, 2), ikpt, iband
         '''
         return self._icbmPerSpin
     @property
     def ivbm(self):
         '''index of valence band maximum
         
-        int
+        int, shape (3,), ispin, ikpt, iband
         '''
         return self._ivbm
     @property
     def icbm(self):
         '''index of conduction band minimum
         
-        int
+        int, shape (3,), ispin, ikpt, iband
         '''
         return self._icbm
     @property
@@ -354,6 +361,14 @@ class BandStructure(Prec, Verbose):
         float
         '''
         return self._cbm
+    @property
+    def bandWidth(self):
+        '''the lower and upper bound of a band
+
+        float, shape (nspins, nbands, 2)
+        '''
+        return self._bandWidth
+
     @property
     def directGap(self):
         '''Direct gap between VBM and CBM of each spin-kpt channel
