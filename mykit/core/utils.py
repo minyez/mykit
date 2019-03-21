@@ -247,7 +247,7 @@ def find_vol_dirs(path='.', vdPat=None):
     return _dirs
 
 
-def conv_string(string, conv2, *id, sep=None, strips=None):
+def conv_string(string, conv2, *indices, sep=None, strips=None):
     '''
     Split the string and convert substrings to a specified type.
 
@@ -273,12 +273,12 @@ def conv_string(string, conv2, *id, sep=None, strips=None):
     else:
         str_list = [x.strip(' '+strips) for x in str_list]
 
-    if len(id) == 0:
+    if len(indices) == 0:
         return list(map(conv2, str_list))
-    elif len(id) == 1:
-        return conv2(str_list[id[0]])
+    elif len(indices) == 1:
+        return conv2(str_list[indices[0]])
     else:
-        conv_strs = [str_list[i] for i in id]
+        conv_strs = [str_list[i] for i in indices]
         return list(map(conv2, conv_strs))
 
 
@@ -347,29 +347,29 @@ def get_str_indices(container, string):
     return ind
 
 
-def get_str_indices_by_iden(container, id):
+def get_str_indices_by_iden(container, iden):
     '''Return the indices of identified strings in a list or tuple``container``.
 
-    The strings are identified by ``id``, either a str, int, or a Iterable of these types.
-    If ``id`` is int or corresponding Iterable, the value greater or equal to the
+    The strings are identified by ``iden``, either a str, int, or a Iterable of these types.
+    If ``iden`` is int or corresponding Iterable, the value greater or equal to the
     length of ``container`` will be ignored.
 
     Args:
         container (list or tuple): container of strings
-        id (int, str, Iterable): the identifier for string to locate
+        iden (int, str, Iterable): the identifier for string to locate
     
     Returns:
         list, unique indices of identified strings
     '''
     ret = []
     l = len(container)
-    if isinstance(id, int):
-        if id < l:
-            ret.append(id)
-    elif isinstance(id, str):
-        ret.extend(get_str_indices(container, id))
-    elif isinstance(id, Iterable):
-        for i in id:
+    if isinstance(iden, int):
+        if iden < l:
+            ret.append(iden)
+    elif isinstance(iden, str):
+        ret.extend(get_str_indices(container, iden))
+    elif isinstance(iden, Iterable):
+        for i in iden:
             if isinstance(i, int):
                 if i < l:
                     ret.append(i)

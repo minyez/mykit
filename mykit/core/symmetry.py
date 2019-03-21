@@ -274,7 +274,7 @@ class SpaceGroup:
         raise SymmetryError("Bad space group table. Contact developer.")
     
     @staticmethod
-    def k_trans_mat_from_prim_to_conv(id):
+    def k_trans_mat_from_prim_to_conv(iden):
         '''Return transformation matrix to convert k-point coordinate in 
         reciprocal lattice vectors of primitive cell to that in vectors of conventional cell
 
@@ -290,12 +290,12 @@ class SpaceGroup:
             For space group 38,39,40,41, tranformation matrix to conventional basis C2mm is used
 
         Args:
-            id (int): the id of space group of the cell, 1~230
+            iden (int): the id of space group of the cell, 1~230
 
         Returns:
             array: (3,3)
         '''
-        _check_valid_spg_id(id)
+        _check_valid_spg_id(iden)
         # primitive and conventional cells coincide.
         identity = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
 
@@ -325,7 +325,7 @@ class SpaceGroup:
                               [ 1.0, 1.0, 1.0]]), # u-v, v-w, u+v+w
         }
         for k, v in _dict.items():
-            if id in k:
+            if iden in k:
                 return v
         return identity
 
@@ -345,14 +345,14 @@ class SpaceGroup:
         return _id
     
     @classmethod
-    def get_spg_symbol(cls, id):
+    def get_spg_symbol(cls, iden):
         '''Get the symbol of space group with index ``id`` in ITA
 
         Args:
-            id (int): the id of space group, 1~230
+            iden (int): the id of space group, 1~230
         '''
-        _check_valid_spg_id(id)
-        return cls.symbols[id-1]
+        _check_valid_spg_id(iden)
+        return cls.symbols[iden-1]
 
 
 class SpecialKpoints(Prec):
@@ -369,15 +369,15 @@ class SpecialKpoints(Prec):
         Note that this will overwrite the default definition.
     '''
 
-    def __init__(self, id, alen, isPrimitive, custom_symbols=None):
-        _check_valid_spg_id(id)
+    def __init__(self, iden, alen, isPrimitive, custom_symbols=None):
+        _check_valid_spg_id(iden)
         try:
             assert np.shape(alen) == (3,)
         except AssertionError:
             raise SymmetryError("Invalid lattice constant shape: {}".format(alen))
     
-        self.spgId = id
-        self._spDict = _special_kpoints[id]
+        self.spgId = iden
+        self._spDict = _special_kpoints[iden]
         try:
             iset = self._spDict["cond"](*alen)
         except ValueError as _err:
@@ -586,20 +586,20 @@ def _spglib_check_cell_and_coordSys(cellIn):
         raise SymmetryError("The coordinate system should be direct. Cartisian found.")
 
 
-def _check_valid_spg_id(id):
-    '''Raise if id is not a valid spacegroup id, i.e. 1~230
+def _check_valid_spg_id(iden):
+    '''Raise if iden is not a valid spacegroup id, i.e. 1~230
 
     Args:
-        id (int): the space group id to check
+        iden (int): the space group id to check
     '''
-    if isinstance(id, str):
+    if isinstance(iden, str):
         raise SymmetryError("string received. id should be int.")
-    if not isinstance(id, int):
+    if not isinstance(iden, int):
         raise SymmetryError("id should be int.")
     try:
-        assert id in range(1, 231)
+        assert iden in range(1, 231)
     except AssertionError:
-        raise SymmetryError("Invalid space group id (1~230): {}".format(id))
+        raise SymmetryError("Invalid space group id (1~230): {}".format(iden))
 
 
 def _check_valid_custom_ksym_dict(custom_symbols):

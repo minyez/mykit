@@ -8,13 +8,12 @@ The ``cell`` class and its subclasses accept the following kwargs when being ins
       either "D" (Direct, default) or "C" (Cartesian)
     - allRelax (bool) : default selective dynamics option for atoms.
       Set True (default) to allow all DOFs to relax
-    - selectDyn (dict) : a dictionary with key-value pair as ``int: [bool, bool, bool]``, which controls
-      the selective dynamic option for atom with the particular index (starting from 0). Default is an
-      empty ``dict``
+    - selectDyn (dict) : a dictionary with key-value pair as ``int: [bool, bool, bool]``, 
+      which controls the selective dynamic option for atom with the particular index 
+      (starting from 0). Default is an empty ``dict``
     - comment (str): message about the cell
 '''
 from collections import OrderedDict
-from collections.abc import Iterable
 # import spglib
 from numbers import Real
 
@@ -38,7 +37,8 @@ class Cell(Prec, Verbose):
 
     Args:
         latt (array-like) : The lattice vectors
-        atoms (list of str) : The list of strings of type for each atom corresponding to the member in pos
+        atoms (list of str) : The list of strings of type for each atom 
+        corresponding to the member in pos
         pos (array-like) : The internal coordinates of atoms
 
     Note:
@@ -81,6 +81,7 @@ class Cell(Prec, Verbose):
             return self.__pos[index, :]
         if isinstance(index, str):
             return self.get_sym_index(index)
+        raise self._error("atom index or symbol {} not found".format(index))
 
     def __str__(self):
         return "{}\nLattice:\n{}\nAtoms: {}\nPositions:\n{}\nUnit: {}\nCoordinates in {}".format(\
@@ -104,7 +105,8 @@ class Cell(Prec, Verbose):
     def get_cell(self):
         '''Purge out the cell, atoms and pos.
 
-        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``Cell`` and its subclasses.
+        ``cell``, ``atoms`` and ``pos`` are the minimal for constructing ``Cell``
+        and its subclasses.
         They can also be used to build sysmetry operations with spglib utilities.
         '''
         return self.__latt, self.__atoms, self.__pos
@@ -304,7 +306,7 @@ class Cell(Prec, Verbose):
             newPos = np.vstack([self.__pos, coord])
         except ValueError:
             raise self._error("Invalid coordinate: {}".format(coord))
-        if sdFlag != None:
+        if sdFlag is not None:
             self.__set_sdFlags({self.natoms: sdFlag})
         self.__pos = newPos
         self.__atoms.append(atom)
@@ -404,14 +406,17 @@ class Cell(Prec, Verbose):
 
     @property
     def atoms(self):
+        '''list.'''
         return self.__atoms
 
     @property
     def pos(self):
+        '''array.'''
         return self.__pos
 
     @property
     def unit(self):
+        '''str. "D" or "C".'''
         return self.__unit
     @unit.setter
     def unit(self, u):
@@ -425,7 +430,8 @@ class Cell(Prec, Verbose):
                 self.__latt = self.__latt * _conv
                 self.__unit = _u
             else:
-                raise self._error("the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr).")
+                info = "the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr)."
+                raise self._error(info)
 
     @property
     def coordSys(self):
@@ -440,7 +446,8 @@ class Cell(Prec, Verbose):
                 self.__pos = np.matmul(self.__pos, _conv)
                 self.__coordSys = _s
             else:
-                raise self._error("Only support \"D\" direct or fractional and \"C\" Cartisian coordinate.")
+                info = "Only support \"D\" direct or fractional and \"C\" Cartisian coordinate."
+                raise self._error(info)
 
     @property
     def atomTypes(self):
@@ -662,7 +669,7 @@ class Cell(Prec, Verbose):
             a,b,c (float) : the lattice constants (a,b,c)
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Simple orthorhombic lattice {}".format(atom)})
         return cls._bravais_o("P", atom, a, b, c, **kwargs)
 
@@ -675,7 +682,7 @@ class Cell(Prec, Verbose):
             a,b,c (float) : the lattice constants (a,b,c)
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Body-centered orthorhombic lattice {}".format(atom)})
         return cls._bravais_o("I", atom, a, b, c, **kwargs)
 
@@ -688,7 +695,7 @@ class Cell(Prec, Verbose):
             a,b,c (float) : the lattice constants (a,b,c)
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Face-centered orthorhombic lattice {}".format(atom)})
         return cls._bravais_o("F", atom, a, b, c, **kwargs)
 
@@ -706,7 +713,7 @@ class Cell(Prec, Verbose):
         _atoms =[atom]
         _pos = [[0.0,0.0,0.0]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Simple cubic lattice {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -730,7 +737,7 @@ class Cell(Prec, Verbose):
             _atoms =[atom,]*2
             _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "BCC {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -754,7 +761,7 @@ class Cell(Prec, Verbose):
             _atoms =[atom,]*4
             _pos = [[0.0,0.0,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "FCC {}".format(atom)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -775,7 +782,7 @@ class Cell(Prec, Verbose):
         _atoms =[atom1,atom2,] + [atom3,]*3
         _pos = [[0.0,0.0,0.0],[0.5,0.5,0.5],[0.0,0.5,0.5],[0.5,0.0,0.5],[0.5,0.5,0.0]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Perovskite {}{}{}3".format(atom1,atom2,atom3)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -810,7 +817,7 @@ class Cell(Prec, Verbose):
                     [0.75, 0.25, 0.75],
                     [0.75, 0.75, 0.25]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Zincblende {}{}".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -846,7 +853,7 @@ class Cell(Prec, Verbose):
                 [0.0, 0.0, 2.0/3],
                 [2.0/3, 1.0/3, 1.0/6]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Wurtzite {}{}".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -876,12 +883,13 @@ class Cell(Prec, Verbose):
                 [0.5-u,0.5+u,0.5],
                 [0.5+u,0.5-u,0.5]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Rutile {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
-    def anatase(cls, atom1="Ti", atom2="O", a=3.7845, c=9.5143, u=0.2199, primitive=False, **kwargs):
+    def anatase(cls, atom1="Ti", atom2="O", a=3.7845, c=9.5143, u=0.2199, \
+            primitive=False, **kwargs):
         '''Generate a anatase lattice (space group 141).
 
         Note:
@@ -925,7 +933,7 @@ class Cell(Prec, Verbose):
                     [0.5, 0.5, 0.5-u],
                     [0.5, 0.5, 0.5+u]]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Anatase {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
     
@@ -957,7 +965,7 @@ class Cell(Prec, Verbose):
                 [0.5-u, 0.5-u, 0.5-u],
                ]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Pyrite {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
@@ -975,8 +983,9 @@ class Cell(Prec, Verbose):
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
         _a = abs(a)
+        _b = abs(b)
         _c = abs(c)
-        _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _c]]
+        _latt = [[_a, 0.0, 0.0], [0.0, _b, 0.0], [0.0, 0.0, _c]]
         _atoms = [atom1,]*2 + [atom2,]*4
         _pos = [[0.0, 0.0, 0.0],
                 [0.5, 0.5, 0.5],
@@ -985,13 +994,14 @@ class Cell(Prec, Verbose):
                 [   -v,    -w,    0.0],
                 [    v,     w,    0.0],]
         kwargs.pop("coordSys", None)
-        if not "comment" in kwargs:
+        if "comment" not in kwargs:
             kwargs.update({"comment": "Marcasite {}{}2".format(atom1, atom2)})
         return cls(_latt, _atoms, _pos, **kwargs)
 
 
 def atoms_from_sym_nat(syms, nats):
-    '''Generate ``atom`` list for ``Cell`` initilization from list of atomic symbols and number of atoms
+    '''Generate ``atom`` list for ``Cell`` initilization from list of atomic symbols 
+    and number of atoms
 
     Args :
         syms (list of str) : atomic symbols
@@ -1085,7 +1095,8 @@ def axis_list(axis):
 
 
 def periodic_duplicates_in_cell(directCoord):
-    '''Return the coordinates and numbers of the duplicates of an atom in a cell due to lattice translation symmetry
+    '''Return the coordinates and numbers of the duplicates of an atom
+    in a cell due to lattice translation symmetry
 
     Args:
         directCoord (array): the direct coordinate of an atom in the cell

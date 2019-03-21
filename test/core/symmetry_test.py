@@ -84,8 +84,8 @@ class test_space_group(ut.TestCase):
     ]
 
     def test_get_spg_symbol(self):
-        for id, symbol in self.testPair:
-            self.assertEqual(SpaceGroup.get_spg_symbol(id), symbol)
+        for i, symbol in self.testPair:
+            self.assertEqual(SpaceGroup.get_spg_symbol(i), symbol)
         # test raises
         self.assertRaisesRegex(SymmetryError, r"string received. id should be int", \
             SpaceGroup.get_spg_symbol, 'P1')
@@ -95,8 +95,8 @@ class test_space_group(ut.TestCase):
             SpaceGroup.get_spg_symbol, -1)
 
     def test_get_spg_id(self):
-        for id, symbol in self.testPair:
-            self.assertEqual(SpaceGroup.get_spg_id(symbol), id)
+        for i, symbol in self.testPair:
+            self.assertEqual(SpaceGroup.get_spg_id(symbol), i)
         self.assertRaisesRegex(SymmetryError, \
             r"int received. symbol should be string", \
             SpaceGroup.get_spg_id, 1)
