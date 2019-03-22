@@ -2,15 +2,6 @@
 #
 # This script provide basic analysis tools for vasp output
 #
-from __future__ import print_function
-
-import copy
-import os
-import shutil
-import subprocess as sp
-import sys
-
-import numpy as np
 
 # from scipy.optimize import curve_fit
 

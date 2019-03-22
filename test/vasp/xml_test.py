@@ -93,15 +93,17 @@ class test_vasprunxml_read(ut.TestCase):
         dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
             'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
+            msg = "Wrong when processing {}".format(fn)
             vxml = Vasprunxml(fn)
-            self.assertFalse(vxml.pDos is None)
+            self.assertFalse(vxml.pDos is None, msg=msg)
             bs = vxml.load_band()
-            self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4)
-            self.assertTrue(bs.hasProjection)
-            # bs.pWave
-            # bs.atoms
-            # bs.projs
-                
+            self.assertAlmostEqual(bs.nelect, vxml.nelect, places=4, msg=msg)
+            self.assertTrue(bs.hasProjection, msg=msg)
+            # Dos related
+            dos = vxml.load_dos()
+            self.assertEqual(dos.nspins, bs.nspins, msg=msg)
+            self.assertTrue(dos.hasProjection, msg=msg)
+
 
 if __name__ == '__main__':
     ut.main()

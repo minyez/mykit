@@ -9,6 +9,7 @@ import numpy as np
 
 from mykit.core.bandstructure import BandStructure
 from mykit.core.cell import sym_nat_from_atoms
+from mykit.core.dos import Dos
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.utils import conv_string, get_first_last_line, get_str_indices
@@ -280,6 +281,9 @@ class Vasprunxml(Verbose, Prec):
                     self._NEDOS = len(v[0])
                 self._totalDos.append(v[1])
                 self._totalDosInteg.append(v[2])
+            # transpose to get shape (nedos, nspins)
+            self._totalDos = np.transpose(self._totalDos)
+            self._totalDosInteg = np.transpose(self._totalDosInteg)
             # attemp to read projected DOS
             pDosRoot = sd.find('partial')
             if pDosRoot != None:
@@ -299,8 +303,8 @@ class Vasprunxml(Verbose, Prec):
                              for x in pDosSet[ia][spin]]
                         _pDos[-1].append(v)
                 # original shape (natoms, nspins, nedos, nprojs)
-                # swap axis for  (nspins, nedos, natoms, nprojs)
-                self._pDos = np.swapaxes(np.swapaxes(_pDos, 0, 1), 1, 2)
+                # swap axis for  (nedos, nspins, natoms, nprojs)
+                self._pDos = np.swapaxes(_pDos, 0, 2)
 
     @property
     def pWave(self):
@@ -349,18 +353,34 @@ class Vasprunxml(Verbose, Prec):
         projected = None
         if self.pWave != None:
             projected = {
-                "atoms": self._atoms,
+                "atoms": self.atoms,
                 "projs": self.projs,
                 "pWave": np.array(self.pWave, dtype=self._dtype)[:, stk:edk, :, :, :]}
         bs = BandStructure(
             np.array(self._eigen, dtype=self._dtype)[:, stk:edk, :],
             np.array(self._occ, dtype=self._dtype)[:, stk:edk, :],
             np.array(self._weight, dtype=self._dtype)[stk:edk],
+            unit='ev',
             efermi=self._efermi, projected=projected,
             kvec=np.array(self.kvec, dtype=self._dtype)[stk:edk, :],
         )
         return bs
 
+    def load_dos(self):
+        '''Return a Dos instance.
+        '''
+        if self.pDos is None:
+            projected = None
+        else:
+            projected = {
+                "atoms": self.atoms,
+                "projs": self.projs,
+                "pDos": np.array(self.pDos, dtype=self._dtype)
+            }
+        dos = Dos(self._dosGrid, self._totalDos, self._efermi, \
+            unit='ev', projected=projected)
+        return dos
+        
     @property
     def nibzkpt(self):
         return self._nibzkpt

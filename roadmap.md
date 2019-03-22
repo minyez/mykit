@@ -12,6 +12,15 @@ They lie the basis for input conversion
   - [x] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
   - [x] abstract base class to define the basic behavior of controller
 
+### `unit` module
+
+Classes that control the allowed units and their conversions inbetween
+
+- `EnergyUnit`: 
+  - [x] default energy unit and list of valid energy unit
+  - [x] get conversion coefficient
+- `LengthUnit`
+
 ### `cell` module
 
 - `Cell` base class: creation of periodic systems
@@ -36,7 +45,6 @@ and help map name and value of parameter tags between different simulation progr
 - [x] `ion_control`: ion relaxation
 - [ ] `scf_control`: electronic self-consistent loop
 - [x] `kmesh_control`: sampling in the reciprocal space
-  - [x] decide the names of necessary tags
 - [ ] `lapw_control`
 - [ ] `mbpt_control`: many-body perturbation calculation control
 
@@ -61,7 +69,7 @@ and help map name and value of parameter tags between different simulation progr
   - [x] converting primitive to conventional coordinate
     - [x] transformation matrix from primitive to conventional
   - [x] converting kpath string to symbols and coordinates of corresponding points on path line segments
-  - [ ] Predefined kpaths for space groups :wrench:
+  - [ ] Predefined kpaths for space groups
   - [x] Factory methods for kpaths of special kpoints
 
 ### `bandstructure` module
@@ -79,16 +87,18 @@ and help map name and value of parameter tags between different simulation progr
   - [x] compute direct band gap, fundamental gap and k-averaged gap
   - [x] extract partial wave coefficients of a or one of projectors on atoms
   - [x] compute effective gap with projections
-  - [ ] if the kvec is parsed, automatically determine if it represents a kpath
-  - [ ] return a `Dos` object
+  - [x] if the kvec is parsed, automatically determine if it represents a kpath, `isKpath` attribute
+  - [ ] eigenvalue unit argument
+  - [ ] export to data file
+  - [ ] return a `Dos` object by specifying a smearing
 
 ### `dos` module
 
 - `Dos`: analyze density of states (DOS)
-  - [ ] reading in energy grids, DOS
+  - [x] reading in energy grids, DOS
   - optional keyword argument
-    - [ ] partial (projected) DOS
-    - [ ] fermi level
+    - [x] partial (projected) DOS
+    - [x] fermi level
 
 ## `vasp` package: VASP related
 
@@ -112,7 +122,8 @@ and help map name and value of parameter tags between different simulation progr
     - [x] analyze kpoints
     - [x] reading eigenvalues and occupation numbers in last calculation section
     - [x] reading partial DOS and wave function projection
-    - [ ] return a `BandStructure` object from the collected information
+    - [x] return a `BandStructure` object from the collected information
+    - [x] return a `Dos` object from the collected information
     - [x] generate `Incar` object from incar section
     - [x] generate `Poscar` objects from initpos and finalpos section
 

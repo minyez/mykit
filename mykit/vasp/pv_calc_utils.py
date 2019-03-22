@@ -13,7 +13,6 @@
 #                 Special thanks to Prof. Hong Jiang and Dr. Feng Wu
 # ====================================================
 
-from __future__ import print_function
 
 import copy
 import os
@@ -24,8 +23,6 @@ import string
 import subprocess as sp
 import sys
 from math import sqrt
-
-from pc_utils import common_run_calc_cmd
 
 #from io_utils import *
 
@@ -168,10 +165,10 @@ from pc_utils import common_run_calc_cmd
 
 # ====================================================
 
-def vasp_write_wannier90():
-    '''
-    '''
-    pass
+# def vasp_write_wannier90():
+#     '''
+#     '''
+#     pass
 
 # ====================================================
 
@@ -331,53 +328,53 @@ def vasp_write_incar_HF_coarse(incar,type_hf="HSE06",ediff="1E-6",npar=1,mode_sm
 
 # ====================================================
 
-def vasp_vaspcmd_zmy(np=1,mpitype="mpirun",vasp_path="vasp"):
-    """
-    Setting vasp command on different platforms
-    mpitype indicates the type of MPI executives, whether use mpirun or yhrun
+# def vasp_vaspcmd_zmy(np=1,mpitype="mpirun",vasp_path="vasp"):
+#     """
+#     Setting vasp command on different platforms
+#     mpitype indicates the type of MPI executives, whether use mpirun or yhrun
 
-    TODO:
-        deprecate mpitype argument
-    """
-# define execution type of vasp
-    if vasp_path == "vasp":
-        try:
-            which_vasp = str(sp.check_output("which vasp",stderr=sp.STDOUT,shell=True)).split('\n')[0]
-            vasp_path = os.path.abspath(which_vasp)
-        except sp.CalledProcessError:
-            try:
-                which_vasp = str(sp.check_output("which vasp_std",stderr=sp.STDOUT,shell=True)).split('\n')[0]
-                vasp_path = os.path.abspath(which_vasp)
-            except sp.CalledProcessError:
-                print("Path for vasp not found. Need manual setting")
-                vasp_path = "vasp"
-                raise
+#     TODO:
+#         deprecate mpitype argument
+#     """
+# # define execution type of vasp
+#     if vasp_path == "vasp":
+#         try:
+#             which_vasp = str(sp.check_output("which vasp",stderr=sp.STDOUT,shell=True)).split('\n')[0]
+#             vasp_path = os.path.abspath(which_vasp)
+#         except sp.CalledProcessError:
+#             try:
+#                 which_vasp = str(sp.check_output("which vasp_std",stderr=sp.STDOUT,shell=True)).split('\n')[0]
+#                 vasp_path = os.path.abspath(which_vasp)
+#             except sp.CalledProcessError:
+#                 print("Path for vasp not found. Need manual setting")
+#                 vasp_path = "vasp"
+#                 raise
 
-    _mpitype = mpitype
+#     _mpitype = mpitype
 
-    # detect the platform and select the MPI interface
-    _hostname = sp.check_output(['hostname']).lower()
-    if _hostname.startswith('th'):
-        _mpitype = "yhrun"
-    else:
-        _mpitype = "mpirun"
+#     # detect the platform and select the MPI interface
+#     _hostname = sp.check_output(['hostname']).lower()
+#     if _hostname.startswith('th'):
+#         _mpitype = "yhrun"
+#     else:
+#         _mpitype = "mpirun"
 
-    if np == 1:
-        vasp_cmd = vasp_path
-    else:
-        if _mpitype == "mpirun":
-            vasp_cmd = "mpirun -np %d %s" % (np, vasp_path)
-        elif _mpitype == "yhrun":
-            vasp_cmd = "yhrun -n %d %s" % (np, vasp_path)
+#     if np == 1:
+#         vasp_cmd = vasp_path
+#     else:
+#         if _mpitype == "mpirun":
+#             vasp_cmd = "mpirun -np %d %s" % (np, vasp_path)
+#         elif _mpitype == "yhrun":
+#             vasp_cmd = "yhrun -n %d %s" % (np, vasp_path)
 
-    return vasp_path, vasp_cmd
+#     return vasp_path, vasp_cmd
 
 # ====================================================
 
-def vasp_vasprun_zmy(vasp_cmd,fout=None,ferr=None):   # will be deprecated
-    """
-    Run vasp. mpi_cmd and vasp_path are both strings
-    """
+# def vasp_vasprun_zmy(vasp_cmd,fout=None,ferr=None):   # will be deprecated
+#     """
+#     Run vasp. mpi_cmd and vasp_path are both strings
+#     """
 
-    common_run_calc_cmd(vasp_cmd, fout, ferr)
+#     common_run_calc_cmd(vasp_cmd, fout, ferr)
 # ====================================================

@@ -10,6 +10,7 @@ import numpy as np
 from mykit.core.kmesh import check_kvecs_form_kpath
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
+from mykit.core.unit import EnergyUnit
 from mykit.core.utils import get_str_indices_by_iden
 
 # eigen, occ (array): shape (nspins, nkpt, nbands)
@@ -17,8 +18,8 @@ DIM_EIGEN_OCC = 3
 '''int. Required dimension of eigenvalues and occupation numbers
 '''
 
-KEYS_PROJ = ("atoms", "projs", "pWave")
-'''tuple. Required keys for projection input
+KEYS_BAND_PROJ = ("atoms", "projs", "pWave")
+'''tuple. Required keys for wave projection input
 '''
 
 # DIM_PWAVE = 5
@@ -29,7 +30,7 @@ class BandStructureError(Exception):
     pass
 
 
-class BandStructure(Prec, Verbose):
+class BandStructure(Prec, Verbose, EnergyUnit):
     '''Base class for analyzing band structure data.
 
     The eigenvalues and occupations should be parsed in a shape of 
@@ -47,17 +48,18 @@ class BandStructure(Prec, Verbose):
         weight (array-like) : the integer weights of each kpoint, 1-d int array
 
     Optional args:
+        unit ('ev','ry','au'): the unit of the eigenvalues, in lower case. 
         kvec (array-like): kpoints vectors in reciprocal space (N.B. not the coordinate)
         efermi (float): the Fermi level. 
             If not parsed, the valence band maximum will be used.
-        projected (dict) : partial wave information. 
-            It should have three keys, "atoms, "projs" and "pWave"
+        projected (dict) : wave projection information. 
+            It should have three keys, "atoms", "projs" and "pWave"
 
     Attributes:
 
     '''
 
-    def __init__(self, eigen, occ, weight, kvec=None, efermi=None, projected=None):
+    def __init__(self, eigen, occ, weight, unit='ev', kvec=None, efermi=None, projected=None):
         try:
             self._nspins, self._nkpts, self._nbands = \
                 _check_eigen_occ_weight_consistency(eigen, occ, weight)
@@ -71,6 +73,8 @@ class BandStructure(Prec, Verbose):
             self._weight = np.array(weight, dtype=self._dtype)
         except TypeError as _err:
             raise BandStructureError(_err)
+
+        EnergyUnit.__init__(self, eunit=unit)
         self._emulti = {1: 2, 2: 1}[self._nspins]
         # channel: ispin, ikpt
         self._nelectPerChannel = np.sum(self._occ, axis=2) * self._emulti
@@ -94,6 +98,21 @@ class BandStructure(Prec, Verbose):
         self._parse_proj(projected)
         self._kvecParsed = False
         self._parse_kvec(kvec)
+
+    @property
+    def unit(self):
+        return self._eunit
+
+    @unit.setter
+    def unit(self, newu):
+        coef = self._get_eunit_conversion(newu)
+        toConv = [self._eigen,
+                  self._vbm, self._vbmPerSpin, self._vbmPerChannel,
+                  self._cbm, self._cbmPerSpin, self._cbmPerChannel,
+                  ]
+        if coef != 1:
+            for item in toConv:
+                item *= coef
 
     @property
     def eigen(self):
@@ -460,7 +479,7 @@ class BandStructure(Prec, Verbose):
         except AssertionError:
             return ()
         try:
-            for key in KEYS_PROJ:
+            for key in KEYS_BAND_PROJ:
                 assert key in projected
         except AssertionError:
             return ()
@@ -471,10 +490,10 @@ class BandStructure(Prec, Verbose):
         try:
             natoms = len(atoms)
             nprojs = len(projs)
-            self.print_warn(np.shape(pWave),
-                            (self._nspins, self._nkpts,
-                             self._nbands, natoms, nprojs),
-                            level=3)
+            self.print_log("Shapes: ", np.shape(pWave),
+                           (self._nspins, self._nkpts,
+                            self._nbands, natoms, nprojs),
+                           level=3)
             assert np.shape(pWave) == \
                 (self._nspins, self._nkpts, self._nbands, natoms, nprojs)
         except (AssertionError, TypeError):
