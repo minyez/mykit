@@ -7,10 +7,10 @@
 
 Functions and classes to deal with tag and value mapping. 
 They lie the basis for input conversion
-  - [x] tags mapping
-  - [ ] values mapping
-  - [x] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
-  - [x] abstract base class to define the basic behavior of controller
+    - [x] tags mapping
+    - [ ] values mapping
+    - [x] store all tags (keywords) mapping in a metadata file, like JSON or rST (see ASE)
+    - [x] abstract base class to define the basic behavior of controller
 
 ### `unit` module
 
@@ -22,16 +22,16 @@ Classes that control the allowed units and their conversions inbetween
 ### `cell` module
 
 - `Cell` base class: creation of periodic systems
-  - Factory methods for common crystals
-    - [x] cubic cells (cP, cI, cF)
-    - [x] orthorhombic cells (oP, oI, oF)
-    - [ ] hexagonal and trigonal cells
-    - [x] zincblende and wurtzite
-    - [x] rutile and anatase
-    - [x] pyrite and marcasite
-    - [x] diamond
-    - [x] perovskite
-  - [x] allow adding atoms 'on the fly'
+    - Factory methods for common crystals
+        - [x] cubic cells (cP, cI, cF)
+        - [x] orthorhombic cells (oP, oI, oF)
+        - [ ] hexagonal and trigonal cells
+        - [x] zincblende and wurtzite
+        - [x] rutile and anatase
+        - [x] pyrite and marcasite
+        - [x] diamond
+        - [x] perovskite
+    - [x] allow adding atoms 'on the fly'
 
 ### Input controllers
 
@@ -53,86 +53,86 @@ and help map name and value of parameter tags between different simulation progr
 ### `symmetry` module
 
 - `Symmetry` class for symmetry information of lattice cell, with help of [spglib](https://atztogo.github.io/spglib/python-spglib.html)
-  - [x] irreducible kpoints
-  - [x] return primitive cell
-  - [x] return standardized cell
+    - [x] irreducible kpoints
+    - [x] return primitive cell
+    - [x] return standardized cell
 - `SpaceGroup`
-  - [x] space group names (to cross-check with Spglib)
-  - [x] tranformation matrix of kpoints coordinates from primitive to conventional cell
-  - [ ] grouping of space groups according to point groups
+    - [x] space group names (to cross-check with Spglib)
+    - [x] tranformation matrix of kpoints coordinates from primitive to conventional cell
+    - [ ] grouping of space groups according to point groups
 - `SpecialKpoints`
-  - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
-  - [ ] k-point paths from [Setyawan and Curtarolo](https://doi.org/10.1016/j.commatsci.2010.05.010)
-    - [ ] create special kpoints from it, alternative to Bilbao
-  - [x] converting primitive to conventional coordinate
-    - [x] transformation matrix from primitive to conventional
-  - [x] converting kpath string to symbols and coordinates of corresponding points on path line segments
-  - [ ] Predefined kpaths for space groups
-  - [x] Factory methods for kpaths of special kpoints
+    - [x] implement special kpoints in reciprocal lattice vector of primitive cell for each space group from Bilbao server
+    - [ ] k-point paths from [Setyawan and Curtarolo](https://doi.org/10.1016/j.commatsci.2010.05.010)
+        - [ ] create special kpoints from it, alternative to Bilbao
+    - [x] converting primitive to conventional coordinate
+        - [x] transformation matrix from primitive to conventional
+    - [x] converting kpath string to symbols and coordinates of corresponding points on path line segments
+    - [ ] Predefined kpaths for space groups
+    - [x] Factory methods for kpaths of special kpoints
 
 ### `bandstructure` module
 
 - `BandStructure`: analyze band structure
-  - [x] reading in eigenvalues, occupation numbers and kpoints weight
-  - optional keyword arguments
-    - [x] partial waves (dict)
-    - [x] Fermi level `efermi` (float)
-    - [x] kpoint vectors `kvec` for evaluating length of kpath
-  - [x] find values and indices of VBM/CBM
-    - [x] at each spin-kpoint channel
-    - [x] for each spin
-    - [x] overall
-  - [x] compute direct band gap, fundamental gap and k-averaged gap
-  - [x] extract partial wave coefficients of a or one of projectors on atoms
-  - [x] compute effective gap with projections
-  - [x] if the kvec is parsed, automatically determine if it represents a kpath, `isKpath` attribute
-  - [ ] eigenvalue unit argument
-  - [ ] export to data file
-  - [ ] return a `Dos` object by specifying a smearing
+    - [x] reading in eigenvalues, occupation numbers and kpoints weight
+    - optional keyword arguments
+        - [x] partial waves (dict)
+        - [x] Fermi level `efermi` (float)
+        - [x] kpoint vectors `kvec` for evaluating length of kpath
+    - [x] find values and indices of VBM/CBM
+        - [x] at each spin-kpoint channel
+        - [x] for each spin
+        - [x] overall
+    - [x] compute direct band gap, fundamental gap and k-averaged gap
+    - [x] extract partial wave coefficients of a or one of projectors on atoms
+    - [x] compute effective gap with projections
+    - [x] if the kvec is parsed, automatically determine if it represents a kpath, `isKpath` attribute
+    - [x] eigenvalue unit argument
+    - [ ] export to data file
+    - [ ] return a `Dos` object by specifying a smearing
 
 ### `dos` module
 
 - `Dos`: analyze density of states (DOS)
-  - [x] reading in energy grids, DOS
-  - optional keyword argument
-    - [x] partial (projected) DOS
-    - [x] fermi level
+    - [x] reading in energy grids, DOS
+    - optional keyword argument
+        - [x] partial (projected) DOS
+        - [x] fermi level
 
 ## `vasp` package: VASP related
 
 - `incar`
-  - `Incar`
-    - [x] Read, print and write 
-    - [ ] Tag explanation
-    - [x] Move tags into a metadata file
+    - `Incar`
+        - [x] Read, print and write 
+        - [ ] Tag explanation
+        - [x] Move tags into a metadata file
 - `poscar` 
-  - `Poscar`
-    - [x] Read, print and write
+    - `Poscar`
+        - [x] Read, print and write
 - `potcar`
-  - [x] `PotcarSearch` for easily searching POTCAR
+    - [x] `PotcarSearch` for easily searching POTCAR
 - `kpoints`
-  - `Kpoints`
-    - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
-    - [x] `__repr__` and `__str__` magics
+    - `Kpoints`
+        - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
+        - [x] `__repr__` and `__str__` magics
 - `wavecar`
 - `xml`
-  - `Vaspxmlrun`
-    - [x] analyze kpoints
-    - [x] reading eigenvalues and occupation numbers in last calculation section
-    - [x] reading partial DOS and wave function projection
-    - [x] return a `BandStructure` object from the collected information
-    - [x] return a `Dos` object from the collected information
-    - [x] generate `Incar` object from incar section
-    - [x] generate `Poscar` objects from initpos and finalpos section
+    - `Vaspxmlrun`
+        - [x] analyze kpoints
+        - [x] reading eigenvalues and occupation numbers in last calculation section
+        - [x] reading partial DOS and wave function projection
+        - [x] return a `BandStructure` object from the collected information
+        - [x] return a `Dos` object from the collected information
+        - [x] generate `Incar` object from incar section
+        - [x] generate `Poscar` objects from initpos and finalpos section
 
 
 ## `wien2k` package: WIEN2k related
 
 - `inputs`
-  - `In1`
-    - [x] read from file
+    - `In1`
+        - [x] read from file
 - `struct`
-  - `Struct`
+    - `Struct`
 
 ## `visualize` package: visualizing results
 
