@@ -3,7 +3,6 @@
 
 The ``cell`` class and its subclasses accept the following kwargs when being instantialized:
 
-    - unit (str): The unit system  to use, either "ang" (default) or "au".
     - coordSys (str): Coordinate system for the internal positions,
       either "D" (Direct, default) or "C" (Cartesian)
     - allRelax (bool) : default selective dynamics option for atoms.
@@ -22,6 +21,7 @@ import numpy as np
 from mykit.core.constants import ANG2AU, AU2ANG, PI
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
+from mykit.core.unit import LengthUnit
 from mykit.core.utils import get_str_indices
 
 
@@ -32,7 +32,7 @@ class CellError(Exception):
     pass
 
 
-class Cell(Prec, Verbose):
+class Cell(Prec, Verbose, LengthUnit):
     '''Cell structure class
 
     Args:
@@ -40,6 +40,7 @@ class Cell(Prec, Verbose):
         atoms (list of str) : The list of strings of type for each atom 
         corresponding to the member in pos
         pos (array-like) : The internal coordinates of atoms
+        unit (str): the unit, in lower case, either "ang" (default) or "au".
 
     Note:
         see ``cell`` module docstring for acceptable kwargs for ``Cell`` and its subclasses
@@ -51,12 +52,11 @@ class Cell(Prec, Verbose):
 
     _error = CellError
 
-    def __init__(self, latt, atoms, pos, **kwargs):
+    def __init__(self, latt, atoms, pos, unit='ang', **kwargs):
 
         self.comment = 'Default Cell class'
         self.__allRelax = True
         self.__selectDyn = {}
-        self.__unit = 'ang'
         self.__coordSys = 'D'
 
         try:
@@ -65,6 +65,7 @@ class Cell(Prec, Verbose):
         except ValueError as _err:
             raise self._error(
                 "Fail to create cell and pos array. Please check.")
+        LengthUnit.__init__(self, lunit=unit)
         self.__atoms = [_a.capitalize() for _a in atoms]
         self.__parse_cellkw(**kwargs)
         # check input consistency
@@ -92,8 +93,6 @@ class Cell(Prec, Verbose):
         return self.__str__()
 
     def __parse_cellkw(self, **kwargs):
-        if 'unit' in kwargs:
-            self.__unit = kwargs['unit'].lower()
         if 'coordSys' in kwargs:
             self.__coordSys = kwargs['coordSys'].upper()
         if "allRelax" in kwargs:
@@ -119,7 +118,7 @@ class Cell(Prec, Verbose):
             dictionary that can be parsed to ``create_from_cell`` class method.
         '''
         _d = {
-            "unit": self.__unit,
+            "unit": self._lunit,
             "coordSys": self.__coordSys,
             "comment": self.comment,
             "allRelax": self.__allRelax,
@@ -130,7 +129,7 @@ class Cell(Prec, Verbose):
     def __check_consistency(self):
         try:
             assert self.__coordSys in ["C", "D"]
-            assert self.__unit in ["ang", "au"]
+            assert self._lunit in ["ang", "au"]
             assert np.shape(self.__latt) == (3, 3)
             assert self.natoms > 0
             assert np.shape(self.__pos) == (self.natoms, 3)
@@ -420,23 +419,17 @@ class Cell(Prec, Verbose):
 
     @property
     def unit(self):
-        '''str. "D" or "C".'''
-        return self.__unit
+        '''str.'''
+        return self._lunit
 
     @unit.setter
     def unit(self, u):
-        _u = u.lower()
-        if _u != self.__unit:
-            _convDict = {"ang": AU2ANG, "au": ANG2AU}
-            _conv = _convDict.get(_u)
-            if _conv is not None:
-                if self.__coordSys == "C":
-                    self.__pos = self.__pos * _conv
-                self.__latt = self.__latt * _conv
-                self.__unit = _u
-            else:
-                info = "the length unit can only be either 'ang' (Angstrom) or 'au' (Bohr)."
-                raise self._error(info)
+        coef = self._get_lunit_conversion(u)
+        if coef != 1:
+            if self.__coordSys == "C":
+                self.__pos = self.__pos * coef
+            self.__latt = self.__latt * coef
+            self._lunit = u.lower()
 
     @property
     def coordSys(self):

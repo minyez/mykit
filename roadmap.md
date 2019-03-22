@@ -16,10 +16,8 @@ They lie the basis for input conversion
 
 Classes that control the allowed units and their conversions inbetween
 
-- `EnergyUnit`: 
-  - [x] default energy unit and list of valid energy unit
-  - [x] get conversion coefficient
-- `LengthUnit`
+- [x] `EnergyUnit` 
+- [x] `LengthUnit`
 
 ### `cell` module
 
