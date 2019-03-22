@@ -66,7 +66,8 @@ class Dos(Prec, Verbose, EnergyUnit):
     def unit(self, newu):
         coef = self._get_eunit_conversion(newu)
         if coef != 1:
-            self._egrid = self._egrid * coef
+            self._egrid *= coef
+            self._efermi *= coef
             self._eunit = newu.lower()
 
     @property

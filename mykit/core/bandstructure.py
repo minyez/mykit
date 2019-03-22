@@ -88,7 +88,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
 
         self._hasInftyCbm = False
         self._compute_vbm_cbm()
-        if not efermi is None:
+        if efermi is not None:
             assert isinstance(efermi, Real)
             self._efermi = efermi
         else:
@@ -106,13 +106,17 @@ class BandStructure(Prec, Verbose, EnergyUnit):
     @unit.setter
     def unit(self, newu):
         coef = self._get_eunit_conversion(newu)
-        toConv = [self._eigen,
-                  self._vbm, self._vbmPerSpin, self._vbmPerChannel,
-                  self._cbm, self._cbmPerSpin, self._cbmPerChannel,
+        toConv = [self._eigen, self._bandWidth, 
+                  self._vbmPerSpin, self._vbmPerChannel,
+                  self._cbmPerSpin, self._cbmPerChannel,
                   ]
         if coef != 1:
+            self._efermi *= coef
+            self._vbm *= coef
+            self._cbm *= coef
             for item in toConv:
                 item *= coef
+            self._eunit = newu.lower()
 
     @property
     def eigen(self):
@@ -128,6 +132,11 @@ class BandStructure(Prec, Verbose, EnergyUnit):
     def weight(self):
         '''Array. kpoints weight (int like), (nkpts, )'''
         return self._weight
+
+    @property
+    def efermi(self):
+        '''float. The energy of Fermi level.'''
+        return self._efermi
 
     @property
     def nelect(self):

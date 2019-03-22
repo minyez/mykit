@@ -24,20 +24,15 @@ class EnergyUnit:
         ('ry', 'au'): RY2HA,
     }
 
-    def __init__(self, eunit):
-        try:
-            u = eunit.lower()
-            assert u in self._validEU
-        except (AttributeError, AssertionError):
-            u = self._defaultEU
-        self._eunit = u
+    def __init__(self, eunit=None):
+        if eunit is None:
+            self._eunit = self._defaultEU
+        else:
+            self._check_valid_eunit(eunit)
+        self._eunit = eunit.lower()
 
     def _get_eunit_conversion(self, unitTo):
-        try:
-            assert isinstance(unitTo, str)
-            assert unitTo.lower() in self._validEU
-        except AssertionError:
-            raise UnitError("allowed energy unit {}, {} parsed".format(self._validEU, unitTo))
+        self._check_valid_eunit(unitTo)
         tu = unitTo.lower()
         fu = self._eunit
         pair = (fu, tu)
@@ -47,6 +42,15 @@ class EnergyUnit:
         elif pair[::-1] in self._convEU:
             co = 1.0 / self._convEU[pair[::-1]]
         return co
+    
+    def _check_valid_eunit(self, eunit):
+        try:
+            assert isinstance(eunit, str)
+            u = eunit.lower()
+            assert u in self._validEU
+        except AssertionError:
+            raise UnitError("allowed energy unit {}, {} parsed".format(
+                self._validEU, eunit))
 
 
 class LengthUnit:
@@ -62,20 +66,15 @@ class LengthUnit:
         ('ang', 'au'): ANG2AU,
     }
 
-    def __init__(self, lunit):
-        try:
-            u = lunit.lower()
-            assert u in self._validLU
-        except (AttributeError, AssertionError):
-            u = self._defaultLU
-        self._lunit = u
+    def __init__(self, lunit=None):
+        if lunit is None:
+            self._lunit = self._defaultLU
+        else:
+            self._check_valid_lunit(lunit)
+        self._lunit = lunit.lower()
 
     def _get_lunit_conversion(self, unitTo):
-        try:
-            assert isinstance(unitTo, str)
-            assert unitTo.lower() in self._validLU
-        except AssertionError:
-            raise UnitError("allowed length unit {}, {} parsed".format(self._validLU, unitTo))
+        self._check_valid_lunit(unitTo)
         tu = unitTo.lower()
         fu = self._lunit
         pair = (fu, tu)
@@ -85,3 +84,13 @@ class LengthUnit:
         elif pair[::-1] in self._convLU:
             co = 1.0 / self._convLU[pair[::-1]]
         return co
+
+    def _check_valid_lunit(self, lunit):
+        try:
+            assert isinstance(lunit, str)
+            u = lunit.lower()
+            assert u in self._validLU
+        except AssertionError:
+            info = "allowed length unit {}, {} parsed".format(
+                self._validLU, lunit)
+            raise UnitError(info)

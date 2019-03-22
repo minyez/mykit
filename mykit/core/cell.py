@@ -129,7 +129,6 @@ class Cell(Prec, Verbose, LengthUnit):
     def __check_consistency(self):
         try:
             assert self.__coordSys in ["C", "D"]
-            assert self._lunit in ["ang", "au"]
             assert np.shape(self.__latt) == (3, 3)
             assert self.natoms > 0
             assert np.shape(self.__pos) == (self.natoms, 3)

@@ -11,6 +11,7 @@ import numpy as np
 from mykit.core.bandstructure import BandStructure as BS
 from mykit.core.bandstructure import BandStructureError as BSE
 from mykit.core.bandstructure import _check_eigen_occ_weight_consistency
+from mykit.core.constants import EV2HA, EV2RY
 from mykit.core.utils import get_matched_files
 
 # pylint: disable=bad-whitespace
@@ -30,6 +31,7 @@ goodOcc = [
 badOcc = [[1.0,1.0,0.0],[1.0,1.0,0.0]]
 goodWeight = [1, 4]
 badWeight = [1,]
+efermi = 1.0
 nspins, nkpts, nbands = np.shape(goodEigen)
 
 class test_check_consistency(ut.TestCase):
@@ -54,7 +56,7 @@ class test_BS_no_projection(ut.TestCase):
             BS, goodEigen, goodOcc, badWeight)
 
     def test_properties(self):
-        bs = BS(goodEigen, goodOcc, goodWeight)
+        bs = BS(goodEigen, goodOcc, goodWeight, efermi=efermi)
         self.assertTrue(np.allclose(goodEigen, bs.eigen))
         self.assertTrue(np.allclose(goodOcc, bs.occ))
         self.assertEqual(bs.nspins, nspins)
@@ -81,6 +83,15 @@ class test_BS_no_projection(ut.TestCase):
         self.assertTrue(bs.projs is None)
         self.assertTrue(bs.pWave is None)
         self.assertFalse(bs.hasProjection)
+        # unit conversion
+        self.assertTrue(np.array_equal(bs.eigen, goodEigen))
+        self.assertEqual(efermi, bs.efermi)
+        vbm = bs.vbm
+        bs.unit = "ry"
+        self.assertTrue(np.array_equal(bs.eigen, \
+            np.multiply(goodEigen, EV2RY)))
+        self.assertEqual(efermi * EV2RY, bs.efermi)
+        self.assertEqual(vbm * EV2RY, bs.vbm)
 
 
 class test_BS_projection(ut.TestCase):
