@@ -21,8 +21,8 @@ class Poscar(Cell):
 
     _error = PoscarError
 
-    def __init__(self, cell, atoms, pos, **kwargs):
-        super(Poscar, self).__init__(cell, atoms, pos, **kwargs)
+    def __init__(self, latt, atoms, pos, **kwargs):
+        super(Poscar, self).__init__(latt, atoms, pos, **kwargs)
 
     # ? Rewrite atomType and typeIndex properties, as the element symbol can appear twice in POSCAR
     # ? But it may be good to let user deal with it, such as using "Fe1", "Fe2" to distinguish.

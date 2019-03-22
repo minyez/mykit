@@ -46,7 +46,7 @@ class Vasprunxml(Verbose, Prec):
             raise VasprunxmlError("Parsed file seems not a vasprun.xml")
         elif not flag:
             self.print_warn(
-                "the calculation is not finished. Try to read it...")
+                "the calculation is not finished. Try to load it anyway...")
         tree = etree.parse(pathXml)
         self.__root = tree.getroot()
         self._init_sections()
@@ -59,10 +59,24 @@ class Vasprunxml(Verbose, Prec):
         self._read_params()
         self._read_klist()
         self._read_eigen_occ()
+        self._read_inter_structs()
+        self._read_force_stress()
         self._hasProjected = False
         self._read_dos()
         if self._hasProjected:
             self._read_projected()
+
+    @property
+    def initPoscar(self):
+        return self._initPoscar
+
+    @property
+    def finalPoscar(self):
+        return self._finalPoscar
+
+    @property
+    def interPoscars(self):
+        return self._interPoscars
 
     def _init_sections(self):
         '''Initialize the XML roots of each sections
@@ -97,7 +111,8 @@ class Vasprunxml(Verbose, Prec):
         latt = [list(map(float, x.text.split())) for x in lattVArray]
         posVArray = secStructure.find('varray')
         pos = [list(map(float, x.text.split())) for x in posVArray]
-        return Poscar(latt, self.atoms, pos, coordSys="D", comment=comment)
+        return Poscar(latt, self.atoms, pos, unit="ang", coordSys="D",
+                      comment=comment)
 
     def _read_incar(self):
         '''Read manual parameters from incar section
@@ -194,14 +209,21 @@ class Vasprunxml(Verbose, Prec):
 
     @property
     def eigen(self):
+        '''float array. energy level of states
+
+        shape (nspins, nibzkpt, nbands)
+        '''
         return self._eigen
 
     @property
     def occ(self):
+        '''float array. occupation numbers of states
+
+        shape (nspins, nibzkpt, nbands)
+        '''
         return self._occ
 
     def _read_eigen_occ(self):
-        # self._eigen = np.zeros([self.nspins,self._nibzkpt,self.nbands])
         self._eigen = []
         self._occ = []
         eigenSet = self._secCalcLast.find(
@@ -227,35 +249,45 @@ class Vasprunxml(Verbose, Prec):
         return None
 
     @property
-    def dosGrid(self):
-        if hasattr(self, '_dosGrid'):
-            return self._dosGrid
+    def edos(self):
+        '''Float array. The energy grid points of DOS
+        '''
+        if hasattr(self, '_edos'):
+            return self._edos
         return None
 
     @property
     def totalDos(self):
+        '''Float array. The total density of states
+
+        shape (nedos, nspins)
+        '''
         if hasattr(self, '_totalDos'):
             return self._totalDos
         return None
 
     @property
     def dos(self):
+        '''Alias of totalDos'''
         return self.totalDos
 
     @property
     def nprojs(self):
+        '''int. The number of projectors'''
         if hasattr(self, '_projs'):
             return len(self._projs)
         return 0
 
     @property
     def projs(self):
+        '''List of str. The name of projectors'''
         if hasattr(self, '_projs'):
             return self._projs
         return None
 
     @property
     def efermi(self):
+        '''float. The energy of Fermi level'''
         return self._efermi
 
     def _read_dos(self):
@@ -270,14 +302,14 @@ class Vasprunxml(Verbose, Prec):
         else:
             self._efermi = float(sd[0].text)
             totDosSet = sd.find('total').find('array').find('set')
-            self._dosGrid = None
+            self._edos = None
             self._totalDos = []
             self._totalDosInteg = []
             for spin in range(self.nspins):
                 v = [conv_string(x.text, float) for x in totDosSet[spin]]
                 v = np.transpose(v)
                 if spin == 0:
-                    self._dosGrid = v[0]
+                    self._edos = v[0]
                     self._NEDOS = len(v[0])
                 self._totalDos.append(v[1])
                 self._totalDosInteg.append(v[2])
@@ -316,10 +348,9 @@ class Vasprunxml(Verbose, Prec):
         projSec = self._secCalcLast.find('projected')
         # pWave data: root->calculation->projected->array->set
         pWaveSet = projSec.find('array').find(
-            'set')  # contains ISPIN dataset(s)
+            'set')
 
         # initialize the pWave data
-        # self._pWave = np.zeros([self.nspins,self._nibzkpt,self.nbands,self.natoms,len(self._projs)])
         _pWave = []
         # shape: (nspin, nibzkpt, nbands, natoms, nprojs)
         for spin in range(self.nspins):
@@ -377,10 +408,10 @@ class Vasprunxml(Verbose, Prec):
                 "projs": self.projs,
                 "pDos": np.array(self.pDos, dtype=self._dtype)
             }
-        dos = Dos(self._dosGrid, self._totalDos, self._efermi, \
-            unit='ev', projected=projected)
+        dos = Dos(self._edos, self._totalDos, self._efermi,
+                  unit='ev', projected=projected)
         return dos
-        
+
     @property
     def nibzkpt(self):
         return self._nibzkpt
@@ -417,9 +448,7 @@ class Vasprunxml(Verbose, Prec):
 
     @property
     def kmode(self):
-        if hasattr(self, "_kmode"):
-            return self._kmode
-        return None
+        return self._kmode
 
     @property
     def kdiv(self):
@@ -434,6 +463,7 @@ class Vasprunxml(Verbose, Prec):
         gen = self._secKpoints.find('generation')
         if gen is None:
             ki = 0
+            self._kmode = "E"
         else:
             ki = 1
             kmode = gen.attrib["param"]
@@ -458,43 +488,52 @@ class Vasprunxml(Verbose, Prec):
         self._weight = [int(np.rint(float(kp.text) * self._nkpt))
                         for kp in self._secKpoints[ki+1]]
 
-    # def pwave_index(self,lcomponent):
-    #     if self.projs == ():
-    #         raise ValueError("XML does not contain partial wave information.")
-    #     index_l = []
-    #     # total wave
-    #     if lcomponent == 't':
-    #         index_l = list(range(len(self._projs)))
-    #     for x in self._projs:
-    #         if x.startswith(lcomponent):
-    #             index_l.append(self._projs.index(x))
-    #     return index_l
+    @property
+    def forces(self):
+        return self._forces
 
-#     def sum_atom_l_comp(self, spin, band, kp, at_index, pw_index):
-#         '''Sum the component of the atoms in at_index and partial waves in pw_index
-#         '''
-#         weigh = 0
-#         for at in at_index:
-#             for pw in pw_index:
-# #                weigh += self._pWave[spin][band][kp][at][pw]
-#                 weigh += self._pWave[spin][band][kp][at][pw]
-#         return weigh
+    @property
+    def stress(self):
+        return self._stress
 
-#     def get_gap(self):
-#         # return the gap from eigenvalue information
-#         ecbm = 100000.0
-#         evbm = -100000.0
-#         vbm = self.nelect/2
-#         cbm = self.nelect/2 + 1
-#         for spin in range(self.nspins):
-#             for kp in range(self._nibzkpt):
-# #                print self.eigen[spin,kp,vbm-1],self.eigen[spin,kp,cbm-1]
-#                 if (self.eigen[spin,kp,vbm-1]> evbm):
-#                     evbm = self.eigen[spin,kp,vbm-1]
-#                 if (self.eigen[spin,kp,cbm-1]< ecbm):
-#                     ecbm = self.eigen[spin,kp,cbm-1]
-#         gap = ecbm - evbm
-#         return gap
+    @property
+    def nIonSteps(self):
+        '''int. Number of ionic steps'''
+        return len(self._forces)
+
+    def _read_force_stress(self):
+        '''Read in the forces on each atoms and overall stress at each
+        ion step.
+        '''
+        fcroots = self.__root.findall('.//varray[@name="forces"]')
+        stroots = self.__root.findall('.//varray[@name="stress"]')
+        forces = []
+        stress = []
+        for i, f in enumerate(fcroots):
+            fcPerStep = []
+            for v in f:
+                fcPerStep.append(conv_string(v.text, float))
+            forces.append(fcPerStep)
+            stPerStep = []
+            for v in stroots[i]:
+                stPerStep.append(conv_string(v.text, float))
+            stress.append(stPerStep)
+        self._forces = forces
+        self._stress = stress
+
+    def _read_inter_structs(self):
+        sroots = self.__root.findall('.//structure')[:-1]
+        # if conventional cell parsed, a primitive_cell section will exist
+        # before initpos
+        if sroots[0].attrib["name"] == 'primitive_cell':
+            sroots = sroots[2:]
+        else:
+            sroots = sroots[1:]
+        self._interPoscars = []
+        for i, s in enumerate(sroots):
+            pc = self._read_pos(
+                s, comment="Intermediate structure, ion step {}".format(i))
+            self._interPoscars.append(pc)
 
 
 def _check_vasprunxml_status(pathXml):

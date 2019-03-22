@@ -17,28 +17,26 @@ class OutcarError(Exception):
 
 class Outcar(Verbose):
     
-    def __init__(self, OutFile='OUTCAR', verbose=True):
+    def __init__(self, OutFile='OUTCAR'):
         
         self.filename = OutFile
         self.eigenene = None
         self.occ = None
-        self.verbose = verbose
 
-        self.__print(" Reading OUTCAR: %s" % OutFile)
+        # print(" Reading OUTCAR: %s" % OutFile)
         with open(OutFile,'r') as f:
             self.outlines = f.readlines()
-        self.__divide_ion_iteration()
-        self.__init_calc_params()
-        self.__check_finished()
-        if not self.flag_finish:
-            self.print_warn("Task has not finished.", level=0)
+        self._divide_ion_iteration()
+        self._init_calc_params()
+        if self.outlines[-1].strip().startswith('Voluntary context switches'):
+            self._finished = True
+        else:
+            self._finished = False
+        if not self._finished:
+            self.print_warn("Task has not finished. Try to load anyway...", level=0)
 
-    def __print(self, pstr):
-        self.print_log(pstr, self.verbose)
-
-    def __init_calc_params(self):
-        '''
-        Initialize the parameters of calculations
+    def _init_calc_params(self):
+        '''Initialize the parameters of calculations
         '''
         # the parameters are saved in the part before the iterations start
         for i in range(len(self.outlines[:self.iterations[0][0]])):
@@ -83,21 +81,7 @@ class Outcar(Verbose):
         # lattice constants and inner coordinates 
         self.lattice, self.innerpos = self.get_pos(ionstep=0)
 
-
-    def __check_finished(self):
-        '''
-        Check if the calculation has finished by checking whether the last line of outlines
-        tells about the time summary
-        '''
-        if self.outlines[-1].strip().startswith('Voluntary context switches'):
-            self.flag_finish = True
-            return True
-        else:
-            self.flag_finish = False
-            return False
-
-
-    def __divide_ion_iteration(self):
+    def _divide_ion_iteration(self):
         '''
         Check the line number of each ionic step
         '''
@@ -319,30 +303,6 @@ class Outcar(Verbose):
         self.occ = np.array(self.occ)
 
         return self.eigenene, self.occ
-
-
-    def get_gap(self, vb=None, cb=None):
-        '''
-        Print the band gap information. Also return the fundamental band gap.
-
-        Parameters:
-            vb: int
-                the index of valence band (>=1)
-            cb: int
-                the index of conduction band (>=1)
-        '''
-
-        if vb is None and cb is None:
-            return self.Eg
-        elif vb is None:
-            vb = self.nelect / 2
-        elif cb is None:
-            cb = self.nelect / 2 + 1
-
-        # set the valence and 
-        # if the band structure has not been extracted, use get_band_structure to obtain that of the final structure
-        if self.eigenene is None:
-            self.get_band_structure()
 
 
 def read_fermi(outcar='OUTCAR'):

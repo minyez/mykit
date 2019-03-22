@@ -16,25 +16,32 @@ class test_vasprunxml_read(ut.TestCase):
         '''Test reading XMLs for SCF calculations (LORBIT not set)
         '''
         dataDir = 'vasprun_scf'
-        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', 'vasp', dataDir)
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..',
+                                   'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
             vxml = Vasprunxml(fn)
             typeMapping = vxml.typeMapping
             # get all index
-            self.assertListEqual(list(range(vxml.natoms)), \
-                vxml.get_atom_index())
-            self.assertFalse(vxml.dosGrid is None)
+            self.assertListEqual(list(range(vxml.natoms)),
+                                 vxml.get_atom_index())
+            self.assertFalse(vxml.edos is None)
             self.assertFalse(vxml.totalDos is None)
             self.assertFalse(vxml.dos is None)
+            # static calculation, there is only 1 ion step.
+            self.assertEqual(1, vxml.nIonSteps)
+            self.assertTupleEqual(np.shape(vxml.forces),
+                                  (vxml.nIonSteps, vxml.natoms, 3))
+            self.assertTupleEqual(np.shape(vxml.stress),
+                                  (vxml.nIonSteps, 3, 3))
+            self.assertEqual(1, len(vxml.interPoscars))
             vxml.ntypes
             vxml.natomsPerType
             vxml.get_atom_index(0)
             vxml.get_atom_index(-1)
             vxml.get_atom_index(typeMapping[0])
-            self.assertRaisesRegex(VasprunxmlError, \
-                r"Atom type not found: *", \
-                vxml.get_atom_index, "UNKNOWNSYMBOL")
+            self.assertRaisesRegex(VasprunxmlError,
+                                   r"Atom type not found: *",
+                                   vxml.get_atom_index, "UNKNOWNSYMBOL")
             # empty properties
             self.assertTrue(vxml.projs is None)
             self.assertEqual(0, vxml.nprojs)
@@ -45,8 +52,8 @@ class test_vasprunxml_read(ut.TestCase):
         '''Test reading XMLs for band calculations (LORBIT set or not)
         '''
         dataDir = 'vasprun_band'
-        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', 'vasp', dataDir)
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..',
+                                   'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
             vxml = Vasprunxml(fn)
             self.assertEqual(vxml.kmode, "L")
@@ -66,8 +73,8 @@ class test_vasprunxml_read(ut.TestCase):
         in case of SCAN and HF band calculations
         '''
         dataDir = 'vasprun_mixed_k_band'
-        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', 'vasp', dataDir)
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..',
+                                   'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
             vxml = Vasprunxml(fn)
             bsMix = vxml.load_band()
@@ -76,22 +83,23 @@ class test_vasprunxml_read(ut.TestCase):
             self.assertTrue(np.allclose(bsBand.weight, np.ones(bsBand.nkpts)))
             self.assertTrue(bsBand.isKpath)
 
-
     def test_opt_xml(self):
         '''Test reading XMLs for geometry optimization
         '''
         dataDir = 'vasprun_opt'
-        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', 'vasp', dataDir)
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..',
+                                   'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
-            _vxml = Vasprunxml(fn)
+            vxml = Vasprunxml(fn)
+            self.assertTupleEqual(np.shape(vxml.forces), \
+                (vxml.nIonSteps, vxml.natoms, 3))
 
     def test_pdos_xml(self):
         '''Test reading XMLs with LORBIT set
         '''
         dataDir = 'vasprun_partial'
-        dataDirPath = os.path.join(os.path.dirname(__file__), '..', \
-            'testdata', 'vasp', dataDir)
+        dataDirPath = os.path.join(os.path.dirname(__file__), '..',
+                                   'testdata', 'vasp', dataDir)
         for fn in get_matched_files(dataDirPath, r"vasprun*"):
             msg = "Wrong when processing {}".format(fn)
             vxml = Vasprunxml(fn)

@@ -30,7 +30,7 @@ class Dos(Prec, Verbose, EnergyUnit):
     The shape of total DOS should be (nedos, nspins)
 
     Args:
-        egrid (1d-array-like)
+        edos (1d-array-like)
         totalDOS (2d-array-like)
         efermi (float)
 
@@ -40,9 +40,9 @@ class Dos(Prec, Verbose, EnergyUnit):
             It should have three keys, "atoms", "projs" and "pDos"
     '''
 
-    def __init__(self, egrid, totalDos, efermi, unit='ev', projected=None):
+    def __init__(self, edos, totalDos, efermi, unit='ev', projected=None):
         try:
-            shapeE = np.shape(egrid)
+            shapeE = np.shape(edos)
             shapeDos = np.shape(totalDos)
             assert len(shapeE) == 1
             assert len(shapeDos) == 2
@@ -51,7 +51,7 @@ class Dos(Prec, Verbose, EnergyUnit):
             raise DosError(
                 'Inconsistent shape: edos {}, DOS {}'.format(shapeE, shapeDos))
         EnergyUnit.__init__(self, eunit=unit)
-        self._egrid = egrid
+        self._edos = edos
         self._efermi = efermi
         self._nedos, self._nspins = shapeDos
         self._dos = np.array(totalDos, dtype=self._dtype)
@@ -66,14 +66,14 @@ class Dos(Prec, Verbose, EnergyUnit):
     def unit(self, newu):
         coef = self._get_eunit_conversion(newu)
         if coef != 1:
-            self._egrid *= coef
+            self._edos *= coef
             self._efermi *= coef
             self._eunit = newu.lower()
 
     @property
-    def egrid(self):
+    def edos(self):
         '''float array. Energy grid points of DOS'''
-        return self._egrid
+        return self._edos
 
     @property
     def nedos(self):
