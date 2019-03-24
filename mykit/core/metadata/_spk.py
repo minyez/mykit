@@ -3403,11 +3403,14 @@ _special_kpoints = {
         "spPrim": [
             {
                 "GM":  [0.0, 0.0, 0.0],
-                "R":   [0.5, 0.5, 0.5],
-                "M":   [0.5, 0.5, 0.0],
-                "X":   [0.0, 0.5, 0.0]
+                "R":   [0.5, 0.5, 0.5], # vertice
+                "M":   [0.5, 0.5, 0.0], # edge center
+                "X":   [0.0, 0.5, 0.0], # face center
             },
-        ]
+        ],
+        "kpath": [
+            ["GM–X–M–GM–R–X M–R"],
+        ],
     },
     222: {
         "cond": cond_any,
@@ -3418,7 +3421,10 @@ _special_kpoints = {
                 "M":   [0.5, 0.5, 0.0],
                 "X":   [0.0, 0.5, 0.0]
             },
-        ]
+        ],
+        "kpath": [
+            ["GM–X–M–GM–R–X M–R"],
+        ],
     },
     223: {
         "cond": cond_any,
@@ -3429,7 +3435,10 @@ _special_kpoints = {
                 "M":   [0.5, 0.5, 0.0],
                 "X":   [0.0, 0.5, 0.0]
             },
-        ]
+        ],
+        "kpath": [
+            ["GM–X–M–GM–R–X M–R"],
+        ],
     },
     224: {
         "cond": cond_any,
@@ -3440,7 +3449,10 @@ _special_kpoints = {
                 "M":   [0.5, 0.5, 0.0],
                 "X":   [0.0, 0.5, 0.0]
             },
-        ]
+        ],
+        "kpath": [
+            ["GM–X–M–GM–R–X M–R"],
+        ],
     },
     225: {
         "cond": cond_any,

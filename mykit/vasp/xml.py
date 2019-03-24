@@ -92,7 +92,7 @@ class Vasprunxml(Verbose, Prec):
         self._secPara = self.__root.find('parameters')
         # all ionic iterations
         self._secCalcs = self.__root.findall('calculation')
-        # the last ionic calculation has the final eigenvalues
+        # the last ionic calculation has final eigenvalues information
         self._secCalcLast = self._secCalcs[-1]
         self._secDos = self._secCalcLast.find('dos')
         self._secAtoms = self.__root.find('atominfo')

@@ -707,7 +707,7 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @classmethod
     def bravais_cP(cls, atom, a=1.0, **kwargs):
-        '''Generate a simple cubic Bravais lattice
+        '''Generate a simple cubic Bravais lattice, space group 221
 
         Args:
             atom (str) : the chemical symbol of atom

@@ -45,7 +45,8 @@ class BandStructure(Prec, Verbose, EnergyUnit):
     Args:
         eigen (array-like) : the energy (eigenvalues) of all bands to be considered
         occ (array-like) : the occupation numbers of all bands
-        weight (array-like) : the integer weights of each kpoint, 1-d int array
+        weight (array-like) : the weights of each kpoint, 1-d array,
+            either int or float.
 
     Optional args:
         unit ('ev','ry','au'): the unit of the eigenvalues, in lower case. 
