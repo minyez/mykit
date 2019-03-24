@@ -3409,7 +3409,7 @@ _special_kpoints = {
             },
         ],
         "kpath": [
-            ["GM–X–M–GM–R–X M–R"],
+            ["GM-X-M-GM-R-X M-R"], # AFLOW
         ],
     },
     222: {
@@ -3423,7 +3423,7 @@ _special_kpoints = {
             },
         ],
         "kpath": [
-            ["GM–X–M–GM–R–X M–R"],
+            ["GM-X-M-GM-R-X M-R"], # AFLOW
         ],
     },
     223: {
@@ -3437,7 +3437,7 @@ _special_kpoints = {
             },
         ],
         "kpath": [
-            ["GM–X–M–GM–R–X M–R"],
+            ["GM-X-M-GM-R-X M-R"], # AFLOW
         ],
     },
     224: {
@@ -3451,7 +3451,7 @@ _special_kpoints = {
             },
         ],
         "kpath": [
-            ["GM–X–M–GM–R–X M–R"],
+            ["GM-X-M-GM-R-X M-R"], # AFLOW
         ],
     },
     225: {

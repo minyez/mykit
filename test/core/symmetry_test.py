@@ -207,8 +207,9 @@ class test_spk_dict(ut.TestCase):
                         for kpath in kpaths:
                             self.assertTrue(isinstance(kpath, str), \
                                 msg="bad kpath value for spg {}".format(k))
-                            self.assertRegex(kpath, KPATH_PATTERN, \
-                                msg="bad kpath value for spg {}".format(k))
+                            for seg in kpath.split():
+                                self.assertRegex(seg, KPATH_PATTERN, \
+                                    msg="bad kpath value for spg {}".format(k))
                             decoded = kpath_decoder(kpath)
                             for ksym in decoded:
                                 self.assertIn(ksym, ksyms, \

@@ -97,6 +97,7 @@ and help map name and value of parameter tags between different simulation progr
     - optional keyword argument
         - [x] partial (projected) DOS
         - [x] fermi level
+    - [x] extract partial wave coefficients of a or one of projectors on atoms
 
 ## `vasp` package: VASP related
 
@@ -115,6 +116,16 @@ and help map name and value of parameter tags between different simulation progr
         - [x] Decide the way to parse tags: use `kmesh_control` as attribute, value check at initialization
         - [x] `__repr__` and `__str__` magics
 - `wavecar`
+- `outcar`
+    - `Outcar`
+        - [x] initial structure as `Poscar` object
+        - [x] return intermediate structure at any ionic step as `Poscar` object
+        - [x] read atom types
+        - [x] read kpoints coordinate and weights
+        - [x] read number of plane waves at each kpoint
+        - [x] an `Incar` object with some import tags read
+        - [x] read eigenvalues and occupations at any ionic step and return a `BandStructure` object (no projection). Trim kpoints allowed.
+    - [x] get OUTCAR value by key, `get_value`
 - `xml`
     - `Vaspxmlrun`
         - [x] analyze kpoints
