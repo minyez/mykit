@@ -255,7 +255,8 @@ def conv_string(string, conv2, *indices, sep=None, strips=None):
     Args:
         string (str): the string from which to convert value
         conv2: the type to which the substring will be converted
-        i: if specified, the i-th substring in the splitted string lists will be converted.
+            support ``str``, ``int``, ``float``, ``bool``
+        indices (int): if specified, the substring with indices in the splitted string lists will be converted.
             otherwise, all substring will be converted.
         sep (regex): the separators used to split the string.
         strips (str): extra strings to strip for each substring before conversion
@@ -263,7 +264,7 @@ def conv_string(string, conv2, *indices, sep=None, strips=None):
     Returns:
         ``conv2``, or list of ``conv2`` type
     '''
-    assert conv2 in [str, int, float]
+    assert conv2 in [str, int, float, bool]
     str_tmp = string.strip()
     if sep is not None:
         str_list = re.split(sep, str_tmp)
@@ -274,13 +275,22 @@ def conv_string(string, conv2, *indices, sep=None, strips=None):
     else:
         str_list = [x.strip(' '+strips) for x in str_list]
 
+    # need to convert to float first for converting to integer
+    if conv2 is int:
+        def convfunc(x): return int(float(x))
+    elif conv2 is bool:
+        def convfunc(x): return {'TRUE': True, 'T': True, '.TRUE.': True, '.T.': True,
+                                 'FALSE': True, 'F': True, '.FALSE.': True, '.F.': False, }.get(x.upper(), None)
+    else:
+        convfunc = conv2
+
     if len(indices) == 0:
-        return list(map(conv2, str_list))
+        return list(map(convfunc, str_list))
     elif len(indices) == 1:
-        return conv2(str_list[indices[0]])
+        return convfunc(str_list[indices[0]])
     else:
         conv_strs = [str_list[i] for i in indices]
-        return list(map(conv2, conv_strs))
+        return list(map(convfunc, conv_strs))
 
 
 # def common_ss_conv(string, i, conv2, sep=None):

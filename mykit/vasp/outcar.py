@@ -7,9 +7,13 @@ import subprocess as sp
 
 import numpy as np
 
-# from mykit.core.lattice import lattice
+from mykit.core.bandstructure import BandStructure
+from mykit.core.cell import atoms_from_sym_nat
+from mykit.core.dos import Dos
 from mykit.core.log import Verbose
 from mykit.core.utils import conv_string
+from mykit.vasp.incar import Incar
+from mykit.vasp.poscar import Poscar
 
 
 class OutcarError(Exception):
@@ -17,81 +21,231 @@ class OutcarError(Exception):
 
 
 class Outcar(Verbose):
-    
+
     def __init__(self, pathOut='OUTCAR'):
 
-        # print(" Reading OUTCAR: %s" % pathOut)
-        with open(pathOut,'r') as f:
+        # read in OUTCAR
+        with open(pathOut, 'r') as f:
             self._outlines = f.readlines()
 
         # self.eigenene = None
         # self.occ = None
-        # self._init_sections()
+        self._check_finished()
+        self._read_all()
+        # Build initial POSCAR
+        self._initPoscar = Poscar(self._initLatt, self.atoms, self._initPos,
+                                  unit="ang", coordSys="D")
         # self._divide_ion_iteration()
-        # self._init_calc_params()
-        # if self._outlines[-1].strip().startswith('Voluntary context switches'):
-        #     self._finished = True
-        # else:
-        #     self._finished = False
-        # if not self._finished:
-        #     self.print_warn("Task has not finished. Try to load anyway...", level=0)
 
-#     def _init_sections(self):
-#         '''initialize the starting and ending line numbers of output sections
-#         '''
-#         nl = len(self._outlines):
-#         i = 0
-#         while i < nl:
-#             l = self._outlines[i].strip().strip('-=')
-#             if l != '':
-#                 if l.startswith('ion  position'):
-#                     i = self._read_init_pos(i)
-#             i += 1
+    def _check_finished(self):
+        l = self._outlines[-1].strip()
+        if l.startswith('Voluntary context switches'):
+            self._finished = True
+        else:
+            self._finished = False
+        if not self._finished:
+            self.print_warn(
+                "Task has not finished. Try to load anyway...", level=0)
 
-#     def _read_init_pos(self, linenum):
-#         '''Reading initial lattice and positions of atoms from the line
-#         with index ``linenum``
+    def _read_all(self):
+        '''initialize
+        '''
+        nl = len(self._outlines)
+        i = 0
+        reader = {
+            r'INCAR:': self._read_atomtypes,
+            r'Subroutine IBZKPT': self._read_weight,
+            r'direct lattice vectors': self._read_init_latt,
+            r'k-points in reciprocal': self._read_kpts,
+            r'position of ions in fractional': self._read_init_pos,
+            r'Dimension of arrays': self._read_dim_params,
+            r'SYSTEM =': self._read_incar_params,
+            r'k-point  1 :': self._read_npw,
+            r'total amount of memory': self._init_iterations,
+        }
+        while i < nl:
+            l = self._outlines[i].strip().strip('-=')
+            if l != '':
+                for k, v in reader.items():
+                    if re.match(k, l):
+                        i = v(i)
+            i += 1
 
-#         Args:
-#             linenum (int): the index of starting line
+    def _read_atomtypes(self, linenum):
+        '''Reading the atom types from the POTCAR names
 
-#         Returns:
-#             int, the index of ending line
-#         '''
-#         sl = linenum
-#         pos = []
-#         latt = []
-#         while True:
-#             sl += 1
+        Args:
+            linenum (int): the index of starting line, 'INCAR:'
 
-#     def _init_calc_params(self):
-#         '''Initialize the parameters of calculations
-#         '''
+        Returns:
+            int
+        '''
+        self._atomTypes = []
+        first = self._outlines[linenum+1]
+        i = 0
+        while True:
+            i += 1
+            same = self._outlines[linenum + 1 + i] == first
+            isPotcar = self._outlines[linenum +
+                                      2 + i].strip().startswith('VRHFIN')
+            if same and isPotcar:
+                break
+        ntypes = i
+        for i in range(ntypes):
+            symbol = self._outlines[linenum + 1 + i].split()[-2]
+            self._atomTypes.append(symbol)
+        return linenum + ntypes
+
+    @property
+    def atomTypes(self):
+        return self._atomTypes
+
+    def _read_init_pos(self, linenum):
+        '''Reading initial positions of atoms from the line
+        with index ``linenum``
+
+        Args:
+            linenum (int): the index of line 
+                starting with 'position of ions in fractional'
+
+        Returns:
+            int, the index of ending line
+        '''
+        pos = []
+        i = 0
+        # positions of atoms
+        while True:
+            l = self._outlines[linenum+1+i].strip()
+            if l == '':
+                break
+            pos.append(conv_string(l, float))
+            i += 1
+        self._initPos = pos
+        return linenum + i
+
+    def _read_init_latt(self, linenum):
+        '''read the initial lattice vectors
+
+        Args:
+            linenum (int)
+
+        Returns:
+            int, the index of last line of the searched region
+        '''
+        latt = []
+        for i in range(3):
+            l = self._outlines[linenum+1+i]
+            latt.append(conv_string(l, float, 0, 1, 2))
+        self._initLatt = latt
+        return linenum + 6
+
+    def _read_weight(self, linenum):
+        '''Read the weight of kpoints
+
+        Args:
+            linenum (int): the index of line starting with "Subroutine IBZKPT"
+
+        Returns:
+            int, the index of last line of the searched region
+        '''
+        nkpts = conv_string(self._outlines[linenum+3], int, 1)
+        weight = []
+        # for i in self._outlines[i+7:i+7+self.nirkp]:
+        for i in range(nkpts):
+            il = linenum + 7 + i
+            l = self._outlines[il]
+            weight.append(conv_string(l, int, -1))
+        self._weight = weight
+        self._nkpts = len(weight)
+        return linenum + 3 + (nkpts+3) * 2 + 5
+
+    @property
+    def weight(self):
+        return self._weight
+
+    @property
+    def nkpts(self):
+        return self._nkpts
+
+    def _read_kpts(self, linenum):
+        '''Read the reciprocal coordinate of kpoints
+
+        Args:
+            linenum (int): the index of line 
+                starting with "k-points in reciprocal lattice"
+
+        Returns:
+            int, the index of last line of the searched region
+        '''
+        kpts = []
+        for i in range(self.nkpts):
+            l = self._outlines[linenum+1+i]
+            kpts.append(conv_string(l, float, 0, 1, 2))
+        self._kpoints = kpts
+        return linenum + self.nkpts
+
+    @property
+    def kpoints(self):
+        return self._kpoints
+
+    def _read_dim_params(self, linenum):
+        '''Read the dimension parameters of calculations
+
+        Args:
+            linenum (int): the index of line starting with 'Dimension of arrays'
+        '''
+        nkpts, self._nbands = conv_string(
+            self._outlines[linenum+1], int, 3, -1)
+        assert nkpts == self.nkpts
+        self._nedos = conv_string(self._outlines[linenum+2], int, 5)
+        # FFT grids
+        self._ngxyz = conv_string(self._outlines[linenum+6], int, 4, 7, -1)
+        self._ngfxyz = conv_string(self._outlines[linenum+7], int, 3, 5, -1)
+        # get the number of types and generate the symbols of atoms
+        typeline = self._outlines[linenum+9].split('=')[-1]
+        ntypes = conv_string(typeline, int)
+        self._atoms = atoms_from_sym_nat(self._atomTypes, ntypes)
+        return linenum + 15
+
+    @property
+    def atoms(self):
+        return self._atoms
+
+    def _read_incar_params(self, linenum):
+        '''Read import INCAR tags shown in OUTCAR
+        '''
+        return linenum
+
+    def _read_npw(self, linenum):
+        '''Read the number of plane waves at each k point
+        '''
+        self._npw = []
+        for i in range(self.nkpts):
+            l = self._outlines[linenum+i]
+            self._npw.append(conv_string(l, int, -1))
+        maxNpw, minNpw = conv_string(
+            self._outlines[linenum+self.nkpts+1], int, -2, -1)
+        # consistency check, related to the internal functionality
+        assert maxNpw == max(self._npw)
+        assert minNpw == min(self._npw)
+        return linenum + self.nkpts + 3
+
+    def _init_iterations(self, linenum):
+        '''initialize the regions of each ionic and electronic iterations
+        '''
+        return linenum
+
 #         # the parameters are saved in the part before the iterations start
 #         for i in range(len(self._outlines[:self.iterations[0][0]])):
 #         #for i in range(len(self.outlines)):
 #             line = self._outlines[i].strip()
 
-#         # irreducible k-points
-#             if line.startswith('Subroutine IBZKPT returns following result'):
-#                 self.nirkp = int(self._outlines[i+3].split()[1])
-#                 self.irkp = []
-#                 self.wirkp = []
-#                 sum_weight = 0.0
-#                 for k_str in self._outlines[i+7:i+7+self.nirkp]:
-#                     k_str_list = k_str.split()
-#                     self.irkp.append([float(x) for x in k_str_list[:3]])
-#                     self.wirkp.append(float(k_str_list[3]))
-#                     sum_weight += self.wirkp[-1]
-#                 self.irkp = np.array(self.irkp)
-#                 self.wirkp = np.divide(np.array(self.wirkp), sum_weight)
-#                 continue
 
 #         # NBANDS, NGX/Y/Z
 #             if line.startswith('Dimension of arrays'):
 #                 self.nbands = int(self._outlines[i+1].split()[-1])
 #                 self.ngxyz  = [int(x) for x in self._outlines[i+6].split()[4:10:3]]
-#                 self.ngfxyz  = [int(x) for x in self._outlines[i+7].split()[3:7:2]] 
+#                 self.ngfxyz  = [int(x) for x in self._outlines[i+7].split()[3:7:2]]
 #                 self.natoms = int(self._outlines[i+2].split()[-1])
 #         # Maximum number of planewaves
 #             if line.startswith('maximum number of plane-waves'):
@@ -107,7 +261,7 @@ class Outcar(Verbose):
 #                 self.ismear = conv_string(line.replace(';',''), int, 2)
 #                 self.sigma  = conv_string(line.replace(';',''), float, 5)
 
-#         # lattice constants and inner coordinates 
+#         # lattice constants and inner coordinates
 #         self.lattice, self.innerpos = self.get_pos(ionstep=0)
 
 #     def _divide_ion_iteration(self):
@@ -127,7 +281,7 @@ class Outcar(Verbose):
 
 #         self.nisteps = i_ionstep[-1]
 #         if self.nisteps == 1:
-#             self.iterations = ln_iteration 
+#             self.iterations = ln_iteration
 #         else:
 #             self.flag_static = False
 #             self.iterations = [[] for i in range(self.nisteps)]
@@ -146,7 +300,7 @@ class Outcar(Verbose):
 #             all_elesteps: bool
 #                 flag for controlling whether the whole range of electronic step or only the last step is included.
 #         '''
-        
+
 #         if all_elesteps:
 #             end_ele = 0
 #         else:
@@ -176,7 +330,7 @@ class Outcar(Verbose):
 #                 The index of ionic step. Default -1 to return the final structure.
 #                 0 for the initial structure, i.e. POSCAR
 #         '''
-        
+
 #         st_line, ed_line = self.__get_ionic_data_region(ionstep, False)
 #         innerpos = []
 
@@ -221,10 +375,10 @@ class Outcar(Verbose):
 
 #         Returns:
 #             total_force: numpy array
-#                 The total force on all or one atom. 
+#                 The total force on all or one atom.
 #                 If iatom is set as a non-negative value, shape(3). Otherwise shape(natoms, 3)
 #         '''
-       
+
 #         if ionstep==0:
 #             st_line, ed_line = self.__get_ionic_data_region(1, False)
 #         else:
@@ -282,7 +436,7 @@ class Outcar(Verbose):
 #         self.eigenene = []
 #         self.occ = []
 #         vb = self.nelect / 2 - 1
-#         cb = self.nelect / 2 
+#         cb = self.nelect / 2
 #         self.vbm = -10000.0
 #         self.cbm =  10000.0
 #         self.vbm_loc =  [0, 0]

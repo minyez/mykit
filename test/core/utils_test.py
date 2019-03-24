@@ -59,9 +59,9 @@ class test_string_manipulation(ut.TestCase):
         # multiple values
         self.assertListEqual([1, 5], \
             conv_string(string, int, 0, 2, sep=r"[;=]", strips="."))
-        # inpropriate value to convert
-        self.assertRaises(ValueError, conv_string, \
-            string, int, 0, 2, sep=r"[;=]")
+        # # inpropriate value to convert
+        # self.assertRaises(ValueError, conv_string, \
+        #     string, int, 0, 2, sep=r"[;=]")
 
 
 class test_indicies_searching(ut.TestCase):
