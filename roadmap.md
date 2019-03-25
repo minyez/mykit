@@ -89,6 +89,14 @@ and help map name and value of parameter tags between different simulation progr
     - [x] eigenvalue unit argument
     - [ ] export to data file
     - [ ] return a `Dos` object by specifying a smearing
+    - Visualize a band
+        - [ ] choose spin component to plot
+        - [ ] if kpath is detected, compute lengths of line segments as plotting x
+        - [ ] allow to draw the projections for selected compenents on atoms of selected bands if projections are available
+            - [ ] raise error if no projection is available
+            - [ ] drawn as dots on the band, with radius representing the value of projections
+            - [ ] drawn as a fill centered on the band, with width representing the value of projections
+        - [ ] keyword argument to choose to return a Matplotlib/Mayavi/Grace object
 
 ### `dos` module
 
@@ -98,6 +106,7 @@ and help map name and value of parameter tags between different simulation progr
         - [x] partial (projected) DOS
         - [x] fermi level
     - [x] extract partial wave coefficients of a or one of projectors on atoms
+    - Visualize DOS
 
 ## `vasp` package: VASP related
 
@@ -146,8 +155,7 @@ and help map name and value of parameter tags between different simulation progr
     - `Struct`
 
 ## `visualize` package: visualizing results
-
-- Matplotlib
+ 
 - XmGrace
 
 ## tools
