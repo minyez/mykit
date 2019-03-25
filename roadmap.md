@@ -101,8 +101,8 @@ and help map name and value of parameter tags between different simulation progr
     - [x] mark the kpoints symbols
     - [ ] allow to draw the projections for selected components on atoms of selected bands if projections are available
         - [ ] raise error if no projection is available
-        - [ ] drawn as dots on the band, with radius representing the value of projections
-        - [ ] drawn as a fill centered on the band, with width representing the value of projections
+        - [ ] drawn as dots on the band, with area representing the value of projections, see [this SO link](https://stackoverflow.com/a/14860958)
+        - [ ] drawn as a fill under on the band, with width representing the value of projections
 
 ### `dos` module
 
