@@ -399,7 +399,7 @@ class Outcar(Verbose, Prec):
         
         kvec = np.dot(self.kpoints, self.get_pos(istep=istep).b)
         return BandStructure(np.array(eigen, dtype=self._dtype)[:, stk:edk, :], 
-                             np.array(occ, dtype=self._dtype)[:, stk:edk], 
+                             np.array(occ, dtype=self._dtype)[:, stk:edk, :], 
                              weight=self._weight[stk:edk],
                              efermi=efermi, unit='ev',
                              kvec=kvec[stk:edk, :])
@@ -460,7 +460,6 @@ class Outcar(Verbose, Prec):
         # convert to direct coordinate
         pc.coordSys = "D"
         return pc
-
 
 #     def get_total_force(self, iatom=None, istep=-1):
 #         '''
