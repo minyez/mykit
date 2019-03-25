@@ -73,7 +73,7 @@ class Outcar(Verbose, Prec):
             r'INCAR:': self._read_atomtypes,
             r'Subroutine IBZKPT': self._read_weight,
             r'direct lattice vectors': self._read_init_latt,
-            r'k-points in reciprocal': self._read_kpts,
+            r'k-points in reciprocal lattice and weights': self._read_kpts,
             r'position of ions in fractional': self._read_init_pos,
             r'Dimension of arrays': self._read_dim_params,
             r'SYSTEM =': self._read_incar_params,
@@ -173,7 +173,6 @@ class Outcar(Verbose, Prec):
             l = self._outlines[il]
             weight.append(conv_string(l, int, -1))
         self._weight = weight
-        self._nkpts = len(weight)
         return linenum + 3 + (nkpts+3) * 2 + 5
 
     @property
@@ -189,17 +188,26 @@ class Outcar(Verbose, Prec):
 
         Args:
             linenum (int): the index of line 
-                starting with "k-points in reciprocal lattice"
+                starting with "k-points in reciprocal lattice and weights"
 
         Returns:
             int, the index of last line of the searched region
         '''
         kpts = []
-        for i in range(self.nkpts):
-            l = self._outlines[linenum+1+i]
-            kpts.append(conv_string(l, float, 0, 1, 2))
+        weight = []
+        i = 0
+        while True:
+            l = self._outlines[linenum+1+i].strip()
+            if l == '':
+                break
+            kw = conv_string(l, float)
+            kpts.append(kw[0:3])
+            weight.append(kw[-1])
+            i += 1
         self._kpoints = kpts
-        return linenum + self.nkpts
+        if not hasattr(self, '_weight'):
+            self._weight = weight
+        return linenum + self._nkpts
 
     @property
     def kpoints(self):
@@ -211,9 +219,8 @@ class Outcar(Verbose, Prec):
         Args:
             linenum (int): the index of line starting with 'Dimension of arrays'
         '''
-        nkpts, self._nbands = conv_string(
+        self._nkpts, self._nbands = conv_string(
             self._outlines[linenum+1], int, 3, -1)
-        assert nkpts == self.nkpts
         self._nedos = conv_string(self._outlines[linenum+2], int, 5)
         # FFT grids
         self._ngxyz = conv_string(self._outlines[linenum+6], int, 4, 7, -1)

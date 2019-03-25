@@ -90,14 +90,16 @@ and help map name and value of parameter tags between different simulation progr
     - [x] if kpath is detected, compute lengths of line segments as plotting x. Otherwise use the index of kpoints.
     - [ ] export to data file
     - [ ] return a `Dos` object by specifying a smearing
-- `BSVisualizer`: visualize a BandStructure object
-    - [x] keyword argument to choose the plotter. Support for
-      - [ ] Matplotlib
-      - [ ] Mayavi
-      - [ ] XmGrace
-    - [ ] choose spin component to plot, when two spin channels are available
-    - [ ] set range for plotting
-    - [ ] allow to draw the projections for selected compenents on atoms of selected bands if projections are available
+- `_BSVisualizer`: abstract base class to visualize a BandStructure object
+    - [x] choose spin component to plot, when two spin channels are available
+    - [x] set if use VBM as energy zero (`align_vbm` keyword)
+    - [ ] abstract methods as contract for band structure visualizers
+    - [ ] option for drawing DOS as well. The Dos object can be parsed directly by `dos` keyword, or set it to a float number as smearing and let `BandStructure` compute one.
+- `BSVisualizerPyplot`: visualize band structure with `matplotlib.pyplot`
+    - [x] set range for plotting
+    - [x] draw selected bands
+    - [x] mark the kpoints symbols
+    - [ ] allow to draw the projections for selected components on atoms of selected bands if projections are available
         - [ ] raise error if no projection is available
         - [ ] drawn as dots on the band, with radius representing the value of projections
         - [ ] drawn as a fill centered on the band, with width representing the value of projections
@@ -160,7 +162,13 @@ and help map name and value of parameter tags between different simulation progr
 
 ## `visualize` package: visualizing results
  
-- XmGrace
+- `Init` function as a global wrapper for visualizers
+    - [ ] call corresponding visualizer by type check
+    - [x] keyword argument to choose the plotter. Support for
+        - [x] Matplotlib
+        - [ ] Mayavi
+        - [ ] XmGrace
+    - [x] keyword arguments to parse visualizers
 
 ## tools
 

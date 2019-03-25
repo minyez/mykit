@@ -2,7 +2,7 @@
 '''
 Module that defines class and utilities for band structure
 '''
-
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from numbers import Real
 
@@ -14,6 +14,8 @@ from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import EnergyUnit
 from mykit.core.utils import get_str_indices_by_iden
+
+# from mykit.core.visualizer import _BandVisualizer
 
 # eigen, occ (array): shape (nspins, nkpt, nbands)
 DIM_EIGEN_OCC = 3
@@ -639,6 +641,9 @@ def _check_eigen_occ_weight_consistency(eigen, occ, weight):
         return shapeEigen
     return ()
 
+# ==========================
+# related with visualization
+# ==========================
 
 def init_band_visualizer(bs, plotter=None, **kwargs):
     '''The wrapper to return a Visualizer object for plotting a band structure.
@@ -669,25 +674,14 @@ def init_band_visualizer(bs, plotter=None, **kwargs):
     return _SUPPORT_PLOTTER[p](bs, **kwargs)
 
 
-class BSVisualizerPyplot(Verbose):
-    '''The class to draw band structure by matplotlib.pyplot. subplots is used.
-
-    Currently only support drawing one bandstructure, i.e. 1 Axes in Fig.
-    Can only plot one spin channel.
-
-    Args:
-        bs (``BandStructure``): the band structure to plot
-        kwargs: keyword arguments to parse to initialize with `pyplot.subplots`
+# contract for a visualizer of band structure
+class _BSVisualizer(ABC, Verbose):
+    '''Abstract base class for band structure visualizer
+    with different plotter
     '''
-
-    def __init__(self, bs, **kwargs):
-        '''
-        '''
+    def __init__(self, bs, align_vbm=False):
+        # check bandstructure
         assert isinstance(bs, BandStructure)
-        try:
-            import matplotlib.pyplot as plt
-        except ModuleNotFoundError:
-            raise ValueError("Matplotlib is required to use pyplot plotter")
         if not bs.isKpath:
             self.print_warn("k-vectors of Band structure do not form a kpath. Plotting anyway...")
         self._bs = deepcopy(bs)
@@ -695,14 +689,8 @@ class BSVisualizerPyplot(Verbose):
         self._efermi = bs.efermi
         self._nspins = bs.nspins
         self._ispin = 0
-        self._alignAtVbm = False
-        # initialize the Figure and Axes
-        self._fig, self._axes = plt.subplots(**kwargs)
+        self.alignAtVbm = align_vbm
         self._drawnKsym = False
-        # labels and ticks on x axis is removed
-        # self._axes.get_xaxis().set_ticks([], [])
-        # set xlimit
-        self._axes.set_xlim([self._xs[0][0], self._xs[-1][-1]])
     
     @property
     def alignAtVbm(self):
@@ -716,6 +704,11 @@ class BSVisualizerPyplot(Verbose):
         self._alignAtVbm = newValue
 
     @property
+    def drawnSym(self):
+        '''bool. If the kpoints symbols have been drawn'''
+        return self._drawnKsym
+
+    @property
     def ispin(self):
         '''int. index of spin channel to plot'''
         return self._ispin
@@ -727,16 +720,73 @@ class BSVisualizerPyplot(Verbose):
         elif newValue >= self._nspins:
             raise TypeError("spin channel index overflow. nspins = %d" % self._nspins)
         self._ispin = newValue
-
-    # def set_energy_range(self, lowlim, uplim):
-    #     '''Set the range of energy to plot
-
-    #     Args:
-    #         lowlim (float): the lower limit to show
-    #         uplim (float): the upper limit to show
-    #     '''
-    #     pass
     
+    # Abstract methods to implement
+    @abstractmethod
+    def set_title(self, title, **kwargs):
+        pass
+
+    @abstractmethod
+    def set_elim(self, bottom, top, **kwargs):
+        pass
+        
+    @abstractmethod
+    def draw(self, *bands, **kwargs):
+        pass
+
+    @abstractmethod    
+    def mark_ksymbols(self, kpath, **kwargs):
+        pass
+    
+    @abstractmethod
+    def draw_proj(self, atom, proj, *bands, **kwargs):
+        pass
+    @abstractmethod
+    def export(self, *args, **kwargs):
+        pass
+
+
+class BSVisualizerPyplot(_BSVisualizer):
+    '''The class to draw band structure by matplotlib.pyplot. subplots is used.
+
+    Currently only support drawing one bandstructure, i.e. 1 Axes in Fig.
+    Can only plot one spin channel.
+
+    Args:
+        bs (``BandStructure``): the band structure to plot
+        kwargs: keyword arguments to parse to initialize with `pyplot.subplots`
+    '''
+
+    def __init__(self, bs, align_vbm=False, **kwargs):
+        '''
+        '''
+        super(BSVisualizerPyplot, self).__init__(bs, align_vbm=align_vbm)
+        try:
+            import matplotlib.pyplot as plt
+        except ModuleNotFoundError:
+            raise ValueError("Matplotlib is required to use pyplot plotter")
+        # initialize the Figure and Axes
+        self._fig, self._axes = plt.subplots(**kwargs)
+        # set xlimit
+        self._axes.set_xlim([self._xs[0][0], self._xs[-1][-1]])
+        # set x tick length to zero to make them invisible
+        self._axes.tick_params(axis=u'x', which=u'both', length=0)
+        self._axes.set_ylabel("Energy ({})".format(bs.unit))
+    
+    def set_title(self, title, **kwargs):
+        '''Set the title of figure
+        
+        Wrapper to pyplot.Axes.set_title
+        '''
+        self._axes.set_title(title, **kwargs)
+
+    def set_elim(self, bottom, top, **kwargs):
+        '''Set the energy limit to show
+        
+        wrapper to Axes.set_ylim
+        '''
+        self._axes.set_ylim(bottom=bottom, top=top, **kwargs)
+
     def draw(self, *bands, **kwargs):
         '''draw the selected bands
 
@@ -768,7 +818,6 @@ class BSVisualizerPyplot(Verbose):
         else:
             self._axes.axhline(bs.efermi, color="k", linestyle='dashed')
         
-    
     def mark_ksymbols(self, kpath):
         '''Mark the kpoints symbols on the plot
 
@@ -779,18 +828,15 @@ class BSVisualizerPyplot(Verbose):
                 followed by a consistency check.
                 If the check fail, a warning will be prompted and no symbols plotted
         '''
-        bs = self._bs
-        if not bs.isKpath:
+        if not self._bs.isKpath:
             return
         try:
             ksyms = kpath_decoder(kpath)
         except KmeshError:
             return
-        if len(ksyms) / 2 != len(bs.kLineSegs):
+        if len(ksyms) / 2 != len(self._bs.kLineSegs):
             self.print_warn("kpath string and extracted data are inconsistent. Skip")
             return
-        xs = self._xs
-        n = len(xs)
         locs = []
         labels = []
         # draw first and last symbol
@@ -798,12 +844,14 @@ class BSVisualizerPyplot(Verbose):
             ksym = ksyms[i]
             s = KSYMBOL_LATEX.get(ksym, ksym)
             # coord = abs(i)
-            coord = xs[i][i]
+            coord = self._xs[i][i]
             # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
             locs.append(coord)
             labels.append(s)
         # draw intermediate points
-        for i in range(n-1):
+        for i, x in enumerate(self._xs):
+            if i == len(self._xs) - 1:
+                break
             ksymLeft = ksyms[2*i+1]
             ksymRight = ksyms[2*i+2]
             if ksymLeft == ksymRight:
@@ -812,7 +860,7 @@ class BSVisualizerPyplot(Verbose):
                 s = KSYMBOL_LATEX.get(ksymLeft, ksymLeft) + "|" + \
                             KSYMBOL_LATEX.get(ksymRight, ksymRight)
             # coord = xs[i][-1] / xs[-1][-1]
-            coord = xs[i][-1]
+            coord = x[-1]
             # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
             locs.append(coord)
             labels.append(s)
@@ -823,19 +871,20 @@ class BSVisualizerPyplot(Verbose):
     def draw_proj(self, atom, proj, *bands, **kwargs):
         '''
         '''
+        bs = self._bs
+        if not bs.hasProjection:
+            self.print_warn("No wave projection is available. Skip.")
+            return
         raise NotImplementedError
     
     def show(self):
+        '''
+        '''
         import matplotlib.pyplot as plt
         # hide the xticks if the kpoints symbols are not drawn
         if not self._drawnKsym:
             self._axes.get_xaxis().set_ticks([])
         plt.show()
-    
-    def clean_data(self):
-        '''Clean up plotted bands
-        '''
-        self._axes.cla()
 
     def export(self, *args, **kwargs):
         '''Wrapper to pyplot.savefig

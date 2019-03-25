@@ -361,7 +361,8 @@ def _get_minimal_band_tags():
         "ICHARG": 11,
         "LORBIT": 11,
         "ISTART": None,
-        "ISMEAR": -5,
+        "ISMEAR": 0,
+        "SIGMA": 0.02,
     }
     return _bandtags
 

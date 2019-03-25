@@ -42,15 +42,15 @@ class prog_mapper(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def parse_tags(self, **kwargs):
+    def parse_tags(self, progName, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
-    def pop_tags(self, *args):
+    def pop_tags(self, progName, *args):
         raise NotImplementedError
 
     @abstractmethod
-    def delete_tags(self, *args):
+    def delete_tags(self, progName, *args):
         raise NotImplementedError
 
     @abstractmethod
@@ -58,7 +58,7 @@ class prog_mapper(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def tag_vals(self, *args):
+    def tag_vals(self, progName, *args):
         raise NotImplementedError
 
     @classmethod
