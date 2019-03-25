@@ -3,11 +3,13 @@
 Module that defines class and utilities for band structure
 '''
 
+from copy import deepcopy
 from numbers import Real
 
 import numpy as np
 
-from mykit.core.kmesh import check_kvecs_form_kpath
+from mykit.core.kmesh import (KSYMBOL_LATEX, KmeshError,
+                              check_kvecs_form_kpath, kpath_decoder)
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import EnergyUnit
@@ -238,6 +240,10 @@ class BandStructure(Prec, Verbose, EnergyUnit):
                 kSegments = check_kvecs_form_kpath(self._kvec)
                 if kSegments != []:
                     self._isKpath = True
+                    self._kLineSegs = kSegments
+                else:
+                    # use the first and last kpoints for plotting
+                    self._kLineSegs = [(0, self.nkpts - 1),]
             except (AssertionError, ValueError):
                 self.print_warn("Bad kpoint vectors input. Skip")
 
@@ -263,6 +269,34 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         if self.hasKvec:
             return self._kvec
         return None
+    
+    @property
+    def kLineSegs(self):
+        '''List. Each member a list, containing the indices of starting and end
+        kpoint vector
+        '''
+        return self._kLineSegs 
+
+    def _generate_kpath_x(self):
+        '''Generate the x coordinates for plotting a kpath
+
+        x for the ending point of one line segment is the same to
+        that for the starting point of next line segment.
+
+        Returns
+            list, each member a list of floats
+        '''
+        xs = []
+        if not (self._isKpath and self.hasKvec):
+            xs.append(list(range(self._nkpts)))
+        else:
+            _accuL = 0.0
+            for sti, edi in self._kLineSegs:
+                l = np.linalg.norm(self._kvec[sti, :] - self._kvec[edi, :])
+                x = [_accuL + ik * l/(edi-sti) for ik in range(edi-sti+1)]
+                xs.append(x)
+                _accuL += l
+        return xs
 
     def _compute_vbm_cbm(self):
         '''compute the band edges on each spin-kpt channel
@@ -604,3 +638,210 @@ def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     if consist:
         return shapeEigen
     return ()
+
+
+def init_band_visualizer(bs, plotter=None, **kwargs):
+    '''The wrapper to return a Visualizer object for plotting a band structure.
+
+    Args:
+        bs (``BandStructure``): the band structure to visualize
+        plotter (str): the plotter to use. Currently support 
+            - "pyplot": matplotlib
+        kwargs: keyword arguments to parse to initialize the plotter.
+            - "pyplot": matplotlib.pyplot.subplots
+    '''
+    # Supported plotter. The first is default.
+    _SUPPORT_PLOTTER = {
+        'pyplot': BSVisualizerPyplot,
+    }
+    default = 'pyplot'
+    try:
+        assert isinstance(bs, BandStructure)
+    except AssertionError:
+        raise TypeError("BandStructure object should be parsed.")
+    if plotter is None:
+        p = default
+    else:
+        if plotter not in _SUPPORT_PLOTTER:
+            raise NotImplementedError("plotter {} not supported.".format(plotter))
+        else:
+            p = plotter
+    return _SUPPORT_PLOTTER[p](bs, **kwargs)
+
+
+class BSVisualizerPyplot(Verbose):
+    '''The class to draw band structure by matplotlib.pyplot. subplots is used.
+
+    Currently only support drawing one bandstructure, i.e. 1 Axes in Fig.
+    Can only plot one spin channel.
+
+    Args:
+        bs (``BandStructure``): the band structure to plot
+        kwargs: keyword arguments to parse to initialize with `pyplot.subplots`
+    '''
+
+    def __init__(self, bs, **kwargs):
+        '''
+        '''
+        assert isinstance(bs, BandStructure)
+        try:
+            import matplotlib.pyplot as plt
+        except ModuleNotFoundError:
+            raise ValueError("Matplotlib is required to use pyplot plotter")
+        if not bs.isKpath:
+            self.print_warn("k-vectors of Band structure do not form a kpath. Plotting anyway...")
+        self._bs = deepcopy(bs)
+        self._xs = bs._generate_kpath_x()
+        self._efermi = bs.efermi
+        self._nspins = bs.nspins
+        self._ispin = 0
+        self._alignAtVbm = False
+        # initialize the Figure and Axes
+        self._fig, self._axes = plt.subplots(**kwargs)
+        self._drawnKsym = False
+        # labels and ticks on x axis is removed
+        # self._axes.get_xaxis().set_ticks([], [])
+        # set xlimit
+        self._axes.set_xlim([self._xs[0][0], self._xs[-1][-1]])
+    
+    @property
+    def alignAtVbm(self):
+        '''bool. whether the VBM is set as energy level'''
+        return self._alignAtVbm
+    
+    @alignAtVbm.setter
+    def alignAtVbm(self, newValue):
+        if not isinstance(newValue, bool):
+            raise TypeError("alignAtVbm should be bool")
+        self._alignAtVbm = newValue
+
+    @property
+    def ispin(self):
+        '''int. index of spin channel to plot'''
+        return self._ispin
+    
+    @ispin.setter
+    def ispin(self, newValue):
+        if not isinstance(newValue, int):
+            raise TypeError("ispin should be int")
+        elif newValue >= self._nspins:
+            raise TypeError("spin channel index overflow. nspins = %d" % self._nspins)
+        self._ispin = newValue
+
+    # def set_energy_range(self, lowlim, uplim):
+    #     '''Set the range of energy to plot
+
+    #     Args:
+    #         lowlim (float): the lower limit to show
+    #         uplim (float): the upper limit to show
+    #     '''
+    #     pass
+    
+    def draw(self, *bands, **kwargs):
+        '''draw the selected bands
+
+        Args:
+            bands (int): the indices of bands to plot
+                All bands will be plot by default.
+            kwargs: keywords to parse to Axes.plot
+        '''
+        # iterate for each line segments
+        if 'color' not in kwargs:
+            kwargs['color'] = 'k'
+        bs = self._bs
+        xs = self._xs
+        if len(bands) == 0:
+            b = list(range(bs.nbands))
+        else:
+            b = bands
+        for i, (stk, edk) in enumerate(bs.kLineSegs):
+            for ib in b:
+                eigen = bs.eigen[self.ispin, stk:edk+1, ib] - \
+                    bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
+                self._axes.plot(xs[i], eigen, **kwargs)
+            # draw vertical line to separate the different line segments
+            if i != len(bs.kLineSegs) - 1:
+                self._axes.axvline(xs[i][-1], color="k")
+        # draw Fermi level
+        if self.alignAtVbm:
+            self._axes.axhline(0.0, color="k", linestyle='dashed')
+        else:
+            self._axes.axhline(bs.efermi, color="k", linestyle='dashed')
+        
+    
+    def mark_ksymbols(self, kpath):
+        '''Mark the kpoints symbols on the plot
+
+        Args
+            kpath (str): the kpath string.
+                If the kpoints of BandStructure do not form a kpath, skip.
+                The string will be decoded by `kpath_decoder` to a list of kpoints symbols.
+                followed by a consistency check.
+                If the check fail, a warning will be prompted and no symbols plotted
+        '''
+        bs = self._bs
+        if not bs.isKpath:
+            return
+        try:
+            ksyms = kpath_decoder(kpath)
+        except KmeshError:
+            return
+        if len(ksyms) / 2 != len(bs.kLineSegs):
+            self.print_warn("kpath string and extracted data are inconsistent. Skip")
+            return
+        xs = self._xs
+        n = len(xs)
+        locs = []
+        labels = []
+        # draw first and last symbol
+        for i in [0, -1]:
+            ksym = ksyms[i]
+            s = KSYMBOL_LATEX.get(ksym, ksym)
+            # coord = abs(i)
+            coord = xs[i][i]
+            # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
+            locs.append(coord)
+            labels.append(s)
+        # draw intermediate points
+        for i in range(n-1):
+            ksymLeft = ksyms[2*i+1]
+            ksymRight = ksyms[2*i+2]
+            if ksymLeft == ksymRight:
+                s = KSYMBOL_LATEX.get(ksymLeft, ksymLeft)
+            else:
+                s = KSYMBOL_LATEX.get(ksymLeft, ksymLeft) + "|" + \
+                            KSYMBOL_LATEX.get(ksymRight, ksymRight)
+            # coord = xs[i][-1] / xs[-1][-1]
+            coord = xs[i][-1]
+            # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
+            locs.append(coord)
+            labels.append(s)
+        self._axes.set_xticks(locs)
+        self._axes.set_xticklabels(labels)
+        self._drawnKsym = True
+    
+    def draw_proj(self, atom, proj, *bands, **kwargs):
+        '''
+        '''
+        raise NotImplementedError
+    
+    def show(self):
+        import matplotlib.pyplot as plt
+        # hide the xticks if the kpoints symbols are not drawn
+        if not self._drawnKsym:
+            self._axes.get_xaxis().set_ticks([])
+        plt.show()
+    
+    def clean_data(self):
+        '''Clean up plotted bands
+        '''
+        self._axes.cla()
+
+    def export(self, *args, **kwargs):
+        '''Wrapper to pyplot.savefig
+
+        Args:
+            args, kwargs: arguments parsed to savefig
+        '''
+        import matplotlib.pyplot as plt
+        plt.savefig(*args, **kwargs)

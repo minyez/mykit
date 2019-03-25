@@ -244,3 +244,10 @@ def check_kvecs_form_kpath(kvec):
     if ed - st > 2:
         segs.append((st, ed-1))
     return segs
+
+# the mapping from kpoint symbol to LaTeX commands
+#pylint: disable=anomalous-backslash-in-string
+KSYMBOL_LATEX = {
+    "GM": "$\Gamma$",
+    "LM": "$\lambda$",
+}

@@ -87,16 +87,20 @@ and help map name and value of parameter tags between different simulation progr
     - [x] compute effective gap with projections
     - [x] if the kvec is parsed, automatically determine if it represents a kpath, `isKpath` attribute
     - [x] eigenvalue unit argument
+    - [x] if kpath is detected, compute lengths of line segments as plotting x. Otherwise use the index of kpoints.
     - [ ] export to data file
     - [ ] return a `Dos` object by specifying a smearing
-    - Visualize a band
-        - [ ] choose spin component to plot
-        - [ ] if kpath is detected, compute lengths of line segments as plotting x
-        - [ ] allow to draw the projections for selected compenents on atoms of selected bands if projections are available
-            - [ ] raise error if no projection is available
-            - [ ] drawn as dots on the band, with radius representing the value of projections
-            - [ ] drawn as a fill centered on the band, with width representing the value of projections
-        - [ ] keyword argument to choose to return a Matplotlib/Mayavi/Grace object
+- `BSVisualizer`: visualize a BandStructure object
+    - [x] keyword argument to choose the plotter. Support for
+      - [ ] Matplotlib
+      - [ ] Mayavi
+      - [ ] XmGrace
+    - [ ] choose spin component to plot, when two spin channels are available
+    - [ ] set range for plotting
+    - [ ] allow to draw the projections for selected compenents on atoms of selected bands if projections are available
+        - [ ] raise error if no projection is available
+        - [ ] drawn as dots on the band, with radius representing the value of projections
+        - [ ] drawn as a fill centered on the band, with width representing the value of projections
 
 ### `dos` module
 
