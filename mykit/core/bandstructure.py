@@ -2,14 +2,12 @@
 '''
 Module that defines class and utilities for band structure
 '''
-from abc import ABC, abstractmethod
-from copy import deepcopy
+import re
 from numbers import Real
 
 import numpy as np
 
-from mykit.core.kmesh import (KSYMBOL_LATEX, KmeshError,
-                              check_kvecs_form_kpath, kpath_decoder)
+from mykit.core.kmesh import check_kvecs_form_kpath
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import EnergyUnit
@@ -25,6 +23,8 @@ DIM_EIGEN_OCC = 3
 KEYS_BAND_PROJ = ("atoms", "projs", "pWave")
 '''tuple. Required keys for wave projection input
 '''
+
+BAND_STR_PATTERN = re.compile(r"[vc]bm([-+][\d]+)?")
 
 # DIM_PWAVE = 5
 # '''pWave (array): shape (nspins, nkpt, nbands, natoms, nprojs)'''
@@ -103,6 +103,58 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         self._parse_proj(projected)
         self._kvecParsed = False
         self._parse_kvec(kvec)
+
+    def get_band_indices(self, *bands):
+        '''Filter the band indices in ``bands``. 
+
+        If no indices is specified, return all available band indices.
+
+        Args:
+            bands (int or str): the band identifier.
+                can be band indices (int), or strings like "cbm", "vbm",
+                "cbm-5", "vbm+2", etc.
+        
+        Returns:
+            list
+        '''
+        if len(bands) == 0:
+            b = list(range(self._nbands))
+        else:
+            b = []
+            for ib in bands:
+                if isinstance(ib, int):
+                    if abs(ib) < self._nbands:
+                        b.append(ib)
+                elif isinstance(ib, str):
+                    i = self._convert_band_str(ib)
+                    if i is not None:
+                        b.append(i)
+        return b
+
+    def _convert_band_str(self, bandStr):
+        '''convert a string of band identifier, like "vbm", "cbm-2", "vbm+3"
+        to the correpsonding band index.
+
+        Args:
+            bandStr (str)
+        
+        Returns:
+            int
+        '''
+        assert isinstance(bandStr, str)
+        if re.match(BAND_STR_PATTERN, bandStr):
+            ref = {"v": self.ivbm[-1], "c": self.icbm[-1]}[bandStr[0]]
+            if len(bandStr) == 3:
+                return ref
+            n = int(re.split(r"[-+]", bandStr)[-1])
+            if bandStr[3] == '-':
+                ib = ref - n
+            else:
+                ib = ref + n
+            # check if the band index is valid
+            if 0 <= ib < self.nbands:
+                return ib
+        return None
 
     @property
     def unit(self):
@@ -553,7 +605,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         the responsible transition of which associates projector `projVbm` on `atomVbm` in VB
         and `projCbm` on atom `atomCbm` in CB.
 
-        If projection information was not parsed, the inverse of the k-averaged gap inverse
+        If no projection information was parsed, the inverse of the k-averaged gap inverse
         will be returned.
 
         Args:
@@ -567,8 +619,8 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         Note:
             Spin-polarization is not considered in retriving projection coefficients.
         '''
-        vbCoeffs = self._sum_atom_proj_comp(atomVbm, projVbm)
-        cbCoeffs = self._sum_atom_proj_comp(atomCbm, projCbm)
+        vbCoeffs = self.sum_atom_proj_comp(atomVbm, projVbm, fail_one=True)
+        cbCoeffs = self.sum_atom_proj_comp(atomCbm, projCbm, fail_one=True)
         if ivb is None or not ivb in range(self.nbands):
             vbCoeff = vbCoeffs[:, :, np.max(self.ivbm)]
         else:
@@ -583,20 +635,26 @@ class BandStructure(Prec, Verbose, EnergyUnit):
             return np.infty
         return 1.0/inv
 
-    def _sum_atom_proj_comp(self, atom, proj):
+    def sum_atom_proj_comp(self, atom, proj, fail_one=True):
         '''Sum the partial wave for projectors `proj` on atoms `atom`
 
         If the instance does not have projection information, 1 will be returned.
 
         Args:
-            atom (int, str, Iterable):
-            proj (int, str, Iterable):
+            atom (int, str, Iterable)
+            proj (int, str, Iterable)
+            fail_one (bool): control the return when no projection is available. 
+                if set True, return np.ones with correct shape, otherwise np.zeros
 
         Returns:
             (nspins, nkpts, nbands)
         '''
         if not self.hasProjection:
-            return np.ones((self.nspins, self.nkpts, self.nbands))
+            func = {True: np.ones, False: np.zeros}
+            try:
+                return func[fail_one]((self.nspins, self.nkpts, self.nbands))
+            except KeyError:
+                raise TypeError("fail_one should be bool type.")
         if atom is None:
             atInd = list(range(self.natoms))
         else:
@@ -640,257 +698,3 @@ def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     if consist:
         return shapeEigen
     return ()
-
-# ==========================
-# related with visualization
-# ==========================
-
-def init_band_visualizer(bs, plotter=None, **kwargs):
-    '''The wrapper to return a Visualizer object for plotting a band structure.
-
-    Args:
-        bs (``BandStructure``): the band structure to visualize
-        plotter (str): the plotter to use. Currently support 
-            - "pyplot": matplotlib
-        kwargs: keyword arguments to parse to initialize the plotter.
-            - "pyplot": matplotlib.pyplot.subplots
-    '''
-    # Supported plotter. The first is default.
-    _SUPPORT_PLOTTER = {
-        'pyplot': BSVisualizerPyplot,
-    }
-    default = 'pyplot'
-    try:
-        assert isinstance(bs, BandStructure)
-    except AssertionError:
-        raise TypeError("BandStructure object should be parsed.")
-    if plotter is None:
-        p = default
-    else:
-        if plotter not in _SUPPORT_PLOTTER:
-            raise NotImplementedError("plotter {} not supported.".format(plotter))
-        else:
-            p = plotter
-    return _SUPPORT_PLOTTER[p](bs, **kwargs)
-
-
-# contract for a visualizer of band structure
-class _BSVisualizer(ABC, Verbose):
-    '''Abstract base class for band structure visualizer
-    with different plotter
-    '''
-    def __init__(self, bs, align_vbm=False):
-        # check bandstructure
-        assert isinstance(bs, BandStructure)
-        if not bs.isKpath:
-            self.print_warn("k-vectors of Band structure do not form a kpath. Plotting anyway...")
-        self._bs = deepcopy(bs)
-        self._xs = bs._generate_kpath_x()
-        self._efermi = bs.efermi
-        self._nspins = bs.nspins
-        self._ispin = 0
-        self.alignAtVbm = align_vbm
-        self._drawnKsym = False
-    
-    @property
-    def alignAtVbm(self):
-        '''bool. whether the VBM is set as energy level'''
-        return self._alignAtVbm
-    
-    @alignAtVbm.setter
-    def alignAtVbm(self, newValue):
-        if not isinstance(newValue, bool):
-            raise TypeError("alignAtVbm should be bool")
-        self._alignAtVbm = newValue
-
-    @property
-    def drawnSym(self):
-        '''bool. If the kpoints symbols have been drawn'''
-        return self._drawnKsym
-
-    @property
-    def ispin(self):
-        '''int. index of spin channel to plot'''
-        return self._ispin
-    
-    @ispin.setter
-    def ispin(self, newValue):
-        if not isinstance(newValue, int):
-            raise TypeError("ispin should be int")
-        elif newValue >= self._nspins:
-            raise TypeError("spin channel index overflow. nspins = %d" % self._nspins)
-        self._ispin = newValue
-    
-    # Abstract methods to implement
-    @abstractmethod
-    def set_title(self, title, **kwargs):
-        pass
-
-    @abstractmethod
-    def set_elim(self, bottom, top, **kwargs):
-        pass
-        
-    @abstractmethod
-    def draw(self, *bands, **kwargs):
-        pass
-
-    @abstractmethod    
-    def mark_ksymbols(self, kpath, **kwargs):
-        pass
-    
-    @abstractmethod
-    def draw_proj(self, atom, proj, *bands, **kwargs):
-        pass
-    @abstractmethod
-    def export(self, *args, **kwargs):
-        pass
-
-
-class BSVisualizerPyplot(_BSVisualizer):
-    '''The class to draw band structure by matplotlib.pyplot. subplots is used.
-
-    Currently only support drawing one bandstructure, i.e. 1 Axes in Fig.
-    Can only plot one spin channel.
-
-    Args:
-        bs (``BandStructure``): the band structure to plot
-        kwargs: keyword arguments to parse to initialize with `pyplot.subplots`
-    '''
-
-    def __init__(self, bs, align_vbm=False, **kwargs):
-        '''
-        '''
-        super(BSVisualizerPyplot, self).__init__(bs, align_vbm=align_vbm)
-        try:
-            import matplotlib.pyplot as plt
-        except ModuleNotFoundError:
-            raise ValueError("Matplotlib is required to use pyplot plotter")
-        # initialize the Figure and Axes
-        self._fig, self._axes = plt.subplots(**kwargs)
-        # set xlimit
-        self._axes.set_xlim([self._xs[0][0], self._xs[-1][-1]])
-        # set x tick length to zero to make them invisible
-        self._axes.tick_params(axis=u'x', which=u'both', length=0)
-        self._axes.set_ylabel("Energy ({})".format(bs.unit))
-    
-    def set_title(self, title, **kwargs):
-        '''Set the title of figure
-        
-        Wrapper to pyplot.Axes.set_title
-        '''
-        self._axes.set_title(title, **kwargs)
-
-    def set_elim(self, bottom, top, **kwargs):
-        '''Set the energy limit to show
-        
-        wrapper to Axes.set_ylim
-        '''
-        self._axes.set_ylim(bottom=bottom, top=top, **kwargs)
-
-    def draw(self, *bands, **kwargs):
-        '''draw the selected bands
-
-        Args:
-            bands (int): the indices of bands to plot
-                All bands will be plot by default.
-            kwargs: keywords to parse to Axes.plot
-        '''
-        # iterate for each line segments
-        if 'color' not in kwargs:
-            kwargs['color'] = 'k'
-        bs = self._bs
-        xs = self._xs
-        if len(bands) == 0:
-            b = list(range(bs.nbands))
-        else:
-            b = bands
-        for i, (stk, edk) in enumerate(bs.kLineSegs):
-            for ib in b:
-                eigen = bs.eigen[self.ispin, stk:edk+1, ib] - \
-                    bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
-                self._axes.plot(xs[i], eigen, **kwargs)
-            # draw vertical line to separate the different line segments
-            if i != len(bs.kLineSegs) - 1:
-                self._axes.axvline(xs[i][-1], color="k")
-        # draw Fermi level
-        if self.alignAtVbm:
-            self._axes.axhline(0.0, color="k", linestyle='dashed')
-        else:
-            self._axes.axhline(bs.efermi, color="k", linestyle='dashed')
-        
-    def mark_ksymbols(self, kpath):
-        '''Mark the kpoints symbols on the plot
-
-        Args
-            kpath (str): the kpath string.
-                If the kpoints of BandStructure do not form a kpath, skip.
-                The string will be decoded by `kpath_decoder` to a list of kpoints symbols.
-                followed by a consistency check.
-                If the check fail, a warning will be prompted and no symbols plotted
-        '''
-        if not self._bs.isKpath:
-            return
-        try:
-            ksyms = kpath_decoder(kpath)
-        except KmeshError:
-            return
-        if len(ksyms) / 2 != len(self._bs.kLineSegs):
-            self.print_warn("kpath string and extracted data are inconsistent. Skip")
-            return
-        locs = []
-        labels = []
-        # draw first and last symbol
-        for i in [0, -1]:
-            ksym = ksyms[i]
-            s = KSYMBOL_LATEX.get(ksym, ksym)
-            # coord = abs(i)
-            coord = self._xs[i][i]
-            # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
-            locs.append(coord)
-            labels.append(s)
-        # draw intermediate points
-        for i, x in enumerate(self._xs):
-            if i == len(self._xs) - 1:
-                break
-            ksymLeft = ksyms[2*i+1]
-            ksymRight = ksyms[2*i+2]
-            if ksymLeft == ksymRight:
-                s = KSYMBOL_LATEX.get(ksymLeft, ksymLeft)
-            else:
-                s = KSYMBOL_LATEX.get(ksymLeft, ksymLeft) + "|" + \
-                            KSYMBOL_LATEX.get(ksymRight, ksymRight)
-            # coord = xs[i][-1] / xs[-1][-1]
-            coord = x[-1]
-            # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
-            locs.append(coord)
-            labels.append(s)
-        self._axes.set_xticks(locs)
-        self._axes.set_xticklabels(labels)
-        self._drawnKsym = True
-    
-    def draw_proj(self, atom, proj, *bands, **kwargs):
-        '''
-        '''
-        bs = self._bs
-        if not bs.hasProjection:
-            self.print_warn("No wave projection is available. Skip.")
-            return
-        raise NotImplementedError
-    
-    def show(self):
-        '''
-        '''
-        import matplotlib.pyplot as plt
-        # hide the xticks if the kpoints symbols are not drawn
-        if not self._drawnKsym:
-            self._axes.get_xaxis().set_ticks([])
-        plt.show()
-
-    def export(self, *args, **kwargs):
-        '''Wrapper to pyplot.savefig
-
-        Args:
-            args, kwargs: arguments parsed to savefig
-        '''
-        import matplotlib.pyplot as plt
-        plt.savefig(*args, **kwargs)
