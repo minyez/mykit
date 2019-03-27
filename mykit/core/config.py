@@ -39,6 +39,7 @@ class global_config:
         "verbWarn"    : 'Verbose level of warnings',
         "verbLog"     : 'Verbose level of log information',
         "logIndent"   : 'Spaces to differentiate logs at different depth',
+        "dbStructure" : 'the absolute path to the database of lattice structures',
     }
     _optKeys = _options.keys()
 
@@ -53,6 +54,7 @@ class global_config:
             "verbWarn"    : 1,
             "verbLog"     : 1,
             "logIndent"   : 4,
+            "dbStructure" : None,
         }
         # try manual input config file, otherwise search for the custom file
         try:

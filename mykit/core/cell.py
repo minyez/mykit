@@ -11,14 +11,16 @@ The ``cell`` class and its subclasses accept the following kwargs when being ins
       which controls the selective dynamic option for atom with the particular index 
       (starting from 0). Default is an empty ``dict``
     - comment (str): message about the cell
+    - reference (str): the reference where the lattice structure is derived.
+
+When other keyword are parsed, they will be filtered out and no exception will be raised
 '''
 from collections import OrderedDict
-# import spglib
 from numbers import Real
 
 import numpy as np
 
-from mykit.core.constants import ANG2AU, AU2ANG, PI
+from mykit.core.constants import PI
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import LengthUnit
@@ -55,6 +57,7 @@ class Cell(Prec, Verbose, LengthUnit):
     def __init__(self, latt, atoms, pos, unit='ang', **kwargs):
 
         self.comment = 'Default Cell class'
+        self.__reference = ''
         self.__allRelax = True
         self.__selectDyn = {}
         self.__coordSys = 'D'
@@ -99,6 +102,8 @@ class Cell(Prec, Verbose, LengthUnit):
             self.__allRelax = kwargs["allRelax"]
         if "selectDyn" in kwargs:
             self.__selectDyn = kwargs["selectDyn"]
+        if "reference" in kwargs:
+            self.__reference = "{}".format(kwargs["reference"])
         if "comment" in kwargs:
             self.comment = "{}".format(kwargs["comment"])
 
@@ -121,10 +126,16 @@ class Cell(Prec, Verbose, LengthUnit):
             "unit": self._lunit,
             "coordSys": self.__coordSys,
             "comment": self.comment,
+            "reference": self.__reference,
             "allRelax": self.__allRelax,
             "selectDyn": self.__selectDyn
         }
         return _d
+
+    def get_reference(self):
+        '''Return the reference of the structure
+        '''
+        return self.__reference
 
     def __check_consistency(self):
         try:
@@ -624,6 +635,12 @@ class Cell(Prec, Verbose, LengthUnit):
     @classmethod
     def read_from_json(cls, pathJson):
         '''Initialize a ``Cell`` instance from a JSON file
+
+        If "factory" key does not exist, it will search for the postional arguments,
+        i.e. "latt", "atoms" and "pos" keys. Raise when any of them does not exist.
+
+        Args:
+            pathJson (str): the path of JSON file
         '''
         import json
         import os
@@ -631,20 +648,58 @@ class Cell(Prec, Verbose, LengthUnit):
             raise cls._error("JSON file not found: {}".format(pathJson))
         with open(pathJson, 'r') as h:
             try:
-                _j = json.load(h)
+                js = json.load(h)
             except json.JSONDecodeError:
                 raise cls._error(
                     "invalid JSON file for cell: {}".format(pathJson))
+        pargs = []
+        lap = ["latt", "atoms", "pos"]
+        factoryDict = {
+            "bravais_oP": ("atom", "a", "b", "c"),
+            "bravais_oI": ("atom", "a", "b", "c"),
+            "bravais_oF": ("atom", "a", "b", "c"),
+            "bravais_cP": ("atom", "a"),
+            "bravais_cI": ("atom", "a"),
+            "bravais_cF": ("atom", "a"),
+            "perovskite": ("atom1", "atom2", "atom3", "a"),
+            "zincblende": ("atom1", "atom2", "a"),
+            "diamond": ("atom", "a"),
+            "wurtzite": ("atom1", "atom2", "a"),
+            "rutile": ("atom1", "atom2", "a", "c", "u"),
+            "anatase": ("atom1", "atom2", "a", "c", "u"),
+            "pyrite": ("atom1", "atom2", "a", "u"),
+            "marcasite": ("atom1", "atom2", "a", "b", "c", "v", "w"),
+        }
+        # found factory key
+        if "factory" in js:
+            fac = js["factory"]
+            # pop out latt, atoms and pos for safety
+            for arg in lap:
+                js.pop(arg, None)
+            if fac in factoryDict:
+                # get positional argument
+                try:
+                    for x in factoryDict[fac]:
+                        pargs.append(js.pop(x))
+                    return cls.__getattribute__(fac)(*pargs, **js)
+                except KeyError:
+                    raise cls._error("Required key not found in JSON: {}".format(x))
+            else:
+                raise cls._error("Factory method unavailable: {}".format(fac))
 
-        _argList = ["latt", "atoms", "pos"]
-        _args = []
-        for _i, arg in enumerate(_argList):
-            v = _j.pop(arg, None)
+        for _i, arg in enumerate(lap):
+            v = js.pop(arg, None)
             if v is None:
                 raise cls._error(
                     "invalid JSON file for cell: {}. No {}".format(pathJson, arg))
-            _args.append(v)
-        return cls(*_args, **_j)
+            pargs.append(v)
+        return cls(*pargs, **js)
+    
+    @classmethod
+    def read_from_cif(cls, pathCif):
+        '''Read from Cif file and return a instance by use of PyCIFRW
+        '''
+        raise NotImplementedError
 
     @classmethod
     def _bravais_o(cls, kind, atom, a, b, c, **kwargs):

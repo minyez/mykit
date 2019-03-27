@@ -2,3 +2,4 @@ numpy
 spglib >= 1.12.0
 lxml
 fortranformat
+PyCIFRW

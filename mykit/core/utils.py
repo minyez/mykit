@@ -21,7 +21,7 @@ def get_dirpath(filePath):
         filePath (str): the string of the path of file
 
     Returns:
-        str: the path of parent directory, if filepath represents a file,
+        str: the absolute path of parent directory, if filepath represents a file,
             otherwise the path of the directory
     '''
 
@@ -29,6 +29,22 @@ def get_dirpath(filePath):
     if os.path.isdir(_path):
         _path = _path + '/'
     return os.path.dirname(_path)
+
+
+def get_file_ext(filePath):
+    '''Return the extension name of filePath
+
+    If filePath is a existing directory, None will be returned
+    If the path have no characters after "." or have no ".", 
+    an empty string will be returned.
+
+    Args:
+        filePath (str): the path of the file
+    '''
+    if os.path.isdir(filePath):
+        return None
+    base = os.path.basename(os.path.abspath(filePath))
+    return os.path.splitext(base)[1][1:]
 
 
 def get_filename_wo_ext(filePath):

@@ -33,6 +33,7 @@ Classes that control the allowed units and their conversions inbetween
       - [x] diamond
       - [x] perovskite
     - [x] allow adding atoms 'on the fly'
+    - [ ] read structure from CIF file by `PyCIFRW`
 
 ### Input controllers
 
@@ -159,14 +160,13 @@ and help map name and value of parameter tags between different simulation progr
     - [x] set range for plotting
     - [x] choose spin component to plot, when two spin channels are available
     - [x] set if use VBM as energy zero (`align_vbm` keyword)
-    - [ ] abstract methods as contract for band structure visualizers
     - [ ] option for drawing DOS as well. The Dos object can be parsed directly by `dos` keyword, or set it to a float number as smearing and let `BandStructure` compute one.
     - [x] draw selected bands
     - [x] mark the kpoints symbols
-    - [ ] allow to draw the projections for selected components on atoms of selected bands if projections are available
+    - [x] allow to draw the projections for selected components on atoms of selected bands if projections are available
       - [ ] raise error if no projection is available
-      - [ ] drawn as dots on the band, with area representing the value of projections, see [this SO link](https://stackoverflow.com/a/14860958)
-      - [ ] drawn as a fill under on the band, with width representing the value of projections
+      - [x] drawn as dots on the band, with area representing the value of projections, see [this SO link](https://stackoverflow.com/a/14860958)
+      - [x] drawn as a fill under on the band, with width representing the value of projections
 
 ## tools
 

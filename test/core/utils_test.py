@@ -4,8 +4,9 @@
 import unittest as ut
 
 from mykit.core.utils import (conv_string, find_vol_dirs, get_dirpath,
-                              get_str_indices, get_str_indices_by_iden,
-                              trim_after, trim_before, trim_both_sides)
+                              get_file_ext, get_str_indices,
+                              get_str_indices_by_iden, trim_after, trim_before,
+                              trim_both_sides)
 
 
 class file_and_path(ut.TestCase):
@@ -17,6 +18,12 @@ class file_and_path(ut.TestCase):
     def test_find_vol_dirs(self):
         # no volume directories at cwd
         self.assertListEqual([], find_vol_dirs())
+
+    def test_get_file_ext(self):
+        self.assertEqual("cif", get_file_ext('abc.cif'))
+        self.assertEqual("struct", get_file_ext('a/b/c/c.struct'))
+        self.assertEqual("struct", get_file_ext('a/b/c/c'))
+        self.assertEqual(None, get_file_ext(get_dirpath(__file__)))
 
 
 class test_string_manipulation(ut.TestCase):

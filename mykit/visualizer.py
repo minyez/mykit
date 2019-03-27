@@ -79,6 +79,7 @@ class BSVisualizer(Verbose):
         self.alignAtVbm = align_vbm
         self._drawnKsym = False
         self._projStyle = proj_style
+        self._useLabel = False
         # initialize the Figure and Axes
         self._fig, self._axes = plt.subplots(**kwargs)
         self._axes.set_xlim([self._xs[0][0], self._xs[-1][-1]])
@@ -119,14 +120,19 @@ class BSVisualizer(Verbose):
     def set_title(self, title, **kwargs):
         '''Set the title of figure
 
-        Wrapper to pyplot.Axes.set_title
+        Wrapper of pyplot.Axes.set_title
         '''
         self._axes.set_title(title, **kwargs)
 
     def set_elim(self, bottom, top, **kwargs):
         '''Set the energy limit to show
 
-        Wrapper to Axes.set_ylim
+        Wrapper of Axes.set_ylim
+
+        Args:
+            bottom (float): the lower bound of the energy range
+            top (float): the upper bound of the energy range
+            kwargs: the keyword arguments to parse to Axes.set_ylim
         '''
         self._axes.set_ylim(bottom=bottom, top=top, **kwargs)
 
@@ -210,7 +216,7 @@ class BSVisualizer(Verbose):
         self._drawnKsym = True
 
     def draw_proj(self, atom, proj, *bands, **kwargs):
-        '''
+        '''draw the wave projection on the band structure diagram
 
         Args:
             atom (int, str or Iterable):
@@ -218,28 +224,22 @@ class BSVisualizer(Verbose):
             bands (int): the indices of bands to draw the projection
             kwargs: keyword argument to parse to pyplot.Axes.scatter or pyplot.Axes.fill_between
                 depending on the projStyle set at initialization.
-
-        TODO:
-            adjust the stripe amplifier by the energy scale
         '''
         bs = self._bs
         xs = self._xs
-        amplifier_dot = 1000.0
+        amplifier_dot = 300.0
         # use triple band gap as multiplier for stripe mode
         amplifier_stripe = bs.fundGap[self.ispin] * 3
         if not bs.hasProjection:
-            self.print_warn("No wave projection is available. Skip.")
-            return
+            raise AttributeError("no projection data is available")
         # get projection data
         proj = bs.sum_atom_proj_comp(atom, proj, fail_one=False)
         binds = bs.get_band_indices(*bands)
-        # print(*bands, b)
         if 'color' not in kwargs:
             kwargs['color'] = 'k'
         if 's' in kwargs:
             kwargs.pop('s')
         for i, (stk, edk) in enumerate(bs.kLineSegs):
-            # print("drawing projections..")
             for _j, bi in enumerate(binds):
                 eigen = bs.eigen[self.ispin, stk:edk+1, bi] - \
                     bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
@@ -249,22 +249,29 @@ class BSVisualizer(Verbose):
                 if self._projStyle == 'stripe':
                     self._axes.fill_between(xs[i], eigen, \
                         eigen - proj[self.ispin, stk:edk+1, bi] * amplifier_stripe, **kwargs)
-                # add label only for once
+                # pop the label keyword such that label is only added for once
                 if 'label' in kwargs:
+                    self._useLabel = True
                     kwargs.pop('label')
         
     def show(self):
-        '''
+        '''Preview the band structure diagram. 
+        
+        A wrapper for pyplot.legend and pyplot.show
         '''
         import matplotlib.pyplot as plt
-        # hide the xticks if the kpoints symbols are not drawn
-        if not self._drawnKsym:
-            self._axes.get_xaxis().set_ticks([])
-        plt.legend()
+        # # hide the xticks if the kpoints symbols are not drawn
+        # if not self._drawnKsym:
+        #     self._axes.get_xaxis().set_ticks([])
+        if self._useLabel:
+            plt.legend()
         plt.show()
 
     def export(self, *args, **kwargs):
         '''Wrapper to pyplot.savefig
+
+        TODO:
+            export agr file
 
         Args:
             args, kwargs: arguments parsed to savefig
