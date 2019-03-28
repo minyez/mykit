@@ -39,6 +39,7 @@ class BSVisualizer(Verbose):
 
     Args:
         bs (``BandStructure``): the band structure to plot
+        ispin (int): the spin channel to show.
         dos (`Dos` object or float)
         projStyle ('dot', 'stripe'): the style to draw the wave projection
         kwargs: keyword arguments to parse to initialize with `pyplot.subplots`
@@ -48,7 +49,8 @@ class BSVisualizer(Verbose):
     '''
     _SUPPORT_PROJ_STYLE = ['dot', 'stripe']
 
-    def __init__(self, bs, align_vbm=False, dos=None, proj_style='dot', **kwargs):
+    def __init__(self, bs, align_vbm=False, dos=None, proj_style='dot', ispin=0,
+                 **kwargs):
         assert isinstance(bs, BandStructure)
         # argument type check
         if not bs.isKpath:
@@ -70,12 +72,12 @@ class BSVisualizer(Verbose):
         if proj_style not in self._SUPPORT_PROJ_STYLE:
             raise ValueError("projStyle {} is not supported. {}".format(
                 proj_style, self._SUPPORT_PROJ_STYLE))
-        
+
         self._bs = deepcopy(bs)
         self._xs = bs._generate_kpath_x()
         self._efermi = bs.efermi
         self._nspins = bs.nspins
-        self._ispin = 0
+        self.ispin = ispin
         self.alignAtVbm = align_vbm
         self._drawnKsym = False
         self._projStyle = proj_style
@@ -113,7 +115,7 @@ class BSVisualizer(Verbose):
         if not isinstance(newValue, int):
             raise TypeError("ispin should be int")
         elif newValue >= self._nspins:
-            raise TypeError(
+            raise ValueError(
                 "spin channel index overflow. nspins = %d" % self._nspins)
         self._ispin = newValue
 
@@ -169,13 +171,10 @@ class BSVisualizer(Verbose):
 
         Args
             kpath (str): the kpath string.
-                If the kpoints of BandStructure do not form a kpath, skip.
                 The string will be decoded by `kpath_decoder` to a list of kpoints symbols.
                 followed by a consistency check.
                 If the check fail, a warning will be prompted and no symbols plotted
         '''
-        if not self._bs.isKpath:
-            return
         try:
             ksyms = kpath_decoder(kpath)
         except KmeshError:
@@ -247,16 +246,16 @@ class BSVisualizer(Verbose):
                     s = proj[self.ispin, stk:edk+1, bi] * amplifier_dot
                     self._axes.scatter(xs[i], eigen, s=s, **kwargs)
                 if self._projStyle == 'stripe':
-                    self._axes.fill_between(xs[i], eigen, \
-                        eigen - proj[self.ispin, stk:edk+1, bi] * amplifier_stripe, **kwargs)
+                    self._axes.fill_between(xs[i], eigen,
+                                            eigen - proj[self.ispin, stk:edk+1, bi] * amplifier_stripe, **kwargs)
                 # pop the label keyword such that label is only added for once
                 if 'label' in kwargs:
                     self._useLabel = True
                     kwargs.pop('label')
-        
+
     def show(self):
         '''Preview the band structure diagram. 
-        
+
         A wrapper for pyplot.legend and pyplot.show
         '''
         import matplotlib.pyplot as plt

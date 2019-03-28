@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import unittest as ut
 
 import numpy as np
@@ -8,6 +9,7 @@ import numpy as np
 from mykit.core.cell import (Cell, CellError, atoms_from_sym_nat, axis_list,
                              periodic_duplicates_in_cell, sym_nat_from_atoms)
 from mykit.core.constants import ANG2AU, AU2ANG, PI
+from mykit.core.utils import get_dirpath, get_matched_files
 
 
 class simple_cubic_lattice(ut.TestCase):
@@ -192,6 +194,14 @@ class cell_factory_method(ut.TestCase):
         self.assertEqual(_cell.coordSys, "D")
         self.assertEqual(_cell.natoms, 2)
         self.assertListEqual(_cell.atoms, ["C", "C"])
+        # TODO JSON with factory key
+    
+    def test_read_from_cif(self):
+        dataDir = os.path.join(get_dirpath(__file__), '..', 'testdata')
+        for fn in os.listdir(dataDir):
+            if fn.endswith('.cif'):
+                cif = os.path.join(dataDir, fn)
+                Cell.read_from_cif(cif)
 
 
 class cell_select_dynamics(ut.TestCase):
