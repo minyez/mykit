@@ -3,15 +3,15 @@
 
 import unittest as ut
 
-from mykit.core.bandstructure import _random_band_structure
+from mykit.core.bandstructure import random_band_structure
 from mykit.core.dos import Dos
 from mykit.visualizer import BSVisualizer, init
 
 
 class test_band_structure_visualizer(ut.TestCase):
 
-    bs = _random_band_structure(2, 10, 20, 4, 9, hasProjection=False)
-    bsProj = _random_band_structure(1, 10, 20, 4, 9, hasProjection=True)
+    bs = random_band_structure(2, 10, 20, 4, 9, hasProjection=False)
+    bsProj = random_band_structure(1, 10, 20, 4, 9, hasProjection=True)
     
     def test_draw(self):
         bsv = BSVisualizer(self.bs, ispin=0)

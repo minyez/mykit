@@ -269,10 +269,6 @@ class SpaceGroup:
         'Pm-3m', 'Pn-3n', 'Pm-3n', 'Pn-3m', 'Fm-3m',  # 221
         'Fm-3c', 'Fd-3m', 'Fd-3c', 'Im-3m', 'Ia-3d',
     )
-    try:
-        assert len(symbols) == 230
-    except AssertionError:
-        raise SymmetryError("Bad space group table. Contact developer.")
 
     @staticmethod
     def k_trans_mat_from_prim_to_conv(iden):
@@ -415,13 +411,13 @@ class SpecialKpoints(Prec):
 
     @property
     def spkSym(self):
-        '''Return symbols of all available special kpoints
+        '''List. Symbols of all available special kpoints
         '''
         return list(self.spkCoord.keys())
 
     @property
     def spkCoord(self):
-        '''Return coordinates in primitive cell of all available special kpoints
+        '''List. Coordinates in primitive cell of all available special kpoints
         '''
         _ret = {}
         _ret.update(self._sp)

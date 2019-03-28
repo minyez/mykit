@@ -658,20 +658,20 @@ class Cell(Prec, Verbose, LengthUnit):
         pargs = []
         lap = ["latt", "atoms", "pos"]
         factoryDict = {
-            "bravais_oP": ("atom", "a", "b", "c"),
-            "bravais_oI": ("atom", "a", "b", "c"),
-            "bravais_oF": ("atom", "a", "b", "c"),
-            "bravais_cP": ("atom", "a"),
-            "bravais_cI": ("atom", "a"),
-            "bravais_cF": ("atom", "a"),
-            "perovskite": ("atom1", "atom2", "atom3", "a"),
-            "zincblende": ("atom1", "atom2", "a"),
-            "diamond": ("atom", "a"),
-            "wurtzite": ("atom1", "atom2", "a"),
-            "rutile": ("atom1", "atom2", "a", "c", "u"),
-            "anatase": ("atom1", "atom2", "a", "c", "u"),
-            "pyrite": ("atom1", "atom2", "a", "u"),
-            "marcasite": ("atom1", "atom2", "a", "b", "c", "v", "w"),
+            "bravais_oP": (cls.bravais_oP, ("atom", "a", "b", "c")),
+            "bravais_oI": (cls.bravais_oI, ("atom", "a", "b", "c")),
+            "bravais_oF": (cls.bravais_oF, ("atom", "a", "b", "c")),
+            "bravais_cP": (cls.bravais_cP, ("atom", "a")),
+            "bravais_cI": (cls.bravais_cI, ("atom", "a")),
+            "bravais_cF": (cls.bravais_cF, ("atom", "a")),
+            "perovskite": (cls.perovskite, ("atom1", "atom2", "atom3", "a")),
+            "zincblende": (cls.zincblende, ("atom1", "atom2", "a")),
+            "diamond": (cls.diamond, ("atom", "a")),
+            "wurtzite": (cls.wurtzite, ("atom1", "atom2", "a")),
+            "rutile": (cls.rutile, ("atom1", "atom2", "a", "c", "u")),
+            "anatase": (cls.anatase, ("atom1", "atom2", "a", "c", "u")),
+            "pyrite": (cls.pyrite, ("atom1", "atom2", "a", "u")),
+            "marcasite": (cls.marcasite, ("atom1", "atom2", "a", "b", "c", "v", "w")),
         }
         # found factory key
         if "factory" in js:
@@ -681,10 +681,12 @@ class Cell(Prec, Verbose, LengthUnit):
                 js.pop(arg, None)
             if fac in factoryDict:
                 # get positional argument
+                # print(fac)
                 try:
-                    for x in factoryDict[fac]:
+                    m, reqPa = factoryDict[fac]
+                    for x in reqPa:
                         pargs.append(js.pop(x))
-                    return cls.__getattribute__(fac)(*pargs, **js)
+                    return m(*pargs, **js)
                 except KeyError:
                     raise cls._error(
                         "Required key not found in JSON: {}".format(x))
@@ -709,12 +711,22 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @classmethod
     def create_from_cell(cls, cell):
-        '''Create POSCAR from ``Cell`` instance ``cell``.
+        '''Create an ``Cell`` object from another ``Cell`` instance ``cell``.
+
+        This is for use of transformation between cells described 
+        by different file formats.
+
+        Args:
+            cell : object of ``Cell`` or its subclasses
+
+        Returns:
+            a ``Cell`` object
         '''
         try:
             assert isinstance(cell, Cell)
         except AssertionError:
-            raise cls._error("the input is not a Cell object")
+            raise cls._error(
+                "the input is not an object of Cell or its subclasses")
         kw = cell.get_kwargs()
         return cls(*cell.get_cell(), **kw)
 
@@ -1237,7 +1249,7 @@ def get_latt_atoms_pos_from_cif(pathCif):
 
     if not isfile(pathCif):
         raise FileNotFoundError(pathCif)
-    
+
     cf = CifFile.ReadCif(pathCif, scantype='flex')
     blk = cf.first_block()
 

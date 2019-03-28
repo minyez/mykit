@@ -11,7 +11,7 @@ import numpy as np
 from mykit.core.bandstructure import BandStructure as BS
 from mykit.core.bandstructure import BandStructureError as BSE
 from mykit.core.bandstructure import (_check_eigen_occ_weight_consistency,
-                                      _random_band_structure)
+                                      random_band_structure)
 from mykit.core.constants import EV2HA, EV2RY
 from mykit.core.utils import get_matched_files
 
@@ -142,7 +142,7 @@ class test_BS_randomize(ut.TestCase):
             ns = ri(1, 2)
             nk = ri(3, 31)
             nb = ri(10, 41)
-            bs = _random_band_structure(ns, nk, nb, is_metal=False)
+            bs = random_band_structure(ns, nk, nb, is_metal=False)
             self.assertEqual(bs.nspins, ns)
             self.assertEqual(bs.nkpts, nk)
             self.assertEqual(bs.nbands, nb)
@@ -155,7 +155,7 @@ class test_BS_randomize(ut.TestCase):
         nk = ri(3, 31)
         nb = ri(10, 41)
         for _i in range(self.n):
-            bs = _random_band_structure(ns, nk, nb, is_metal=True)
+            bs = random_band_structure(ns, nk, nb, is_metal=True)
             self.assertTrue(bs.isMetal)
 
 

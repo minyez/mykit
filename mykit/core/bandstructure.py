@@ -696,7 +696,7 @@ def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     return ()
 
 
-def _random_band_structure(nspins=1, nkpts=1, nbands=2, natoms=1, nprojs=1,
+def random_band_structure(nspins=1, nkpts=1, nbands=2, natoms=1, nprojs=1,
                            hasProjection=False, is_metal=False):
     '''Return a BandStructure object with fake band energies, occupations and
     projections

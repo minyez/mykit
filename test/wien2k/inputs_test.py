@@ -15,7 +15,8 @@ class test_In1(ut.TestCase):
             '..', 'testdata', 'wien2k', dataDir)
         for fn in os.listdir(dataDirPath):
             path = os.path.join(dataDirPath, fn)
-            In1.read_from_file(path)
+            in1 = In1.read_from_file(path)
+            in1.add_exception(0, 1, 0.20)
 
 if __name__ == '__main__':
     ut.main()

@@ -186,7 +186,27 @@ class cell_factory_method(ut.TestCase):
             json.dump(_dict, h)
         self.assertRaisesRegex(CellError, "invalid JSON file for cell: {}. No {}".format(_tf.name, "pos"), \
             Cell.read_from_json, _tf.name)
+
+        # JSON with factory key
+        _dict = {
+            "factory": "zincblende", 
+            "atom1": "Zn", 
+            "a": 8.0, "unit": "au",
+            }
+        with open(_tf.name, 'w') as h:
+            json.dump(_dict, h)
+        self.assertRaisesRegex(CellError, "Required key not found in JSON: atom2", \
+            Cell.read_from_json, _tf.name)
+        # add atom2 and dump again
+        _dict["atom2"] = "O"
+        with open(_tf.name, 'w') as h:
+            json.dump(_dict, h)
+        _cell = Cell.read_from_json(_tf.name)
+        self.assertEqual(_cell.unit, 'au')
+        self.assertEqual(_cell.comment, "Zincblende ZnO")
+        self.assertAlmostEqual(512, _cell.vol)
         _tf.close()
+
         # test one file in testdata, Cell_1.json is tested here
         _path = os.path.join(os.path.dirname(__file__), '..', 'testdata', 'Cell_1.json')
         _cell = Cell.read_from_json(_path)
@@ -194,7 +214,6 @@ class cell_factory_method(ut.TestCase):
         self.assertEqual(_cell.coordSys, "D")
         self.assertEqual(_cell.natoms, 2)
         self.assertListEqual(_cell.atoms, ["C", "C"])
-        # TODO JSON with factory key
     
     def test_read_from_cif(self):
         dataDir = os.path.join(get_dirpath(__file__), '..', 'testdata')
