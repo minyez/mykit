@@ -13,7 +13,7 @@ URL = 'https://github.com/minyez/' + NAME
 REQUIRES_PYTHON = '>=3.5.6'
 BINDIR = "tools"
 REQUIRED = [
-    'numpy', 'spglib>=1.12.0', 'lxml', 'fortranformat', 'PyCIFRW',
+    'numpy', 'spglib>=1.12.0', 'lxml', 'fortranformat', 'PyCIFRW', 'matplotlib',
 ]
 LICENSE = "MIT"
 
