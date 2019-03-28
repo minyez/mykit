@@ -431,3 +431,90 @@ def get_str_indices_by_iden(container, iden):
 #         ofile.close()
 #     if not ferr is None:
 #         efile.close()
+
+
+def conv_equiv_pos_string(s):
+    '''Convert a string representing symmetry operation in CIF file
+    to a rotation matrix R and a translation vector t
+
+    The relation between original and transformed fractional coordinate, x and x',
+    is
+
+    x' = Rx + t
+
+    Obviously, x, x' and t are treated as a column vector
+
+    Args:
+        s (str): a symmetry operation string found in 
+            _symmetry_equiv_pos_as_xyz item of a CIF file.
+
+    Returns:
+        two lists, shape (3,3) and (3,)
+    '''
+    trans = [0, 0, 0]
+    rot = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    items = [x.strip() for x in s.split(',')]
+    if len(items) != 3:
+        raise ValueError("s does not seem to be a symmetry operation string")
+    for i in items:
+        if len(i) == 0:
+            raise ValueError(
+                "s does not seem to be a symmetry operation string")
+
+    d = {'x': 0, 'y': 1, 'z': 2}
+    for i in range(3):
+        stList = items[i].split('+')
+        for st in stList:
+            # loop in case that string like '-x-y' appears
+            while True:
+                sign = 1
+                try:
+                    if st.startswith('-'):
+                        sign = -1
+                        st = st[1:]
+                    if st[0] in d:
+                        rot[i][d[st[0]]] = sign
+                        st = st[1:]
+                    else:
+                        # confront number
+                        break
+                except IndexError:
+                    # end of line
+                    break
+            if len(st) == 0:
+                continue
+            else:
+                # deal with fractional number x/y
+                trans[i] = float(st[0]) / float(st[-1])
+    return rot, trans
+
+
+def conv_estimate_number(s):
+    '''Convert a string representing a number with error to a float number.
+
+    Literally, string like '3.87(6)' will be converted to 3.876.
+    For now, estimate error in the parenthese is reserved.
+
+    Args:
+        s (str): number string
+
+    Retuns:
+        float
+    '''
+    return float(re.sub(r"[\(\)]", '', s))
+
+
+def get_latt_from_latt_consts(a, b, c, alpha=90, beta=90, gamma=90):
+    '''Convert lattice constants to lattice vectors in right-hand system
+
+    Currently support orthormrhobic lattice only!!!
+
+    Args:
+        a, b, c (float): length of lattice vectors
+        alpha, beta, gamma (float): angles between lattice vectors in degree.
+            90 used as default.
+    '''
+    a = abs(a)
+    b = abs(b)
+    c = abs(c)
+    return [[a, 0, 0], [0, b, 0], [0, 0, c]]

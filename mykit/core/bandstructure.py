@@ -635,10 +635,8 @@ class BandStructure(Prec, Verbose, EnergyUnit):
             return np.infty
         return 1.0/inv
 
-    def sum_atom_proj_comp(self, atom, proj, fail_one=True):
+    def sum_atom_proj_comp(self, atom=None, proj=None, fail_one=True):
         '''Sum the partial wave for projectors `proj` on atoms `atom`
-
-        If the instance does not have projection information, 1 will be returned.
 
         Args:
             atom (int, str, Iterable)

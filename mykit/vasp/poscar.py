@@ -197,20 +197,6 @@ class Poscar(Cell):
             return cls(_latt, _atoms, _pos, unit="ang", coordSys=_cs,
                        allRelax=True, selectDyn=__fix, comment=_comment)
 
-    @classmethod
-    def create_from_cell(cls, cell):
-        '''Create POSCAR from ``Cell`` instance ``cell``.
-        '''
-        try:
-            assert isinstance(cell, Cell)
-        except AssertionError:
-            raise cls._error("the input is not a lattice instance")
-        __kw = cell.get_kwargs()
-        return cls(*cell.get_cell(), **__kw)
-
-
-# ===============================
-
 # def read_atom_info(poscar='POSCAR'):
 #     atom_type_list = []
 #     natoms_list = []

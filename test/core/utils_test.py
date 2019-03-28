@@ -3,10 +3,13 @@
 
 import unittest as ut
 
-from mykit.core.utils import (conv_string, find_vol_dirs, get_dirpath,
-                              get_file_ext, get_str_indices,
-                              get_str_indices_by_iden, trim_after, trim_before,
-                              trim_both_sides)
+import numpy as np
+
+from mykit.core.utils import (conv_equiv_pos_string, conv_estimate_number,
+                              conv_string, find_vol_dirs, get_dirpath,
+                              get_file_ext, get_latt_from_latt_consts,
+                              get_str_indices, get_str_indices_by_iden,
+                              trim_after, trim_before, trim_both_sides)
 
 
 class file_and_path(ut.TestCase):
@@ -22,7 +25,7 @@ class file_and_path(ut.TestCase):
     def test_get_file_ext(self):
         self.assertEqual("cif", get_file_ext('abc.cif'))
         self.assertEqual("struct", get_file_ext('a/b/c/c.struct'))
-        self.assertEqual("struct", get_file_ext('a/b/c/c'))
+        self.assertEqual("", get_file_ext('a/b/c/c'))
         self.assertEqual(None, get_file_ext(get_dirpath(__file__)))
 
 
@@ -70,6 +73,9 @@ class test_string_manipulation(ut.TestCase):
         # self.assertRaises(ValueError, conv_string, \
         #     string, int, 0, 2, sep=r"[;=]")
 
+    def test_conv_estimate_number(self):
+        self.assertEqual(3.23, conv_estimate_number('3.2(3)'))
+
 
 class test_indicies_searching(ut.TestCase):
 
@@ -87,6 +93,28 @@ class test_indicies_searching(ut.TestCase):
             get_str_indices_by_iden(self.container, ['b', 0]))
         self.assertListEqual([1, 6], \
             get_str_indices_by_iden(self.container, ['b', 20]))
+
+
+class test_cif_conversion_utils(ut.TestCase):
+
+    def test_conv_equiv_pos_string(self):
+        self.assertRaisesRegex(ValueError, \
+            r"s does not seem to be a symmetry operation string", 
+            conv_equiv_pos_string, 'x, y, z, a')
+        self.assertRaisesRegex(ValueError, \
+            r"s does not seem to be a symmetry operation string", 
+            conv_equiv_pos_string, 'x, y,')
+    
+    def test_get_latt_from_latt_consts(self):
+        a = 2.0
+        b = 3.0
+        c = 4.0
+        # alpha = 60
+        # beta = 60
+        # gamma = 60
+        self.assertTrue(np.allclose(\
+            [[a,0,0],[0,b,0],[0,0,c]], \
+                get_latt_from_latt_consts(a, b, c)))
 
 
 if __name__ == "__main__":

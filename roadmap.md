@@ -101,7 +101,6 @@ and help map name and value of parameter tags between different simulation progr
       - [x] partial (projected) DOS
       - [x] fermi level
     - [x] extract partial wave coefficients of a or one of projectors on atoms
-    - Visualize DOS
 
 ## `vasp` package: VASP related
 
@@ -164,7 +163,7 @@ and help map name and value of parameter tags between different simulation progr
     - [x] draw selected bands
     - [x] mark the kpoints symbols
     - [x] allow to draw the projections for selected components on atoms of selected bands if projections are available
-      - [ ] raise error if no projection is available
+      - [x] raise error if no projection is available
       - [x] drawn as dots on the band, with area representing the value of projections, see [this SO link](https://stackoverflow.com/a/14860958)
       - [x] drawn as a fill under on the band, with width representing the value of projections
 

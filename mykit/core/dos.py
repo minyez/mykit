@@ -41,6 +41,7 @@ class Dos(Prec, Verbose, EnergyUnit):
     '''
 
     def __init__(self, edos, totalDos, efermi, unit='ev', projected=None):
+        # check shape consistency
         try:
             shapeE = np.shape(edos)
             shapeDos = np.shape(totalDos)
@@ -196,20 +197,26 @@ class Dos(Prec, Verbose, EnergyUnit):
             return self._pDos
         return None
 
-    def _sum_atom_proj_comp(self, atom, proj):
+    def sum_atom_proj_comp(self, atom=None, proj=None, fail_one=True):
         '''Sum the pDOS for projectors `proj` on atoms `atom`
 
         If the instance does not have projection information, 1 will be returned.
 
         Args:
-            atom (int, str, Iterable):
-            proj (int, str, Iterable):
+            atom (int, str, Iterable)
+            proj (int, str, Iterable)
+            fail_one (bool): control the return when no projection is available. 
+                if set True, return np.ones with correct shape, otherwise np.zeros
 
         Returns:
             (nedos, nspins)
         '''
         if not self.hasProjection:
-            return np.ones((self.nedos, self.nspins))
+            func = {True: np.ones, False: np.zeros}
+            try:
+                return func[fail_one]((self.nedos, self.nspins))
+            except KeyError:
+                raise TypeError("fail_one should be bool type.")
         if atom is None:
             atInd = list(range(self.natoms))
         else:
