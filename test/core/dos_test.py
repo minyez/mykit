@@ -5,6 +5,7 @@ import unittest as ut
 
 import numpy as np
 
+from mykit.core.constants import EV2RY
 from mykit.core.dos import Dos, DosError
 
 goodEgrid = [-4,-3,-2,-1,0,1,2,3,4]
@@ -41,9 +42,11 @@ class test_dos_initialize(ut.TestCase):
             Dos, badEgrid, goodDos, 0.0)
     
     def test_properties(self):
-        dos = Dos(goodEgrid, goodDos, efermi=0.0)
+        dos = Dos(goodEgrid, goodDos, efermi=1.0, unit="ev")
         self.assertEqual(dos.nedos, nedos)
         self.assertEqual(dos.nspins, nspins)
+        dos.unit = "ry"
+        self.assertAlmostEqual(dos.efermi, EV2RY)
         
 
 

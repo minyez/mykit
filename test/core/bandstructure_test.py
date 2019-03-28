@@ -10,50 +10,53 @@ import numpy as np
 
 from mykit.core.bandstructure import BandStructure as BS
 from mykit.core.bandstructure import BandStructureError as BSE
-from mykit.core.bandstructure import _check_eigen_occ_weight_consistency
+from mykit.core.bandstructure import (_check_eigen_occ_weight_consistency,
+                                      _random_band_structure)
 from mykit.core.constants import EV2HA, EV2RY
 from mykit.core.utils import get_matched_files
 
 # pylint: disable=bad-whitespace
 goodEigen = [
     [
-        [1,2,3],
-        [11,22,33],
+        [1, 2, 3],
+        [11, 22, 33],
     ],
 ]
-badEigen = [[100,102,103], [210,212,213]]
+badEigen = [[100, 102, 103], [210, 212, 213]]
 goodOcc = [
     [
-        [1.0,1.0,0.0],
-        [1.0,1.0,0.0],
+        [1.0, 1.0, 0.0],
+        [1.0, 1.0, 0.0],
     ],
 ]
-badOcc = [[1.0,1.0,0.0],[1.0,1.0,0.0]]
+badOcc = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0]]
+ivb = 1
 goodWeight = [1, 4]
-badWeight = [1,]
+badWeight = [1, ]
 efermi = 1.0
 nspins, nkpts, nbands = np.shape(goodEigen)
+
 
 class test_check_consistency(ut.TestCase):
 
     def test_check_eigen_occ(self):
-        self.assertTupleEqual(_check_eigen_occ_weight_consistency(goodEigen, goodOcc, goodWeight), \
-            (nspins, nkpts, nbands))
-        self.assertTupleEqual(_check_eigen_occ_weight_consistency(badEigen, badOcc, goodWeight), \
-            ())
-        self.assertTupleEqual(_check_eigen_occ_weight_consistency(goodEigen, goodOcc, badWeight), \
-            ())
+        self.assertTupleEqual(_check_eigen_occ_weight_consistency(goodEigen, goodOcc, goodWeight),
+                              (nspins, nkpts, nbands))
+        self.assertTupleEqual(_check_eigen_occ_weight_consistency(badEigen, badOcc, goodWeight),
+                              ())
+        self.assertTupleEqual(_check_eigen_occ_weight_consistency(goodEigen, goodOcc, badWeight),
+                              ())
 
 
 class test_BS_no_projection(ut.TestCase):
 
     def test_raise_inconsistent_eigen_occ(self):
-        self.assertRaisesRegex(BSE, r"Bad eigen, occ and weight shapes *", \
-            BS, badEigen, goodOcc, goodWeight)
-        self.assertRaisesRegex(BSE, r"Bad eigen, occ and weight shapes *", \
-            BS, goodEigen, badOcc, goodWeight)
-        self.assertRaisesRegex(BSE, r"Bad eigen, occ and weight shapes *", \
-            BS, goodEigen, goodOcc, badWeight)
+        self.assertRaisesRegex(BSE, r"Bad eigen, occ and weight shapes *",
+                               BS, badEigen, goodOcc, goodWeight)
+        self.assertRaisesRegex(BSE, r"Bad eigen, occ and weight shapes *",
+                               BS, goodEigen, badOcc, goodWeight)
+        self.assertRaisesRegex(BSE, r"Bad eigen, occ and weight shapes *",
+                               BS, goodEigen, goodOcc, badWeight)
 
     def test_properties(self):
         bs = BS(goodEigen, goodOcc, goodWeight, efermi=efermi)
@@ -88,16 +91,22 @@ class test_BS_no_projection(ut.TestCase):
         self.assertEqual(efermi, bs.efermi)
         vbm = bs.vbm
         bs.unit = "ry"
-        self.assertTrue(np.array_equal(bs.eigen, \
-            np.multiply(goodEigen, EV2RY)))
+        self.assertTrue(np.array_equal(bs.eigen,
+                                       np.multiply(goodEigen, EV2RY)))
         self.assertEqual(efermi * EV2RY, bs.efermi)
         self.assertEqual(vbm * EV2RY, bs.vbm)
+
+    def test_get_band_indices(self):
+        bs = BS(goodEigen, goodOcc, goodWeight, efermi=efermi)
+        self.assertListEqual([ivb, ], bs.get_band_indices('vbm'))
+        self.assertListEqual(
+            [ivb-1, ivb+1], bs.get_band_indices('vbm-1', 'cbm'))
 
 
 class test_BS_projection(ut.TestCase):
 
-    dataDirPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), \
-        '..', 'testdata')
+    dataDirPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               '..', 'testdata')
 
     def test_reading_in_good_projection(self):
         countGood = 0
@@ -121,6 +130,33 @@ class test_BS_projection(ut.TestCase):
         print("Processed {} good band structure projections".format(countGood))
 
 
+class test_BS_randomize(ut.TestCase):
+    '''Test if the random band structure behaves as expected
+    '''
+
+    n = 30
+
+    def test_semiconductor(self):
+        ri = np.random.randint
+        for _i in range(self.n):
+            ns = ri(1, 2)
+            nk = ri(3, 31)
+            nb = ri(10, 41)
+            bs = _random_band_structure(ns, nk, nb, is_metal=False)
+            self.assertEqual(bs.nspins, ns)
+            self.assertEqual(bs.nkpts, nk)
+            self.assertEqual(bs.nbands, nb)
+            self.assertFalse(bs.isMetal)
+            self.assertTrue(np.all(bs.fundGap > 0))
+
+    def test_metal(self):
+        ri = np.random.randint
+        ns = ri(1, 2)
+        nk = ri(3, 31)
+        nb = ri(10, 41)
+        for _i in range(self.n):
+            bs = _random_band_structure(ns, nk, nb, is_metal=True)
+            self.assertTrue(bs.isMetal)
 
 
 if __name__ == '__main__':

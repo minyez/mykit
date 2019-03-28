@@ -113,7 +113,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
             bands (int or str): the band identifier.
                 can be band indices (int), or strings like "cbm", "vbm",
                 "cbm-5", "vbm+2", etc.
-        
+
         Returns:
             list
         '''
@@ -137,7 +137,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
 
         Args:
             bandStr (str)
-        
+
         Returns:
             int
         '''
@@ -163,7 +163,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
     @unit.setter
     def unit(self, newu):
         coef = self._get_eunit_conversion(newu)
-        toConv = [self._eigen, self._bandWidth, 
+        toConv = [self._eigen, self._bandWidth,
                   self._vbmPerSpin, self._vbmPerChannel,
                   self._cbmPerSpin, self._cbmPerChannel,
                   ]
@@ -282,6 +282,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         '''Parse the kpoints vectors
         '''
         self._isKpath = None
+        self._kLineSegs = [(0, self.nkpts - 1), ]
         if not kvec is None:
             try:
                 assert np.shape(kvec) == (self._nkpts, 3)
@@ -295,9 +296,6 @@ class BandStructure(Prec, Verbose, EnergyUnit):
                 if kSegments != []:
                     self._isKpath = True
                     self._kLineSegs = kSegments
-                else:
-                    # use the first and last kpoints for plotting
-                    self._kLineSegs = [(0, self.nkpts - 1),]
             except (AssertionError, ValueError):
                 self.print_warn("Bad kpoint vectors input. Skip")
 
@@ -323,13 +321,13 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         if self.hasKvec:
             return self._kvec
         return None
-    
+
     @property
     def kLineSegs(self):
         '''List. Each member a list, containing the indices of starting and end
         kpoint vector
         '''
-        return self._kLineSegs 
+        return self._kLineSegs
 
     def _generate_kpath_x(self):
         '''Generate the x coordinates for plotting a kpath
@@ -696,3 +694,72 @@ def _check_eigen_occ_weight_consistency(eigen, occ, weight):
     if consist:
         return shapeEigen
     return ()
+
+
+def _random_band_structure(nspins=1, nkpts=1, nbands=2, natoms=1, nprojs=1,
+                           hasProjection=False, is_metal=False):
+    '''Return a BandStructure object with fake band energies, occupations and
+    projections
+
+    Note:
+        For test use only.
+
+    TODO:
+        randomize a kpath
+
+    Args:
+        nspins, nkpts, nbands, natoms, nprojs (int): 
+            the dimensions of eigenvalues, occupation numbers and projections.
+        hasProjection (bool): if fake projection information is generated
+        is_metal (bool): if set True, a band structure of metal is generated, 
+        otherwise that of semiconductor
+    '''
+    ns = nspins
+    nk = nkpts
+    nb = nbands
+    na = natoms
+    npr = nprojs
+    atomTypes = ["C", "Si", "Na", "Cl", "P"]
+    projNames = ["s", "px", "py", "pz", "dyz", "dzx", "dxy", "dx2-y2", "dz2"]
+    for i in [ns, nk, nb]:
+        assert isinstance(i, int)
+    if nspins not in [1, 2]:
+        ns = 1
+    if nk < 1:
+        nk = 1
+    # at least one empty band
+    if nbands < 2:
+        nb = 2
+    if na < 1:
+        na = 6
+    if npr < 1:
+        npr = 1
+        
+    shape = (ns, nk, nb)
+    eigen = np.random.random_sample(shape)
+    # set vb to the band in the middle
+    ivb = int(nbands/2) - 1
+    for i in range(nbands):
+        eigen[:, :, i] += i - ivb
+
+    occ = np.zeros(shape)
+    occ[:, :, :ivb+1] = 1.0
+    weight = np.random.randint(1, 11, size=nk)
+    efermi = None
+    if is_metal:
+        efermi = np.average(eigen[:, :, ivb])
+        occ[:, :, ivb] = np.exp(efermi - eigen[:, :, ivb])
+        # normalize to 1
+        occ[:, :, ivb] /= np.max(occ[:, :, ivb])
+    projected = None
+    if hasProjection:
+        atoms = list(np.random.choice(atomTypes, na))
+        projs = projNames[:npr]
+        pWave = np.random.random_sample((*shape, na, npr))
+        # normalize
+        for ispin in range(ns):
+            for ik in range(nk):
+                for ib in range(nb):
+                    pWave[ispin, ik, ib, :, :] /= np.sum(pWave[ispin, ik, ib, :, :])
+        projected = dict((("atoms", atoms), ("projs", projs), ("pWave", pWave)))
+    return BandStructure(eigen, occ, weight, efermi=efermi, projected=projected)

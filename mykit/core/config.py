@@ -2,7 +2,6 @@
 '''defines variables related to MYKit configuration
 '''
 
-import abc
 import json
 import logging
 import os

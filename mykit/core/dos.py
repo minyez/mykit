@@ -52,7 +52,7 @@ class Dos(Prec, Verbose, EnergyUnit):
             raise DosError(
                 'Inconsistent shape: edos {}, DOS {}'.format(shapeE, shapeDos))
         EnergyUnit.__init__(self, eunit=unit)
-        self._edos = edos
+        self._edos = np.array(edos, dtype=self._dtype)
         self._efermi = efermi
         self._nedos, self._nspins = shapeDos
         self._dos = np.array(totalDos, dtype=self._dtype)

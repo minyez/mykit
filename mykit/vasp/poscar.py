@@ -163,7 +163,7 @@ class Poscar(Cell):
                 # read possible selective dynamic flags, and atom type
                 if len(_words) == 3:
                     pass
-                # add possible atomic info for ATAT like POSCAR
+                # add possible atomic info for ATAT-like POSCAR
                 elif len(_words) == 4:
                     try:
                         assert _words[-1] not in __fixDict
