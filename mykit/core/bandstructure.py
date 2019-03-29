@@ -687,6 +687,9 @@ class BandStructure(Prec, Verbose, EnergyUnit):
             nedos (int): the number of energy grid points
             smearing (str): the smearing scheme
             sigma (float): the width of smearing, in the same unit with BandStructure.
+
+        Returns:
+            ``Dos`` object
         '''
         smearDict = {
             "Gaussian": Smearing.gaussian,
@@ -696,27 +699,22 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         if smearing not in smearDict:
             raise ValueError("smearing type {} is not available".format(smearing))
         sm = smearDict[smearing]
-        eminAvail = np.min(self._eigen)
-        emaxAvail = np.max(self._eigen)
+        eminAvail, emaxAvail = np.min(self._eigen), np.max(self._eigen)
         if emin is None:
-            emin = eminAvail
-        elif not isinstance(emin, Real):
-            raise TypeError("emin must be a real number")
-        if emin < eminAvail:
             emin = eminAvail
         if emax is None:
             emax = emaxAvail
-        elif not isinstance(emax, Real):
-            raise TypeError("emax must be a real number")
+        for e in (emin, emax):
+            if not isinstance(e, Real):
+                raise TypeError("emin/emax must be a real number")
+        if emin < eminAvail:
+            emin = eminAvail
         if emax > emaxAvail:
             emax = emaxAvail
-
         egrid = np.linspace(emin, emax, nedos)
         totalDos = np.zeros((nedos, self.nspins), dtype=self._dtype)
         if self.hasProjection:
-            projected = {}
-            projected["atoms"] = self._atoms 
-            projected["projs"] = self._projs
+            projected = {"atoms": self._atoms, "projs": self._projs}
             pDos = np.zeros((nedos, self.nspins, self.natoms, self.nprojs), dtype=self._dtype)
             projected["pDos"] = pDos
         else:
@@ -731,7 +729,6 @@ class BandStructure(Prec, Verbose, EnergyUnit):
                 for _j in range(2):
                     p = np.moveaxis(p, 0, -1)
                 pDos[i, :, :, :] += np.sum(p * self._pWave, axis=(1,2))
-        
         return Dos(egrid, totalDos, self._efermi, unit=self.unit, projected=projected)
 
 

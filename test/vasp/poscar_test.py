@@ -114,7 +114,7 @@ def _verify_poscar_by_json(tc, pc, pathJson):
     if "comment" in _vDict:
         tc.assertEqual(_vDict["comment"], pc.comment)
     if "pos" in _vDict:
-        tc.assertTrue(np.allclose(pc.pos, np.array(_vDict["pos"], dtype=pc._dtype)))
+        tc.assertTrue(np.allclose(pc.pos, np.array(_vDict["pos"], dtype=pc._dtype)), msg=verifyMsg)
     # put sort check at the end
     if "sorted" in _vDict:
         for _axis in range(3):

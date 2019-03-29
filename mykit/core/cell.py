@@ -74,7 +74,7 @@ class Cell(Prec, Verbose, LengthUnit):
         # check input consistency
         self.__check_consistency()
         # move all atoms into the lattice (0,0,0)
-        self.move_atoms_to_first_lattice()
+        # self.move_atoms_to_first_lattice()
         # sanitize atoms arrangement
         self.__sanitize_atoms()
 
