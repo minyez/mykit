@@ -15,10 +15,8 @@ The ``cell`` class and its subclasses accept the following kwargs when being ins
 
 When other keyword are parsed, they will be filtered out and no exception will be raised
 '''
-import re
 from collections import OrderedDict
 from numbers import Real
-from os.path import abspath, isfile
 
 import numpy as np
 
@@ -26,8 +24,7 @@ from mykit.core.constants import PI
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import LengthUnit
-from mykit.core.utils import (conv_equiv_pos_string, conv_estimate_number,
-                              get_latt_from_latt_consts, get_str_indices)
+from mykit.core.utils import Cif, get_str_indices
 
 
 # ==================== classes ====================
@@ -705,8 +702,10 @@ class Cell(Prec, Verbose, LengthUnit):
     def read_from_cif(cls, pathCif):
         '''Read from Cif file and return a instance by use of PyCIFRW
         '''
-        path = abspath(pathCif)
-        latt, atoms, pos, kw = get_latt_atoms_pos_from_cif(path)
+        cif = Cif(pathCif)
+        kw = {"coordSys": "D", "reference": cif.get_reference_str(), }
+        latt = cif.get_lattice_vectors()
+        atoms, pos = cif.get_all_atoms()
         return cls(latt, atoms, pos, **kw)
 
     @classmethod
@@ -1233,83 +1232,3 @@ def periodic_duplicates_in_cell(directCoord):
                 _c[i] = 1.0
             _dupcs.extend(_trans)
     return tuple(_dupcs), _n
-
-
-def get_latt_atoms_pos_from_cif(pathCif):
-    '''Return lattice vectors, symbols and positions of atoms withint the cell
-    recorded in a CIF file
-
-    Args:
-        pathCif (str): the path of the cif file to read
-
-    Returns:
-        3 lists and 1 dictionary.
-    '''
-    import CifFile
-
-    if not isfile(pathCif):
-        raise FileNotFoundError(pathCif)
-
-    cf = CifFile.ReadCif(pathCif, scantype='flex')
-    blk = cf.first_block()
-
-    # get positions and symbols of all inequivalent atoms
-    posInequiv = []
-    atomInequiv = []
-    natomsPerInequiv = []
-    for l in blk.GetLoop('_atom_site_fract_x'):
-        posOne = []
-        for a in ["_atom_site_fract_x",
-                  "_atom_site_fract_y",
-                  "_atom_site_fract_z"]:
-            p = conv_estimate_number(l.__getattribute__(a))
-            posOne.append(p)
-        posInequiv.append(posOne)
-        natomsPerInequiv.append(int(l._atom_site_symmetry_multiplicity))
-        atomInequiv.append(re.sub(r"\d[+-]?", '', l._atom_site_type_symbol))
-    # get all operation symmetries
-    rot = []
-    trans = []
-    for l in blk.GetLoop('_symmetry_equiv_pos_site_id'):
-        r, t = conv_equiv_pos_string(l._symmetry_equiv_pos_as_xyz)
-        rot.append(r)
-        trans.append(t)
-    # construct atom symbols and positions list by symmetry operations
-    pos = []
-    atoms = []
-    for r, t in zip(rot, trans):
-        for i, p in enumerate(posInequiv):
-            a = np.add(np.dot(r, p), t)
-            # move to the lattice at origin
-            a = np.subtract(a, np.floor(a))
-            try:
-                for pPrev in pos:
-                    if np.allclose(pPrev, a):
-                        raise ValueError
-            except ValueError:
-                continue
-            else:
-                atoms.append(atomInequiv[i])
-                pos.append(a)
-    # consistency check
-    if sum(natomsPerInequiv) != len(atoms):
-        raise IOError(
-            "inconsistent number of atoms and entries after symmetry operations")
-
-    # get the lattice vectors
-    latta, lattb, lattc = \
-        tuple(map(lambda x: conv_estimate_number(blk.GetItemValue(x)),
-                  ["_cell_length_a", "_cell_length_b", "_cell_length_c"]))
-    angles = []
-    for a in ["_cell_angle_alpha",
-              "_cell_angle_beta",
-              "_cell_angle_gamma"]:
-        angles.append(conv_estimate_number(blk.GetItemValue(a)))
-    latt = get_latt_from_latt_consts(latta, lattb, lattc, *angles)
-
-    kw = {"coordSys": "D"}
-    # get reference
-    refTitle = ''.join(blk.GetItemValue("_publ_section_title").split('\n'))
-    kw["reference"] = refTitle
-
-    return latt, atoms, pos, kw

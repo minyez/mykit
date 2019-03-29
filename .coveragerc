@@ -3,6 +3,7 @@ source = mykit
 omit = 
     versioneer.py
     setup.py
+    mykit/_version.py
 
 [report]
 ignore_errors = True

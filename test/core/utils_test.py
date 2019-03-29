@@ -5,11 +5,11 @@ import unittest as ut
 
 import numpy as np
 
-from mykit.core.utils import (conv_equiv_pos_string, conv_estimate_number,
-                              conv_string, find_vol_dirs, get_dirpath,
-                              get_file_ext, get_latt_from_latt_consts,
-                              get_str_indices, get_str_indices_by_iden,
-                              trim_after, trim_before, trim_both_sides)
+from mykit.core.utils import (Cif, conv_estimate_number, conv_string,
+                              find_vol_dirs, get_dirpath, get_file_ext,
+                              get_latt_vecs_from_latt_consts, get_str_indices,
+                              get_str_indices_by_iden, trim_after, trim_before,
+                              trim_both_sides)
 
 
 class file_and_path(ut.TestCase):
@@ -95,17 +95,17 @@ class test_indicies_searching(ut.TestCase):
             get_str_indices_by_iden(self.container, ['b', 20]))
 
 
-class test_cif_conversion_utils(ut.TestCase):
+class test_cif_related(ut.TestCase):
 
-    def test_conv_equiv_pos_string(self):
+    def test_decode_equiv_pos_string(self):
         self.assertRaisesRegex(ValueError, \
             r"s does not seem to be a symmetry operation string", 
-            conv_equiv_pos_string, 'x, y, z, a')
+            Cif.decode_equiv_pos_string, 'x, y, z, a')
         self.assertRaisesRegex(ValueError, \
             r"s does not seem to be a symmetry operation string", 
-            conv_equiv_pos_string, 'x, y,')
+            Cif.decode_equiv_pos_string, 'x, y,')
     
-    def test_get_latt_from_latt_consts(self):
+    def test_get_latt_vecs_from_latt_consts(self):
         a = 2.0
         b = 3.0
         c = 4.0
@@ -114,7 +114,7 @@ class test_cif_conversion_utils(ut.TestCase):
         # gamma = 60
         self.assertTrue(np.allclose(\
             [[a,0,0],[0,b,0],[0,0,c]], \
-                get_latt_from_latt_consts(a, b, c)))
+                get_latt_vecs_from_latt_consts(a, b, c)))
 
 
 if __name__ == "__main__":
