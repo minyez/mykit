@@ -33,7 +33,7 @@ Classes that control the allowed units and their conversions inbetween
       - [x] diamond
       - [x] perovskite
     - [x] allow adding atoms 'on the fly'
-    - [ ] read structure from CIF file by `PyCIFRW`
+    - [x] read structure from CIF file by `PyCIFRW`
 
 ### Input controllers
 
@@ -91,7 +91,7 @@ and help map name and value of parameter tags between different simulation progr
     - [x] eigenvalue unit argument
     - [x] if kpath is detected, compute lengths of line segments as plotting x. Otherwise use the index of kpoints.
     - [ ] export to data file
-    - [ ] return a `Dos` object by specifying a smearing
+    - [x] return a `Dos` object by specifying a smearing
 
 ### `dos` module
 

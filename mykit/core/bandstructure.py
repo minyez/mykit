@@ -7,11 +7,12 @@ from numbers import Real
 
 import numpy as np
 
+from mykit.core.dos import Dos
 from mykit.core.kmesh import check_kvecs_form_kpath
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import EnergyUnit
-from mykit.core.utils import get_str_indices_by_iden
+from mykit.core.utils import Smearing, get_str_indices_by_iden
 
 # from mykit.core.visualizer import _BandVisualizer
 
@@ -674,6 +675,64 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         if self.hasProjection:
             return get_str_indices_by_iden(self._projs, proj)
         return []
+    
+    def get_dos(self, emin=None, emax=None, nedos=3000, smearing="Gaussian", sigma=0.05):
+        '''Generate a Dos object on a energy grid by smearing the band structure
+        with particular smearing scheme
+
+        Args:
+            emin, emax (float): the minimum and maximum of energy grid.
+                If not specified, the minium and maximum value of the eigenvalues
+                will be used, respectively.
+            nedos (int): the number of energy grid points
+            smearing (str): the smearing scheme
+            sigma (float): the width of smearing, in the same unit with BandStructure.
+        '''
+        smearDict = {
+            "Gaussian": Smearing.gaussian,
+        }
+        if not isinstance(sigma, Real):
+            raise TypeError("sigma must be a real number")
+        if smearing not in smearDict:
+            raise ValueError("smearing type {} is not available".format(smearing))
+        sm = smearDict[smearing]
+        eminAvail = np.min(self._eigen)
+        emaxAvail = np.max(self._eigen)
+        if emin is None:
+            emin = eminAvail
+        elif not isinstance(emin, Real):
+            raise TypeError("emin must be a real number")
+        if emin < eminAvail:
+            emin = eminAvail
+        if emax is None:
+            emax = emaxAvail
+        elif not isinstance(emax, Real):
+            raise TypeError("emax must be a real number")
+        if emax > emaxAvail:
+            emax = emaxAvail
+
+        egrid = np.linspace(emin, emax, nedos)
+        totalDos = np.zeros((nedos, self.nspins), dtype=self._dtype)
+        if self.hasProjection:
+            projected = {}
+            projected["atoms"] = self._atoms 
+            projected["projs"] = self._projs
+            pDos = np.zeros((nedos, self.nspins, self.natoms, self.nprojs), dtype=self._dtype)
+            projected["pDos"] = pDos
+        else:
+            projected = None
+        # ? the convolution may be optimized
+        for i in range(nedos):
+            # shape of d: (nspins, nkpts, nbands)
+            d =  sm(self._eigen, egrid[i], sigma)
+            totalDos[i, :] += np.sum(d, axis=(1, 2))
+            if self.hasProjection:
+                p = np.tile(d, (self.natoms, self.nprojs, 1, 1, 1))
+                for _j in range(2):
+                    p = np.moveaxis(p, 0, -1)
+                pDos[i, :, :, :] += np.sum(p * self._pWave, axis=(1,2))
+        
+        return Dos(egrid, totalDos, self._efermi, unit=self.unit, projected=projected)
 
 
 def _check_eigen_occ_weight_consistency(eigen, occ, weight):

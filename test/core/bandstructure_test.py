@@ -101,6 +101,10 @@ class test_BS_no_projection(ut.TestCase):
         self.assertListEqual([ivb, ], bs.get_band_indices('vbm'))
         self.assertListEqual(
             [ivb-1, ivb+1], bs.get_band_indices('vbm-1', 'cbm'))
+    
+    def test_get_dos(self):
+        bs = BS(goodEigen, goodOcc, goodWeight, efermi=efermi)
+        bs.get_dos()
 
 
 class test_BS_projection(ut.TestCase):
@@ -126,6 +130,7 @@ class test_BS_projection(ut.TestCase):
             self.assertListEqual(bs.projs, j["projs"])
             self.assertTrue(bs.hasProjection)
             bs.effective_gap()
+            bs.get_dos()
             countGood += 1
         print("Processed {} good band structure projections".format(countGood))
 
@@ -134,7 +139,7 @@ class test_BS_randomize(ut.TestCase):
     '''Test if the random band structure behaves as expected
     '''
 
-    n = 30
+    n = 10
 
     def test_semiconductor(self):
         ri = np.random.randint

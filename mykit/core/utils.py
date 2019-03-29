@@ -13,6 +13,8 @@ from sys import stdout
 import CifFile
 import numpy as np
 
+from mykit.core.constants import PI
+
 
 def get_dirpath(filePath):
     '''get the name of directory with filePath
@@ -309,31 +311,6 @@ def conv_string(string, conv2, *indices, sep=None, strips=None):
         return list(map(convfunc, conv_strs))
 
 
-# def common_ss_conv(string, i, conv2, sep=None):
-#     '''
-#     Split the string and convert a single substring to a specified type.
-
-#     Args:
-#         string (str): the string from which to convert value
-#         i (int): the substring index in the list to be converted after splitting by sep
-#         conv2: the type to which the substring will be converted
-#         sep (regex): the separators used to split the string.
-#     '''
-
-#     str_tmp = string.strip()
-#     if sep is not None:
-#         str_list = re.split(r'[%s]'%sep, str_tmp)
-#     #    print(str_list)
-#     else:
-#         str_list = str_tmp.split()
-
-#     # try:
-#         # return conv2(str_list[i])
-#     # except ValueError:
-#     #     return conv2(float(str_list[i]))
-#     return conv2(str_list[i])
-
-
 def get_first_last_line(filePath, encoding=stdout.encoding):
     '''Return the first and the last lines of file
 
@@ -375,7 +352,7 @@ def get_str_indices(container, string):
     return ind
 
 
-def get_str_indices_by_iden(container, iden):
+def get_str_indices_by_iden(container, iden=None):
     '''Return the indices of identified strings in a list or tuple``container``.
 
     The strings are identified by ``iden``, either a str, int, or a Iterable of these types.
@@ -390,6 +367,8 @@ def get_str_indices_by_iden(container, iden):
         list, unique indices of identified strings
     '''
     ret = []
+    if iden is None:
+        return ret
     l = len(container)
     if isinstance(iden, int):
         if iden < l:
@@ -526,13 +505,14 @@ class Cif:
         if self._latt is None:
             latta, lattb, lattc = \
                 tuple(map(lambda x: conv_estimate_number(self.__blk.GetItemValue(x)),
-                        ["_cell_length_a", "_cell_length_b", "_cell_length_c"]))
+                          ["_cell_length_a", "_cell_length_b", "_cell_length_c"]))
             angles = []
             for a in ["_cell_angle_alpha",
-                    "_cell_angle_beta",
-                    "_cell_angle_gamma"]:
+                      "_cell_angle_beta",
+                      "_cell_angle_gamma"]:
                 angles.append(conv_estimate_number(self.__blk.GetItemValue(a)))
-            self._latt = get_latt_vecs_from_latt_consts(latta, lattb, lattc, *angles)
+            self._latt = get_latt_vecs_from_latt_consts(
+                latta, lattb, lattc, *angles)
         return self._latt
 
     def get_all_atoms(self):
@@ -567,7 +547,7 @@ class Cif:
             self._atoms = atoms
             self._pos = pos
         return self._atoms, self._pos
-    
+
     def get_reference_str(self):
         '''Get the reference string
 
@@ -575,7 +555,8 @@ class Cif:
             str
         '''
         if self._ref is None:
-            refTitle = ''.join(self.__blk.GetItemValue("_publ_section_title").split('\n'))
+            refTitle = ''.join(self.__blk.GetItemValue(
+                "_publ_section_title").split('\n'))
             self._ref = refTitle
         return self._ref
 
@@ -602,7 +583,8 @@ class Cif:
         rot = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
         items = [x.strip() for x in s.split(',')]
         if len(items) != 3:
-            raise ValueError("s does not seem to be a symmetry operation string")
+            raise ValueError(
+                "s does not seem to be a symmetry operation string")
         for i in items:
             if len(i) == 0:
                 raise ValueError(
@@ -634,3 +616,15 @@ class Cif:
                     # deal with fractional number x/y
                     trans[i] = float(st[0]) / float(st[-1])
         return rot, trans
+
+
+class Smearing:
+    '''class with different smearing schemes implemented as static method
+    '''
+
+    @staticmethod
+    def gaussian(x, x0, sigma):
+        '''Gaussian smearing
+        '''
+        return np.exp(-np.subtract(x, x0) ** 2 / sigma ** 2 / 2.0) / \
+            sigma / np.sqrt(2.0*PI)
