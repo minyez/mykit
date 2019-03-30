@@ -24,7 +24,8 @@ from mykit.core.constants import PI
 from mykit.core.log import Verbose
 from mykit.core.numeric import Prec
 from mykit.core.unit import LengthUnit
-from mykit.core.utils import Cif, get_str_indices
+from mykit.core.utils import (Cif, get_latt_consts_from_latt_vecs,
+                              get_str_indices)
 
 
 # ==================== classes ====================
@@ -400,18 +401,9 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def lattConsts(self):
-        '''Lattice constant of the cell, i.e., a, b, c, alpha, beta, gamma (In degree)
+        '''Lattice constant of the cell, i.e., a, b, c, alpha, beta, gamma (in degree)
         '''
-        _alen = self.alen
-        _angle = []
-        for i in range(3):
-            j = (i+1) % 3
-            k = (i+2) % 3
-            _cos = np.dot(self.__latt[j], self.__latt[k])/_alen[j]/_alen[k]
-            _angle.append(np.arccos(_cos))
-        # convert to degree
-        _angle = np.array(_angle, dtype=self._dtype) / PI * 180.0
-        return (*_alen, *_angle)
+        return get_latt_consts_from_latt_vecs(self.__latt)
 
     @property
     def latt(self):
@@ -926,6 +918,8 @@ class Cell(Prec, Verbose, LengthUnit):
             primitive (bool): if set True, the primitive cell will be generated.
             kwargs: keyword argument for ``Cell`` except ``coordSys``
         '''
+        if "comment" not in kwargs:
+            kwargs.update({"comment": "Diamond {}".format(atom)})
         return cls.zincblende(atom, atom, a=a, primitive=primitive, **kwargs)
 
     @classmethod

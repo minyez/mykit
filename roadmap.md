@@ -54,7 +54,9 @@ and help map name and value of parameter tags between different simulation progr
 
 ### `symmetry` module
 
-  - `Symmetry` class for symmetry information of lattice cell, with help of [spglib](https://atztogo.github.io/spglib/python-spglib.html)
+  - wrapper functions to `spglib` to get symmetry information from `Cell` objects
+    - [x] space group number and symbol
+    - [x] symmetry operations
     - [x] irreducible kpoints
     - [x] return primitive cell
     - [x] return standardized cell
@@ -142,11 +144,16 @@ and help map name and value of parameter tags between different simulation progr
 
 ## `wien2k` package: WIEN2k related
 
+  - `constants`: set up constants for WIEN2k, such as fortran IO format, default RMT and R0
+  - `utils`
+    - get default RMT and R0 for elements
+    - print a symmetry operation block with a rotation matrix and a translation vector
   - `inputs`
     - `In1`
       - [x] read from file
   - `struct`
     - `Struct`
+      - [x] subclass of `Cell`, with extra keyword argument `rmt` and `r0`.
 
 ## `visualize` module: visualizing results
  

@@ -33,8 +33,7 @@ class simple_cubic_lattice(ut.TestCase):
         self.assertTrue(np.array_equal(self._cell.a, self._latt))
         self.assertAlmostEqual(pow(self._a, 3), self._cell.vol)
         self.assertTrue(np.array_equal(self._cell.center, [0.5, 0.5, 0.5]))
-        lattConsts = self._cell.lattConsts
-        self.assertTupleEqual(lattConsts,
+        self.assertTupleEqual(self._cell.lattConsts,
                               (self._a, self._a, self._a, 90.0, 90.0, 90.0))
         # Reciprocal
         recpIn2Pi = np.array(self._latt, dtype=self._cell._dtype)/self._a**2

@@ -443,6 +443,32 @@ def get_latt_vecs_from_latt_consts(a, b, c, alpha=90, beta=90, gamma=90):
     return [[a, 0, 0], [0, b, 0], [0, 0, c]]
 
 
+def get_latt_consts_from_latt_vecs(latt):
+    '''Convert lattice vectors in right-hand system to lattice constants
+
+    Args:
+        latt (2d-array): lattice vectors, shape (3,3)
+    
+    Returns:
+        6 floats, a, b, c, alpha, beta, gamma (in degree)
+    '''
+    try:
+        assert np.shape(latt) == (3,3)
+    except AssertionError:
+        raise ValueError("Invalid lattice vectors")
+    a = np.array(latt)
+    alen = np.linalg.norm(a, axis=1)
+    angle = []
+    for i in range(3):
+        j = (i+1) % 3
+        k = (i+2) % 3
+        _cos = np.dot(a[j, :], a[k, :])/alen[j]/alen[k]
+        angle.append(np.arccos(_cos))
+    # convert to degree
+    angle = np.array(angle, dtype='float64') / PI * 180.0
+    return (*alen, *angle)
+
+
 class Cif:
     '''Class to read CIF files and initialize atomic data by PyCIFRW
 

@@ -95,7 +95,9 @@ class test_indicies_searching(ut.TestCase):
             get_str_indices_by_iden(self.container, ['b', 20]))
 
 
-class test_cif_related(ut.TestCase):
+class test_structure_related(ut.TestCase):
+    '''Test utilities related with structure and cell creation
+    '''
 
     def test_decode_equiv_pos_string(self):
         self.assertRaisesRegex(ValueError, \

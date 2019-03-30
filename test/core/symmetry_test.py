@@ -11,10 +11,13 @@ from mykit.core.metadata._spk import (_special_kpoints, cond_a_lt_b,
                                       cond_abc_invsq, cond_any, cond_c_lt_a,
                                       cond_curt_a_lt_sqrt_c,
                                       cond_max_bc_noneq_left)
-from mykit.core.symmetry import (SpaceGroup, SpecialKpoints, Symmetry,
-                                 SymmetryError, _check_valid_custom_ksym_dict,
+from mykit.core.symmetry import (SpaceGroup, SpecialKpoints, SymmetryError,
+                                 _check_valid_custom_ksym_dict,
                                  _check_valid_spg_id,
-                                 _spglib_check_cell_and_coordSys)
+                                 _spglib_check_cell_and_coordSys, get_ibzkpt,
+                                 get_inequiv, get_spacegroup,
+                                 get_sym_operations, is_primitive, primitize,
+                                 standardize)
 
 NKSETS_COND = {
     cond_any: 1,
@@ -26,62 +29,59 @@ NKSETS_COND = {
 }
 
 
-class test_symmetry(ut.TestCase):
+class test_crystal_symmetries(ut.TestCase):
+    '''
+    '''
+    # rutile TiO2
+    rTiO2 = Cell.rutile("Ti", "O")
+    # w-ZnS
+    wZnS = Cell.wurtzite("Zn", "S")
+    # zincblende ZnO
+    zbPrim = Cell.zincblende("Zn", "O", primitive=True)
+    zbConv = Cell.zincblende("Zn", "O")
+    # diamond
+    dcPrim = Cell.diamond("C", aLatt=3.25, primitive=True)
+    dcConv = Cell.diamond("C", aLatt=3.25, primitive=False)
 
-    def test_check_primitive(self):
-        at = "C"
-        zbPrim = Cell.zincblende(at, at, primitive=True)
-        zbConv = Cell.zincblende(at, at, primitive=False)
-        self.assertTrue(Symmetry.check_primitive(zbPrim))
-        self.assertFalse(Symmetry.check_primitive(zbConv))
+    def test_sym_operations(self):
+        self.assertEqual(16, len(get_sym_operations(self.rTiO2)["rotations"]))
+        self.assertEqual(16, len(get_sym_operations(self.rTiO2)["translations"]))
+
+    def test_is_primitive(self):
+        self.assertTrue(is_primitive(self.zbPrim))
+        self.assertTrue(is_primitive(self.rTiO2))
+        self.assertTrue(is_primitive(self.wZnS))
+        self.assertTrue(is_primitive(self.dcPrim))
+        self.assertFalse(is_primitive(self.zbConv))
+        self.assertFalse(is_primitive(self.dcConv))
 
     def test_well_known_spg_of_sysmtems(self):
-        # TiO2
-        TiO2 = Cell.rutile("Ti", "O")
-        spgtio2 = Symmetry(TiO2)
-        self.assertEqual(136, spgtio2.spgId)
-        self.assertEqual('P4_2/mnm', spgtio2.spgSym)
-        self.assertTrue(spgtio2.isPrimitive)
-        # w-ZnS
-        wZnS = Cell.wurtzite("Zn", "S")
-        spgwzns = Symmetry(wZnS)
-        self.assertEqual(186, spgwzns.spgId)
-        self.assertEqual('P6_3mc', spgwzns.spgSym)
-        self.assertTrue(spgwzns.isPrimitive)
-        # zincblende ZnO
-        cZnO = Cell.zincblende("Zn", "O")
-        spgczno = Symmetry(cZnO)
-        self.assertEqual(216, spgczno.spgId)
-        self.assertEqual('F-43m', spgczno.spgSym)
-        self.assertFalse(spgczno.isPrimitive)
-        # diamond
-        dC = Cell.diamond("C", aLatt=3.25)
-        spgdc = Symmetry(dC)
-        self.assertEqual(227, spgdc.spgId)
-        self.assertEqual('Fd-3m', spgdc.spgSym)
-        self.assertFalse(spgdc.isPrimitive)
-        # direct get_spg
-        self.assertTupleEqual(Symmetry.get_spg(dC), (227, 'Fd-3m'))
+        self.assertTupleEqual((136, 'P4_2/mnm'), get_spacegroup(self.rTiO2))
+        self.assertTupleEqual((186, 'P6_3mc'), get_spacegroup(self.wZnS))
+        self.assertTupleEqual((216, 'F-43m'), get_spacegroup(self.zbPrim))
+        self.assertTupleEqual((227, 'Fd-3m'), get_spacegroup(self.dcPrim))
+    
+    def test_get_inequiv(self):
+        a, _i = get_inequiv(self.dcPrim)
+        self.assertListEqual(['C', ], a)
+        a, _i = get_inequiv(self.zbPrim)
+        self.assertListEqual(['Zn', 'O'], a)
 
     def test_zincblende_prim(self):
-        at = "C"
-        zbConv = Cell.zincblende(at, at, primitive=False)
-        sym = Symmetry(zbConv)
-        sym.cell
-        sym.operations
         # irreducible kpoints
-        sym.ibzkpt([2, 2, 2])
-        self.assertFalse(sym.isPrimitive)
-        # get_primitive
-        isPrim, _ = sym.get_primitive(store=True)
-        self.assertFalse(isPrim)
-        self.assertTrue(sym.isPrimitive)
-        # get_standard
-        sym.get_standard(primitive=False, store=True)
+        get_ibzkpt(self.zbConv, [2, 2, 2])
+        # primitize
+        zbPrim = primitize(self.zbConv)
+        self.assertIsInstance(zbPrim, Cell)
+        self.assertTrue(is_primitive(zbPrim))
+        # standardize
+        std = standardize(self.zbConv, primitive=False)
+        self.assertIsInstance(std, Cell)
         # for zincblende, the standard cell is conventional
-        self.assertFalse(sym.isPrimitive)
-        sym.get_standard(primitive=True, store=True)
-        self.assertTrue(sym.isPrimitive)
+        self.assertFalse(is_primitive(std))
+        std = standardize(self.zbConv, primitive=True)
+        self.assertIsInstance(std, Cell)
+        self.assertTrue(is_primitive(std))
 
 
 class test_space_group(ut.TestCase):
@@ -90,6 +90,9 @@ class test_space_group(ut.TestCase):
         (1, 'P1'), (22, 'F222'), (64, 'Cmce'), (123, 'P4mmm'),
         (161, 'R3c'), (168, 'P6_3mc'), (208, 'P4232'), (230, 'Ia-3d')
     ]
+    
+    def test_symbols(self):
+        self.assertEqual(len(SpaceGroup.symbols), 230)
 
     def test_get_spg_symbol(self):
         for i, symbol in self.testPair:
@@ -111,16 +114,6 @@ class test_space_group(ut.TestCase):
         self.assertRaisesRegex(SymmetryError,
                                r"Space group symbol is not found in ITA: Pxxx",
                                SpaceGroup.get_spg_id, 'Pxxx')
-
-    def test_symbols(self):
-        self.assertEqual(len(SpaceGroup.symbols), 230)
-
-    def test_get_spg(self):
-        at = "C"
-        fcc = Cell.bravais_cF(at, primitive=False)
-        self.assertTupleEqual(Symmetry.get_spg(fcc), (225, "Fm-3m"))
-        fcc = Cell.bravais_cF(at, primitive=True)
-        self.assertTupleEqual(Symmetry.get_spg(fcc), (225, "Fm-3m"))
 
 
 class test_spk_dict(ut.TestCase):
@@ -269,11 +262,6 @@ class test_special_kpoints(ut.TestCase):
         self.assertListEqual([0.0, 0.0, 0.5], spkpts["N"])
         spkpts["P"] = [0.2, 0.2, 0.2]
         self.assertDictEqual(spkpts._custom, {"P": [0.2, 0.2, 0.2]})
-
-    def test_init_from_symmetry(self):
-        sym = Symmetry(Cell.wurtzite("Zn", "O", a=6.0))
-        spk = SpecialKpoints.from_symmetry(sym)
-        self.assertEqual(spk.spgId, 186)
 
     def test_init_from_cell(self):
         aTiO2Prim = Cell.anatase("Ti", "O", primitive=True)
