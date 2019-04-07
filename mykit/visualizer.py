@@ -1,7 +1,6 @@
 # coding = utf-8
 
 from copy import deepcopy
-from numbers import Number
 
 import numpy as np
 
@@ -40,8 +39,10 @@ class BSVisualizer(Verbose):
     Args:
         bs (``BandStructure``): the band structure to plot
         ispin (int): the spin channel to show.
-        dos (`Dos` object or float)
-        projStyle ('dot', 'stripe'): the style to draw the wave projection
+        dos (`Dos` object or dict): density of states to draw with the band structure
+            if a dict is parsed, it will be used as the keyword arguments for ``get_dos``
+            method of ``BandStructure``
+        projStyle ('dot', 'stripe'): the style to draw the wave projections
         kwargs: keyword arguments to parse to initialize with `pyplot.subplots`
 
     TODO:
@@ -60,14 +61,17 @@ class BSVisualizer(Verbose):
             import matplotlib.pyplot as plt
         except ModuleNotFoundError:
             raise ValueError("Matplotlib is required to use pyplot plotter")
+        self._drawDos = False
         if dos is not None:
             self._drawDos = True
-            if isinstance(dos, Number):
-                pass
+            if isinstance(dos, dict):
+                self._dos = bs.get_dos(**dos)
             elif isinstance(dos, Dos):
-                pass
-            raise NotImplementedError(
-                "Plot DOS with band is not supported yet")
+                _check_bs_dos_consistency(bs, dos)
+                self._dos = deepcopy(dos)
+            else:
+                raise TypeError(
+                    "dos should be a number or Dos objest")
 
         if proj_style not in self._SUPPORT_PROJ_STYLE:
             raise ValueError("projStyle {} is not supported. {}".format(
@@ -83,11 +87,26 @@ class BSVisualizer(Verbose):
         self._projStyle = proj_style
         self._useLabel = False
         # initialize the Figure and Axes
-        self._fig, self._axes = plt.subplots(**kwargs)
-        self._axes.set_xlim([self._xs[0][0], self._xs[-1][-1]])
+        if self._drawDos:
+            kwargs.pop("nrows", None)
+            kwargs.pop("ncols", None)
+            kwargs.pop("sharey", None)
+            self._fig, (self._axbs, self._axdos) = plt.subplots(
+                1, 2, gridspec_kw={"width_ratios": [2, 1]}, sharey=True, **kwargs)
+            self._fig.subplots_adjust(wspace=0)
+        else:
+            self._fig, self._axbs = plt.subplots(**kwargs)
+        # set band structre axis
+        self._axbs.set_xlim([self._xs[0][0], self._xs[-1][-1]])
         # set x tick length to zero to make them invisible
-        self._axes.tick_params(axis=u'x', which=u'both', length=0)
-        self._axes.set_ylabel("Energy ({})".format(bs.unit))
+        self._axbs.tick_params(axis=u'x', which=u'both', length=0)
+        self._axbs.set_ylabel("Energy ({})".format(bs.unit))
+        # set dos axis
+        if self._drawDos:
+            # hide marks and tick of x axis
+            self._axdos.get_xaxis().set_ticks([])
+            self._axdos.set_xlim([0.0, np.max(self._dos.dos)*1.1])
+            self._draw_total_dos()
 
     @property
     def alignAtVbm(self):
@@ -124,7 +143,7 @@ class BSVisualizer(Verbose):
 
         Wrapper of pyplot.Axes.set_title
         '''
-        self._axes.set_title(title, **kwargs)
+        self._axbs.set_title(title, **kwargs)
 
     def set_elim(self, bottom, top, **kwargs):
         '''Set the energy limit to show
@@ -136,7 +155,21 @@ class BSVisualizer(Verbose):
             top (float): the upper bound of the energy range
             kwargs: the keyword arguments to parse to Axes.set_ylim
         '''
-        self._axes.set_ylim(bottom=bottom, top=top, **kwargs)
+        self._axbs.set_ylim(bottom=bottom, top=top, **kwargs)
+
+    def _draw_total_dos(self):
+        '''draw the total dos
+        '''
+        dos = self._dos
+        edos = dos.edos - dos.efermi * int(self.alignAtVbm)
+                    # self._bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
+        self._axdos.plot(dos.dos[:, self.ispin], edos, color="k")
+        # draw Fermi level
+        if self.alignAtVbm:
+            self._axdos.axhline(0.0, color="k", linestyle='dashed')
+        else:
+            self._axdos.axhline(dos.efermi, color="k", linestyle='dashed')
+
 
     def draw(self, *bands, **kwargs):
         '''draw the selected bands
@@ -156,15 +189,16 @@ class BSVisualizer(Verbose):
             for ib in b:
                 eigen = bs.eigen[self.ispin, stk:edk+1, ib] - \
                     bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
-                self._axes.plot(xs[i], eigen, **kwargs)
+                    # bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
+                self._axbs.plot(xs[i], eigen, **kwargs)
             # draw vertical line to separate the different line segments
             if i != len(bs.kLineSegs) - 1:
-                self._axes.axvline(xs[i][-1], color="k")
+                self._axbs.axvline(xs[i][-1], color="k")
         # draw Fermi level
         if self.alignAtVbm:
-            self._axes.axhline(0.0, color="k", linestyle='dashed')
+            self._axbs.axhline(0.0, color="k", linestyle='dashed')
         else:
-            self._axes.axhline(bs.efermi, color="k", linestyle='dashed')
+            self._axbs.axhline(bs.efermi, color="k", linestyle='dashed')
 
     def mark_ksymbols(self, kpath):
         '''Mark the kpoints symbols on the plot.
@@ -210,8 +244,8 @@ class BSVisualizer(Verbose):
             # self._axes.annotate(s, xy=(coord, 0), xycoords="axes fraction", ha="center")
             locs.append(coord)
             labels.append(s)
-        self._axes.set_xticks(locs)
-        self._axes.set_xticklabels(labels)
+        self._axbs.set_xticks(locs)
+        self._axbs.set_xticklabels(labels)
         self._drawnKsym = True
 
     def draw_proj(self, atom, proj, *bands, **kwargs):
@@ -226,31 +260,39 @@ class BSVisualizer(Verbose):
         '''
         bs = self._bs
         xs = self._xs
-        amplifier_dot = 300.0
+        amplifier_dot = 200.0
         # use triple band gap as multiplier for stripe mode
         amplifier_stripe = bs.fundGap[self.ispin] * 3
         if not bs.hasProjection:
             raise AttributeError("no projection data is available")
         # get projection data
-        proj = bs.sum_atom_proj_comp(atom, proj, fail_one=False)
+        pWave = bs.sum_atom_proj_comp(atom, proj, fail_one=False)
         binds = bs.get_band_indices(*bands)
         if 'color' not in kwargs:
             kwargs['color'] = 'k'
         if 's' in kwargs:
             kwargs.pop('s')
+        if 'label' in kwargs:
+            self._useLabel = True
+        # draw DOS
+        if self._drawDos:
+            dos = self._dos
+            edos = dos.edos - dos.efermi * int(self.alignAtVbm)
+            pDos = dos.sum_atom_proj_comp(atom ,proj, fail_one=False)
+            self._axdos.plot(pDos[:, self.ispin], edos, **kwargs)
+        # draw band
         for i, (stk, edk) in enumerate(bs.kLineSegs):
             for _j, bi in enumerate(binds):
                 eigen = bs.eigen[self.ispin, stk:edk+1, bi] - \
                     bs.vbmPerSpin[self.ispin] * int(self.alignAtVbm)
                 if self._projStyle == 'dot':
-                    s = proj[self.ispin, stk:edk+1, bi] * amplifier_dot
-                    self._axes.scatter(xs[i], eigen, s=s, **kwargs)
+                    s = pWave[self.ispin, stk:edk+1, bi] * amplifier_dot
+                    self._axbs.scatter(xs[i], eigen, s=s, **kwargs)
                 if self._projStyle == 'stripe':
-                    self._axes.fill_between(xs[i], eigen,
-                                            eigen - proj[self.ispin, stk:edk+1, bi] * amplifier_stripe, **kwargs)
+                    self._axbs.fill_between(xs[i], eigen,
+                                            eigen - pWave[self.ispin, stk:edk+1, bi] * amplifier_stripe, **kwargs)
                 # pop the label keyword such that label is only added for once
                 if 'label' in kwargs:
-                    self._useLabel = True
                     kwargs.pop('label')
 
     def show(self):
@@ -277,3 +319,24 @@ class BSVisualizer(Verbose):
         '''
         import matplotlib.pyplot as plt
         plt.savefig(*args, **kwargs)
+
+
+def _check_bs_dos_consistency(bs, dos):
+    '''Check the consistency of BandStructure and Dos objects
+
+    Spin, unit, projections (projectors and atoms)
+    '''
+
+    assert isinstance(bs, BandStructure)
+    assert isinstance(dos, Dos)
+    assert bs.nspins == dos.nspins
+    assert bs.unit == dos.unit
+    assert bs.hasProjection == dos.hasProjection
+
+    if bs.hasProjection:
+        assert bs.natoms == dos.natoms
+        assert bs.nprojs == dos.nprojs
+        for i, a in enumerate(bs.atoms):
+            assert a == dos.atoms[i]
+        for i, p in enumerate(bs.projs):
+            assert p == dos.projs[i]

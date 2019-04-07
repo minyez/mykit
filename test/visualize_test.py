@@ -35,11 +35,14 @@ class test_band_structure_visualizer(ut.TestCase):
     def test_draw_proj(self):
         bsv = BSVisualizer(self.bs)
         bsvProj = BSVisualizer(self.bsProj)
+        bsvProjWithDos = BSVisualizer(self.bsProj, dos={"sigma": 0.02})
         # raise if no projection is parsed
         self.assertRaisesRegex(AttributeError, \
             r"no projection data is available", \
             bsv.draw_proj, 'vbm', 'C', 's', 'vbm')
         bsvProj.draw_proj('vbm', (self.bsProj.atoms[0],), ('s',), 'vbm', label="test")
+        bsvProjWithDos.draw_proj('vbm', (self.bsProj.atoms[0],), ('s',), 'vbm', label="test")
+
 
     def test_init(self):
         bsv = init(self.bs)
