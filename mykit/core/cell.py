@@ -696,6 +696,8 @@ class Cell(Prec, Verbose, LengthUnit):
         '''
         cif = Cif(pathCif)
         kw = {"coordSys": "D", "reference": cif.get_reference_str(), }
+        # use chemical name as comment
+        kw['comment'] = ', '.join(cif.get_chemical_name())
         latt = cif.get_lattice_vectors()
         atoms, pos = cif.get_all_atoms()
         return cls(latt, atoms, pos, **kw)
@@ -981,7 +983,7 @@ class Cell(Prec, Verbose, LengthUnit):
     @classmethod
     def anatase(cls, atom1="Ti", atom2="O", a=3.7845, c=9.5143, u=0.2199,
                 primitive=False, **kwargs):
-        '''Generate a anatase lattice (space group 141).
+        '''Generate an anatase lattice (space group 141).
 
         Note:
             This cell is not standardized.

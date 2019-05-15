@@ -522,6 +522,23 @@ class Cif:
         self.operations["rotations"] = tuple(rots)
         self.operations["translations"] = tuple(trans)
 
+    def get_chemical_name(self):
+        '''Return the chemical names stored in the head of a CIF file
+
+        Returns
+            3 str, systematic name, mineral name and structure type
+        '''
+        sysName = self.__blk.GetItemValue("_chemical_name_systematic")
+        try:
+            mineName = self.__blk.GetItemValue("_chemical_name_mineral")
+        except KeyError:
+            mineName = 'N/A'
+        try:
+            structName = self.__blk.GetItemValue("_chemical_name_structure_type")
+        except:
+            structName = 'N/A'
+        return sysName, mineName, structName
+
     def get_lattice_vectors(self):
         '''initialize the lattice vectors from cif
 

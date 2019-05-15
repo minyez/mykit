@@ -348,6 +348,7 @@ def _get_minimal_dos_tags():
     _dostags = {
         "ICHARG": 11,
         "LORBIT": 11,
+        "ISYM": 0,
         "ISTART": None,
         "NEDOS": 3000,
         "ISMEAR": 0,

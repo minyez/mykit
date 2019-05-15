@@ -260,7 +260,7 @@ class BSVisualizer(Verbose):
         '''
         bs = self._bs
         xs = self._xs
-        amplifier_dot = 200.0
+        amplifier_dot = 120.0
         # use triple band gap as multiplier for stripe mode
         amplifier_stripe = bs.fundGap[self.ispin] * 3
         if not bs.hasProjection:
@@ -278,7 +278,7 @@ class BSVisualizer(Verbose):
         if self._drawDos:
             dos = self._dos
             edos = dos.edos - dos.efermi * int(self.alignAtVbm)
-            pDos = dos.sum_atom_proj_comp(atom ,proj, fail_one=False)
+            pDos = dos.sum_atom_proj_comp(atom, proj, fail_one=False)
             self._axdos.plot(pDos[:, self.ispin], edos, **kwargs)
         # draw band
         for i, (stk, edk) in enumerate(bs.kLineSegs):
@@ -295,7 +295,7 @@ class BSVisualizer(Verbose):
                 if 'label' in kwargs:
                     kwargs.pop('label')
 
-    def show(self):
+    def show(self, legend=True, tight_layout=False):
         '''Preview the band structure diagram. 
 
         A wrapper for pyplot.legend and pyplot.show
@@ -304,8 +304,10 @@ class BSVisualizer(Verbose):
         # # hide the xticks if the kpoints symbols are not drawn
         # if not self._drawnKsym:
         #     self._axes.get_xaxis().set_ticks([])
-        if self._useLabel:
+        if self._useLabel and legend:
             plt.legend()
+        if tight_layout:
+            plt.tight_layout()
         plt.show()
 
     def export(self, *args, **kwargs):
