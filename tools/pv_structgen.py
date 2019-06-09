@@ -1,76 +1,54 @@
-#!/usr/bin/env python
-# generate a number of structures with different volumes for plotting energy-volume curve
+#!/usr/bin/env python3
+'''
+Generate a number of structures with different volumes
+for plotting energy-volume curve in VASP
+'''
 
-from argparse import ArgumentParser
-import numpy as np
 import os
-import errno
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+import numpy as np
+from mykit.vasp.poscar import Poscar
 
-def create_path(path):
-    try:
-        os.makedirs(path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
+def pv_structgen():
+    '''main stream
+    '''
 
-parser = ArgumentParser()
-parser.add_argument("-i", help="input struct file, default POSCAR")
-parser.add_argument("-s", help="start volume ratio, default 0.92", type=float)
-parser.add_argument("-e", help="end volume ratio, default 1.08", type=float)
-parser.add_argument("-d", help="interval of volume ratio, default 0.02", type=float)
-args = parser.parse_args()
+    parser = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter)
+    parser.add_argument("-i", dest='ipos', type=str, default='POSCAR', \
+        help="input struct file, default POSCAR")
+    parser.add_argument("-s", dest='stvra', type=float, default=0.92, \
+        help="start volume ratio, default 0.92")
+    parser.add_argument("-e", dest='edvra', type=float, default=1.08, \
+        help="end volume ratio, default 1.08")
+    parser.add_argument("-d", dest='interval', type=float, default=0.02, \
+        help="interval of volume ratio, default 0.02")
+    parser.add_argument("--dir", action="store_true", \
+        help="save each POSCAR in directory with name 'V_x.xx'")
 
-if args.i:
-    struct_file = args.i
-else:
-    struct_file = "POSCAR"
+    opts = parser.parse_args()
+    
+    stvra = opts.stvra
+    edvra = opts.edvra
+    interval = opts.interval
+    grid = round((edvra-stvra)/interval) + 1
+    vras = np.linspace(stvra, edvra, grid)
+    aras = np.power(vras, 1.0/3)
 
-if args.s:
-    rvs = args.s
-else:
-    rvs = 0.92
+    pc = Poscar.read_from_file(opts.ipos) 
 
-if args.e:
-    rve = args.e
-else:
-    rve = 1.08
+    if opts.savedir:
+        for i, x in enumerate(vras):
+            dname = 'V_%3.2f' % x
+            if os.path.isdir(dname):
+                print("%s found. Remove old..." % dname)
+                os.removedirs(dname)
+            os.makedirs(dname)
+            pc.write(os.path.join(dname, 'POSCAR'), scale=aras[i])
+    else:
+        for i, x in enumerate(vras):
+            fname = 'POSCAR_%3.2f' % x
+            pc.write(fname, scale=aras[i])
+    
 
-if args.d:
-    interval = args.d
-else:
-    interval = 0.02
-
-with open(struct_file,'r') as f:
-    lines = f.readlines()
-
-scale_old = float(lines[1].split()[0])
-grid = round(( rve - rvs ) / interval) + 1
-struct_range_np = np.linspace(rvs,rve,grid)
-struct_range_str = [ ]
-for x in struct_range_np:
-     struct_range_str.append("%3.2f" % x)
-#print rvs,rve,interval,(rve-rvs)/interval,round((rve-rvs)/interval),grid
-#print struct_range_np
-#print struct_range_str
-
-# create directories with POSCAR for each volume
-for x in struct_range_str:
-    create_path("./V_%s" % x)
-    ra = np.power(float(x),1/3.0)
-    lines[1]= "%s\n" % str(ra * scale_old)
-    os.chdir("./V_%s" % x)
-    with open("POSCAR",'w') as poscar:
-        for line in lines:
-            poscar.write(line)
-    os.chdir("../")
-
-# write bash code to run the scanning
-#with open("run-Ener-Vol.sh",'w') as f:
-#    f.write("#!/usr/bin/env bash")
-#    f.write("# vasp=")
-#    f.write("for i in %s" % " ".join())
-#    f.write("do")
-#    f.write()
-#    f.write("done")
-
-
+if __name__ == "__main__":
+    pv_structgen()
