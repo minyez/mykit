@@ -40,7 +40,7 @@ vaspTests=(poscar_test.py
            xml_test.py)
 
 w2kTestDir="wien2k"
-w2kTests=(inputs_test.py)
+w2kTests=(inputs_test.py struct_test.py)
 
 for ct in ${coreTests[@]}
 do

@@ -1,10 +1,15 @@
 # coding = utf-8
-'''Class that manipulates WIEN2k main input struct file 
-'''
+"""Class that manipulates WIEN2k main input struct file 
+"""
 from mykit.core.cell import Cell
-from mykit.core.symmetry import get_spacegroup, get_sym_operations, standardize
-from mykit.core.utils import get_cwd_name
-
+#from mykit.core.symmetry import get_spacegroup, get_sym_operations, standardize
+from mykit.core.utils import (
+    get_cwd_name,
+    get_latt_vecs_from_latt_consts,
+    get_all_atoms_from_sym_ops,
+)
+from mykit.wien2k.constants import STRUCT_LATT_PARAM_READER, DEFAULT_NPT
+from mykit.wien2k.utils import read_atom_info, read_symops, get_default_r0, get_default_rmt
 
 
 class StructError(Exception):
@@ -12,38 +17,116 @@ class StructError(Exception):
 
 
 class Struct(Cell):
-    '''Class to manipulate WIEN2k master input case.struct file
+    """Class to manipulate WIEN2k master input case.struct file
 
     Args:
         latt, atoms, pos, kwargs: see docstring of Cell
-        rmt (dict)
         r0 (dict)
-    '''
+        rmt (dict)
+    """
 
-    def __init__(self, latt, atoms, pos, rmt=None, r0=None, **kwargs):
+    def __init__(self, latt, atoms, pos, npt=None, r0=None, rmt=None, **kwargs):
         super(Struct, self).__init__(latt, atoms, pos, **kwargs)
-        self._set_rmt_r0(rmt, r0)
-    
-    def _set_rmt_r0(self, rmt, r0):
-        pass
-    
+        self.r0 = r0
+        self.rmt = rmt
+        self.npt = npt
+        self._set_r0()
+        self._set_rmt()
+        self._set_npt()
+
+    def _set_r0(self):
+        if self.r0 is None:
+            r0 = {}
+            for a in self.atomTypes:
+                r0[a] = get_default_r0(a)
+            self.r0 = r0
+        else:
+            assert isinstance(self.r0, dict)
+            for a in self.atomTypes:
+                if a not in self.r0:
+                    self.r0[a] = get_default_r0(a)
+
+    def _set_rmt(self):
+        if self.rmt is None:
+            rmt = {}
+            for a in self.atomTypes:
+                rmt[a] = get_default_rmt(a)
+            self.rmt = rmt
+        else:
+            assert isinstance(self.rmt, dict)
+            for a in self.atomTypes:
+                if a not in self.rmt:
+                    self.rmt[a] = get_default_rmt(a)
+
+    def _set_npt(self):
+        if self.npt is None:
+            npt = {}
+            for a in self.atomTypes:
+                npt[a] = DEFAULT_NPT
+            self.npt = npt
+        else:
+            assert isinstance(self.npt, dict)
+            for a in self.atomTypes:
+                if a not in self.npt:
+                    self.npt[a] = DEFAULT_NPT
+
     def __str__(self):
-        return ''
+        return ""
 
     @classmethod
-    def read_from_file(self, pathStruct=None):
-        '''Read from an existing struct file
+    def read_from_file(cls, pathStruct=None):
+        """Read from an existing struct file
 
         Args:
             pathStruct (str): path to the file to read as WIEN2k struct
-        '''
+        """
         p = pathStruct
         if p is None:
-            p = get_cwd_name() + '.struct'
-        
-        with open(p, 'r') as h:
+            p = get_cwd_name() + ".struct"
+
+        with open(p, "r") as h:
             slines = h.readlines()
-        
-        
-        
-        raise NotImplementedError
+
+        kwargs = {"coordSys": "D", "unit": "au"}
+        kwargs["comment"] = slines[0].strip()
+        nIneqAtoms = int(slines[1].split()[2])
+        latttype = slines[1].split()[0]
+        # TODO: mode of calculation
+        latt = get_latt_vecs_from_latt_consts(*STRUCT_LATT_PARAM_READER.read(slines[3]))
+
+        ineqAtoms = []
+        ineqPos = []
+        npt = {}
+        r0 = {}
+        rmt = {}
+
+        atomBlocks = []
+        newAtom = True
+        # divide lines into block of atoms and symmetry operations
+        for i, line in enumerate(slines):
+            if i < 4:
+                continue
+            l = line.strip()
+            if l.startswith("ATOM") and newAtom:
+                s = i
+                newAtom = False
+            if l.startswith("LOCAL ROT MATRIX"):
+                atomBlocks.append(tuple([s, i + 2]))
+                newAtom = True
+            if l.endswith("SYMMETRY OPERATIONS"):
+                symopsSt = i
+                break
+        assert len(atomBlocks) == nIneqAtoms
+
+        for s, l in atomBlocks:
+            at, pos, anpt, ar0, armt = read_atom_info(latttype, slines[s : l + 1])
+            ineqAtoms.extend(at)
+            ineqPos.extend(pos)
+            npt[at[0]] = anpt
+            r0[at[0]] = ar0
+            rmt[at[0]] = armt
+        symops = read_symops(slines[symopsSt:])
+        atoms, pos = get_all_atoms_from_sym_ops(ineqAtoms, ineqPos, symops)
+        return cls(latt, atoms, pos, npt, r0, rmt, **kwargs)
+
+
