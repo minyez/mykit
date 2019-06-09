@@ -25,6 +25,8 @@ ELEMENT_SYMBOLS = ('X' , # pseudo atom
                 # 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og', 
                 )
 
+NUCLEAR_CHARGE = dict([(s, i) for i, s in enumerate(ELEMENT_SYMBOLS)])
+
 # ====================================================
 # Standard atomic weight, or relative atomic mass of the element 
 # Data from NIST database 144, last update January 2015
@@ -137,11 +139,3 @@ ATOMIC_WEIGHT = (0.0,
 #         print(atomType, natomList)
 
 #     return atomType, natomList, compositions
-
-def get_nuclear_charge(iden):
-    '''Get the number of nuclear charge from element-symbol-like identifier
-
-    Args:
-        iden (str): the identifier of element. 
-    '''
-    raise NotImplementedError

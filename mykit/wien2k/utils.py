@@ -7,6 +7,7 @@ from fnmatch import fnmatch
 import numpy as np
 from mykit.wien2k.constants import DEFAULT_R0, DEFAULT_R0S, DEFAULT_RMT, DEFAULT_RMTS
 from mykit.core.utils import get_dirpath
+from mykit.core.elements import NUCLEAR_CHARGE
 
 
 def get_default_r0(elem):
@@ -17,8 +18,7 @@ def get_default_r0(elem):
             A trailing number is allowed.
     """
     e = re.sub(r"\d", '', elem)
-    r0 = DEFAULT_R0S.get(e, DEFAULT_R0)
-    return r0
+    return DEFAULT_R0S.get(e, DEFAULT_R0)
 
 
 def get_default_rmt(elem):
@@ -29,8 +29,21 @@ def get_default_rmt(elem):
             A trailing number is allowed.
     """
     e = re.sub(r"\d", '', elem)
-    rmt = DEFAULT_RMTS.get(e, DEFAULT_RMT)
-    return rmt
+    return DEFAULT_RMTS.get(e, DEFAULT_RMT)
+
+
+def get_z(elem):
+    """Get nuclear charge Z from element ``elem``
+
+    Args:
+        elem (str): string representing the atomic symbol of element
+            A trailing number is allowed.
+    """
+    e = re.sub(r"\d", '', elem)
+    z = NUCLEAR_CHARGE.get(e, None)
+    if z is None:
+        raise ValueError("Invalid element identifier: %s" % elem)
+    return float(z)
 
 
 def get_casename(w2kdir="."):
