@@ -1,6 +1,7 @@
 # coding = utf-8
 """Class that manipulates WIEN2k main input struct file 
 """
+import numpy as np
 from mykit.core.cell import Cell
 #from mykit.core.symmetry import get_spacegroup, get_sym_operations, standardize
 from mykit.core.utils import (
@@ -72,6 +73,27 @@ class Struct(Cell):
 
     def __str__(self):
         return ""
+    
+    def get_radial(self, iden):
+        """return the radial grid points of particular muffin-tin
+
+        Args:
+            iden (int or str): the identifier for inequivalent atom
+                int for the index and str for the name.
+        """
+        if isinstance(iden, int):
+            at = self.atomTypes[iden]
+        elif isinstance(iden, str):
+            if iden in self.atomTypes:
+                raise ValueError("atom %s is not found" % iden)
+            at = iden
+        else:
+            raise TypeError("iden should be int or str")
+        r0 = self.r0[at]
+        rmt = self.rmt[at]
+        npt = self.npt[at]
+        return r0 * np.logspace(0, np.log(rmt/r0), num=npt, base=np.e)
+        
 
     @classmethod
     def read_from_file(cls, pathStruct=None):
