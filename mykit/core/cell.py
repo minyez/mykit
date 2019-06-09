@@ -909,6 +909,42 @@ class Cell(Prec, Verbose, LengthUnit):
         return cls(_latt, _atoms, _pos, **kwargs)
 
     @classmethod
+    def rocksalt(cls, atom1="Na", atom2="Cl", a=1.0, primitive=False, **kwargs):
+        '''Generate a rocksalt lattice
+
+        ``atom1`` are placed at vertex and ``atom2`` at tetrahedron interstitial
+
+        Args:
+            atom1 (str): symbol of atom1 (set at vertex)
+            atom2 (str): symbol of atom2
+            a (float): the lattice constant of the conventional cell.
+            primitive (bool): if set True, the primitive cell will be generated.
+            kwargs: keyword argument for ``Cell`` except ``coordSys``
+        '''
+        _a = abs(a)
+        if primitive:
+            _latt = [[0.0, _a/2.0, _a/2.0],
+                     [_a/2.0, 0.0, _a/2.0], [_a/2.0, _a/2.0, 0.0]]
+            _atoms = [atom1, atom2]
+            _pos = [[0.0, 0.0, 0.0],
+                    [0.5, 0.5, 0.5]]
+        else:
+            _latt = [[_a, 0.0, 0.0], [0.0, _a, 0.0], [0.0, 0.0, _a]]
+            _atoms = [atom1, ]*4 + [atom2, ]*4
+            _pos = [[0.0, 0.0, 0.0],
+                    [0.0, 0.5, 0.5],
+                    [0.5, 0.0, 0.5],
+                    [0.5, 0.5, 0.0],
+                    [0.5, 0.0, 0.0],
+                    [0.0, 0.5, 0.0],
+                    [0.0, 0.0, 0.5],
+                    [0.5, 0.5, 0.5]]
+        kwargs.pop("coordSys", None)
+        if "comment" not in kwargs:
+            kwargs.update({"comment": "Rocksalt {}{}".format(atom1, atom2)})
+        return cls(_latt, _atoms, _pos, **kwargs)
+        
+    @classmethod
     def diamond(cls, atom="C", a=1.0, primitive=False, **kwargs):
         '''Generate a diamond lattice (space group 227)
 
