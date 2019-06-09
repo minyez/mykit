@@ -193,10 +193,10 @@ class BSVisualizer(Verbose):
                 self._axbs.plot(xs[i], eigen, **kwargs)
             # draw vertical line to separate the different line segments
             if i != len(bs.kLineSegs) - 1:
-                self._axbs.axvline(xs[i][-1], color="k")
+                self._axbs.axvline(xs[i][-1], lw=2, color="k")
         # draw Fermi level
         if self.alignAtVbm:
-            self._axbs.axhline(0.0, color="k", linestyle='dashed')
+            self._axbs.axhline(0.0, color="k", lw=2, linestyle='dashed')
         else:
             self._axbs.axhline(bs.efermi, color="k", linestyle='dashed')
 
@@ -260,7 +260,7 @@ class BSVisualizer(Verbose):
         '''
         bs = self._bs
         xs = self._xs
-        amplifier_dot = 120.0
+        amplifier_dot = 150.0
         # use triple band gap as multiplier for stripe mode
         amplifier_stripe = bs.fundGap[self.ispin] * 3
         if not bs.hasProjection:

@@ -1,8 +1,10 @@
 # coding = utf-8
-'''Class that manipulates WIEN2k main input file struct
+'''Class that manipulates WIEN2k main input struct file 
 '''
 from mykit.core.cell import Cell
 from mykit.core.symmetry import get_spacegroup, get_sym_operations, standardize
+from mykit.core.utils import get_cwd_name
+
 
 
 class StructError(Exception):
@@ -27,3 +29,21 @@ class Struct(Cell):
     
     def __str__(self):
         return ''
+
+    @classmethod
+    def read_from_file(self, pathStruct=None):
+        '''Read from an existing struct file
+
+        Args:
+            pathStruct (str): path to the file to read as WIEN2k struct
+        '''
+        p = pathStruct
+        if p is None:
+            p = get_cwd_name() + '.struct'
+        
+        with open(p, 'r') as h:
+            slines = h.readlines()
+        
+        
+        
+        raise NotImplementedError

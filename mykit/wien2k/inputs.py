@@ -5,8 +5,9 @@ import os
 from fortranformat._exceptions import InvalidFormat
 
 from mykit.core.log import Verbose
-from mykit.core.utils import (get_cwd_name, get_filename_wo_ext, trim_after,
+from mykit.core.utils import (get_filename_wo_ext, trim_after,
                               trim_both_sides)
+from mykit.wien2k.utils import get_casename, find_complex_file
 from mykit.wien2k.constants import EL_READER, EL_WRITER
 
 
@@ -50,22 +51,18 @@ class In1(Verbose):
 
     def write(self):
         # TODO
-        pass
+        raise NotImplementedError
 
     @classmethod
-    def read_from_file(cls, filePath):
+    def read_from_file(cls, filePath=None):
         '''Return In1 instance by reading an exisiting 
 
         Args:
             filePath (str): the file name
         '''
         if filePath is None:
-            casename = get_cwd_name()
-            _path = casename + '.in1'
-            if not os.path.isfile(_path):
-                _path = casename + '.in1c'
-            if not os.path.isfile(_path):
-                raise InputError("Neither {casename}.in1 nor {casename}.in1c is found.")
+            casename = get_casename()
+            _path = find_complex_file(casename, 'in1')
         else:
             _path = filePath
             casename = get_filename_wo_ext(_path)

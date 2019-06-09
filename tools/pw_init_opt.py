@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''Generate structure files for parameter scanning and equation of state calculations
 
 Use script optimize in wien2k. See details in wien2k userguide.
@@ -10,17 +10,15 @@ Currently only support 1D case, i.e. optimization type = 1,2,3,4
     [4]  VARY B/A RATIO with CONSTANT VOLUME and C/A (orthorh lattice)
 '''
 
-from __future__ import print_function
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import subprocess as sp
-import sys
 from shutil import copy2
-from pw_anal_utils import w2k_get_casename
+from mykit.wien2k.utils import get_casename
 
 
-def pw_init_optimize_job(ArgList):
+def pw_init_optimize_job():
     
-    parser = ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-c", dest="casename", help="casename", default=None)
     parser.add_argument("-t", dest="stype", help="type of optimization.", type=int, default=1)
     parser.add_argument("-n", dest="nstruct", type=int, default=11, \
@@ -30,23 +28,20 @@ def pw_init_optimize_job(ArgList):
     parser.add_argument("-e", dest="ed", type=int, default=10, \
             help="ending value. Integer")
     parser.add_argument("--ccmd", dest="f_calccmd", default=None, \
-            help="file containing calculation command. Default: run_lapw -ec 0.000001")
+            help="file containing calculation command. Default: run_lapw -ec 0.0000001")
     parser.add_argument("--save", dest="savelapwdname", default=None, \
             help="Naming of the directory of savelapw command. Mustn't have space")
-    parser.add_argument("--run", dest="f_run", action='store_true', \
-            help="flag for running the optimization")
+    # parser.add_argument("--run", dest="f_run", action='store_true', \
+    #         help="flag for running the optimization")
     parser.add_argument("-D", dest="debug", action='store_true', \
             help="debug mode")
     
-    opts = parser.parse_args(ArgList[1:])
-   
-    if opts.debug:
-        print(ArgList)
+    opts = parser.parse_args()
 
-    if opts.casename is None:
-        casename = w2k_get_casename() 
-    else:
-        casename = opts.casename
+    # if opts.casename is None:
+    #     casename = get_casename() 
+    # else:
+    #     casename = opts.casename
     
     ns = opts.nstruct
     st = float(opts.st)
@@ -83,8 +78,8 @@ def pw_init_optimize_job(ArgList):
     #    print("WARNING: %s.inm is not found." % casename)
     
     # read the optimize.job
-    with open('optimize.job', 'r') as h_optimize:
-        lines_optjob = h_optimize.readlines()
+    with open('optimize.job', 'r') as h:
+        lines_optjob = h.readlines()
     
     for i, line in enumerate(lines_optjob):
         words = line.split()
@@ -103,26 +98,26 @@ def pw_init_optimize_job(ArgList):
                     lines_optjob[i] = "save_lapw -d ${i}_%s\n" % opts.savelapwdname
                 else:
                     lines_optjob[i] = "save_lapw -d ${i}_default\n"
-    
+    # back up
     copy2('optimize.job', 'optimize.job.old')
     
-    with open('optimize.job', 'w') as h_optimize_new:
+    with open('optimize.job', 'w') as h:
         for line in lines_optjob:
-            h_optimize_new.write(line)
+            h.write(line)
 
     # run the optimization
-    if opts.f_run:
-        fout = 'opt_type_%s.out' % opts.stype
-        ferr = 'opt_type_%s.error' % opts.stype
-        ofile = open(fout, 'w')
-        efile = open(ferr, 'w')
+    # if opts.f_run:
+    #     fout = 'opt_type_%s.out' % opts.stype
+    #     ferr = 'opt_type_%s.error' % opts.stype
+    #     ofile = open(fout, 'w')
+    #     efile = open(ferr, 'w')
     
-        p = sp.Popen('./optimize.job', stdout=ofile, stderr=efile, shell=True)
-        p.wait()
+    #     p = sp.Popen('./optimize.job', stdout=ofile, stderr=efile, shell=True)
+    #     p.wait()
     
-        ofile.close()
-        efile.close()
+    #     ofile.close()
+    #     efile.close()
 
 
 if __name__ == "__main__":
-    pw_init_optimize_job(sys.argv)
+    pw_init_optimize_job()

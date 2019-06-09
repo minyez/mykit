@@ -85,7 +85,7 @@ class Poscar(Cell):
     def read_from_file(cls, pathPoscar="POSCAR"):
         '''Read from an existing POSCAR file ``pathPoscar``
 
-        Args :
+        Args:
             pathPoscar (str) : path to the file to read as POSCAR
         '''
         # TODO may be decomposed to support reading structures stored in XDATCAR and OUTCAR?

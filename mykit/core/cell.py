@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=bad-whitespace
 '''Module that defines classes for crystal cell manipulation and symmtetry operation
 
 The ``cell`` class and its subclasses accept the following kwargs when being instantialized:
@@ -393,10 +394,14 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def a(self):
+        '''Lattice vectors
+        '''
         return self.__latt
 
     @property
     def alen(self):
+        '''Length of lattice vectors
+        '''
         return np.array([np.linalg.norm(x) for x in self.__latt], dtype=self._dtype)
 
     @property
@@ -407,6 +412,8 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def latt(self):
+        '''Lattice vectors
+        '''
         return self.__latt
 
     @property
@@ -435,6 +442,8 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def coordSys(self):
+        '''coordinate system
+        '''
         return self.__coordSys
 
     @coordSys.setter
@@ -479,10 +488,14 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def vol(self):
+        '''Volume of the cell
+        '''
         return np.linalg.det(self.__latt)
 
     @property
     def natoms(self):
+        '''Int. Total number of atoms
+        '''
         return len(self.__atoms)
 
     @property
@@ -504,6 +517,8 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def bIn2Pi(self):
+        '''Alias to ``recpLattIn2Pi``
+        '''
         return self.recpLattIn2Pi
 
     @property
@@ -514,12 +529,14 @@ class Cell(Prec, Verbose, LengthUnit):
 
     @property
     def b(self):
-        '''Alias of reciprocal lattice vector
+        '''Alias of ``recpLatt``
         '''
         return self.recpLatt
 
     @property
     def blen(self):
+        '''Length of reciprocal lattice vector in unit^-1
+        '''
         return np.array([np.linalg.norm(x) for x in self.b], dtype=self._dtype)
 
     # * selective dynamics related
@@ -645,7 +662,6 @@ class Cell(Prec, Verbose, LengthUnit):
                 raise cls._error(
                     "invalid JSON file for cell: {}".format(pathJson))
         pargs = []
-        lap = ["latt", "atoms", "pos"]
         factoryDict = {
             "bravais_oP": (cls.bravais_oP, ("atom", "a", "b", "c")),
             "bravais_oI": (cls.bravais_oI, ("atom", "a", "b", "c")),
@@ -666,7 +682,7 @@ class Cell(Prec, Verbose, LengthUnit):
         if "factory" in js:
             fac = js["factory"]
             # pop out latt, atoms and pos for safety
-            for arg in lap:
+            for arg in ["latt", "atoms", "pos"]:
                 js.pop(arg, None)
             if fac in factoryDict:
                 # get positional argument
@@ -682,7 +698,7 @@ class Cell(Prec, Verbose, LengthUnit):
             else:
                 raise cls._error("Factory method unavailable: {}".format(fac))
 
-        for _i, arg in enumerate(lap):
+        for _i, arg in enumerate(["latt", "atoms", "pos"]):
             v = js.pop(arg, None)
             if v is None:
                 raise cls._error(
@@ -697,7 +713,7 @@ class Cell(Prec, Verbose, LengthUnit):
         cif = Cif(pathCif)
         kw = {"coordSys": "D", "reference": cif.get_reference_str(), }
         # use chemical name as comment
-        kw['comment'] = ', '.join(cif.get_chemical_name())
+        kw['comment'] = ', '.join(cif.get_chemical_name()) + ' type'
         latt = cif.get_lattice_vectors()
         atoms, pos = cif.get_all_atoms()
         return cls(latt, atoms, pos, **kw)
@@ -1057,8 +1073,7 @@ class Cell(Prec, Verbose, LengthUnit):
                 [u,    -u, 0.5-u],
                 [-u,     u, 0.5+u],
                 [0.5+u, 0.5+u, 0.5+u],
-                [0.5-u, 0.5-u, 0.5-u],
-                ]
+                [0.5-u, 0.5-u, 0.5-u]]
         kwargs.pop("coordSys", None)
         if "comment" not in kwargs:
             kwargs.update({"comment": "Pyrite {}{}2".format(atom1, atom2)})

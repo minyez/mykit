@@ -20,20 +20,6 @@ from fnmatch import fnmatch
 
 # ====================================================
 
-def w2k_get_casename(w2kdir='.'):
-    '''
-    return the name of the case from case.struct, if there exists a struct file
-    or the casename will be set to the name of the directory.
-    '''
-    w2kdir_abspath = os.path.abspath(w2kdir)
-    if os.path.isdir(w2kdir_abspath):
-        for filename in os.listdir(w2kdir_abspath):
-            if fnmatch(filename, w2kdir_abspath + '/*.struct'):
-                case = filename.split('/')[-1][:-8]
-                return case
-
-    return os.path.basename(common_get_dirpath(w2kdir))
-
 # ====================================================
 
 def Read_BandStructure(casename,hybrid=False):

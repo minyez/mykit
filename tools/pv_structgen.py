@@ -36,7 +36,7 @@ def pv_structgen():
 
     pc = Poscar.read_from_file(opts.ipos) 
 
-    if opts.savedir:
+    if opts.dir:
         for i, x in enumerate(vras):
             dname = 'V_%3.2f' % x
             if os.path.isdir(dname):
