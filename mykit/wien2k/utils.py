@@ -172,7 +172,7 @@ def read_lm_data(lines, lenfield=19):
     return data
 
 
-def outwin(r, vr, E, l, Z, normalize=False):
+def solve_rde(r, vr, E, l, Z, normalize=False):
     """Python adaption of OUTWINB subroutine for outward integration
     of radial Dirac equation. Scalar relativistic effect is always
     included.
@@ -219,7 +219,6 @@ def outwin(r, vr, E, l, Z, normalize=False):
     df1 = dgf[1, 0]
     df2 = dgf[1, 1]
     df3 = dgf[1, 2]
-    print(dx)
 
     for i in range(3, ngrids):
         rdx = r[i] * dx
@@ -247,6 +246,32 @@ def outwin(r, vr, E, l, Z, normalize=False):
         u /= norm
         dudr /= norm
     return ur_large, ur_small, u, dudr, nodes
+
+
+def solve_ene_deriv(r, vr, E, l, Z):
+    """Compute the energy derivative of wavefunction at E
+    using finite difference
+    """
+    dE = 1.0e-3
+    urlp, ursp, up, dup, _ = solve_rde(r, vr, E+dE, l, Z, normalize=True)
+    urln, ursn, un, dun, _ = solve_rde(r, vr, E-dE, l, Z, normalize=True)
+    n = len(r)
+    urlde = (urlp - urln) / 2.0 / dE
+    ursde = (ursp - ursn) / 2.0 / dE
+    ude = (up - un) / 2.0 / dE
+    dude = (dup - dun) / 2.0 / dE
+    # normalize to u at E
+    url, urs, u, du, _ = solve_rde(r, vr, E, l, Z, normalize=True)
+    ovlp = logr_int(r, urlde, ursde, url, urs)
+    urlde -= ovlp * url
+    ursde -= ovlp * urs
+    ude -= ovlp * u
+    dude -= ovlp * du
+    nodes = 0
+    for i in range(1, n):
+        if urlde[i-1] * urlde[i] < 0.0:
+            nodes += 1
+    return urlde, ursde, ude, dude, nodes
 
 
 def logr_int(r, a, b, x, y):
