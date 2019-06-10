@@ -55,6 +55,16 @@ class In1(Verbose):
         self.elparams = elparams
 
     def add_exception(self, atomId, l, e, search=0.000, cont=True, lapw=0):
+        """Add one exception for a particular atom and l channel
+
+        Args:
+            atomId (int)
+            l (int)
+            e (float)
+            search (float)
+            cont (bool)
+            lapw (0, 1)
+        """
         assert isinstance(cont, bool)
         assert isinstance(atomId, int)
         assert lapw in [0, 1]
@@ -65,6 +75,19 @@ class In1(Verbose):
         if not l in elparam["exceptions"]:
             elparam["exceptions"][l] = []
         elparam["exceptions"][l].append([e, search, contStr, lapw])
+
+    def get_exceptions(self, atomId):
+        """Get exceptions of a particular atom
+
+        Args:
+            atomId (int)
+        """
+        assert isinstance(atomId, int)
+        try:
+            elparam = self.elparams[atomId]["exceptions"]
+        except IndexError:
+            return None
+        return elparam
 
     def write(self):
         # TODO

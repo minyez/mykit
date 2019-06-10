@@ -8,7 +8,7 @@ from mykit.wien2k.outputs import Vsp
 
 class test_vsp(ut.TestCase):
 
-    def read(self):
+    def test_read_in(self):
         dataDir = 'vsp'
         dataDirPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), \
             '..', 'testdata', 'wien2k', dataDir)

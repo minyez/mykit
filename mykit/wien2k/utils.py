@@ -5,9 +5,10 @@ import os
 from shutil import which
 from fnmatch import fnmatch
 import numpy as np
-from mykit.wien2k.constants import DEFAULT_R0, DEFAULT_R0S, DEFAULT_RMT, DEFAULT_RMTS
+from mykit.wien2k.constants import DEFAULT_R0, DEFAULT_R0S, DEFAULT_RMT, DEFAULT_RMTS, CFEIN2
 from mykit.core.utils import get_dirpath
 from mykit.core.elements import NUCLEAR_CHARGE
+from mykit.core.numeric import Prec
 
 
 def get_default_r0(elem):
@@ -150,3 +151,132 @@ def read_symops(lines):
         symops["rotations"][i, :, :] = r
         symops["translations"][i, :] = t
     return symops
+
+
+def read_lm_data(lines, lenfield=19):
+    """Read the potential data of a particular LM channel in vsp and vns file
+
+    Note that the header containing 'L=,M=' should be excluded. Only numbers and
+    empty lines are allowed. Hartree is used
+
+    Args:
+        lines (list of str): file lines containing data of potential
+        lenfield (int): the length of field that one number occupies, 19 as default
+    """
+    l = ''.join([x.strip() for x in lines])
+    ll = len(l)
+    if ll%lenfield != 0:
+        raise IOError("Bad input, total length %d not divided by %d" % (ll, lenfield))
+    n = int(ll/lenfield)
+    data = [float(l[lenfield*i:lenfield*(i+1)])/2.0 for i in range(n)]
+    return data
+
+
+def outwin(r, vr, E, l, Z, normalize=False):
+    """Python adaption of OUTWINB subroutine for outward integration
+    of radial Dirac equation. Scalar relativistic effect is always
+    included.
+
+    Args
+        r (array-like): radial grid points
+        vr (array-like): potential times r, V*r, in a.u.
+        E (float): energy in Hatree
+        l (int): angular momentum
+        Z (float): nuclear charge
+
+    Returns
+        array, array, float, float, int: 
+            u*r(large), u*r(small), u and du/dr at boundary, and number of nodes
+    """
+    ngrids = len(r)
+    nodes = 0
+    ERy = E * 2.0
+    assert len(vr) == ngrids
+    assert Z > 0.9
+    assert isinstance(E, float)
+    assert isinstance(l, (float, int))
+
+    ur_large = np.zeros(ngrids, dtype=Prec._dtype)
+    ur_small = np.zeros(ngrids, dtype=Prec._dtype)
+    r = np.array(r, dtype=Prec._dtype)
+    v = 2.0 * np.array(vr, dtype=Prec._dtype)/r
+    dx = np.log(r[-1]/r[0]) / (ngrids-1)
+    c = 2.0e0 * 137.0359895
+    z = float(Z) * 2
+    zdc = z/c
+
+    llp1 = float(l*(l+1))
+    s = np.sqrt(llp1 + 1.0 - zdc**2)
+
+    dgf = np.zeros((2, 3))
+    ur_large[0:3] = np.power(r[0:3], s) * 1.0
+    ur_small[0:3] = np.power(r[0:3], s) * (s-1) / zdc
+    dgf[0, :] = dx * ur_large[0:3] * s
+    dgf[1, :] = dx * ur_small[0:3] * s
+    dg1 = dgf[0, 0]
+    dg2 = dgf[0, 1]
+    dg3 = dgf[0, 2]
+    df1 = dgf[1, 0]
+    df2 = dgf[1, 1]
+    df3 = dgf[1, 2]
+    print(dx)
+
+    for i in range(3, ngrids):
+        rdx = r[i] * dx
+        phi = (ERy - v[i]) * rdx / c
+        U = rdx * c + phi
+        Y = - llp1 * dx * dx / U + phi
+        det = 64.0/9.0 - dx * dx + U * Y
+        B11 = ur_large[i-1] * 8.0/3.0 + dg1 / 9.0 - 5.0 * dg2 / 9.0 + 19.0 * dg3 / 9.0
+        B22 = ur_small[i-1] * 8.0/3.0 + df1 / 9.0 - 5.0 * df2 / 9.0 + 19.0 * df3 / 9.0
+        ur_large[i] = (B11*(8.0/3.0+dx) + B22 * U)/det
+        ur_small[i] = (B22*(8.0/3.0-dx) - B11 * Y)/det
+        if ur_large[i-1]*ur_large[i] < 0:
+            nodes += 1
+        dg1, dg2, dg3 = dg2, dg3, U*ur_small[i] + dx * ur_large[i]
+        df1, df2, df3 = df2, df3, - Y*ur_large[i] - dx * ur_small[i]
+
+    ur_small *= c/2.0
+
+    u = ur_large[-1]/r[-1]
+    dudr = (dg3/dx/r[-1] - u)/r[-1]
+    if normalize:
+        norm = np.sqrt(logr_int(r, ur_large, ur_small, ur_large, ur_small))
+        ur_large /= norm
+        ur_small /= norm
+        u /= norm
+        dudr /= norm
+    return ur_large, ur_small, u, dudr, nodes
+
+
+def logr_int(r, a, b, x, y):
+    """Calculate the sum of inner product, (a, x) + (b, y)
+    on a logarithmic radial grid point.
+
+    This is adapted from rint13 in WIEN2k
+    """
+    def _func(n):
+        return r[n] * (a[n] * x[n] + CFEIN2 * b[n] * y[n])
+
+    ngrids = len(r)
+    assert ngrids == len(a) == len(b) == len(x) == len(y)
+    r0 = r[0]
+    dx = np.log(r[1]/r[0])
+    j = 3 - ngrids % 2
+    j1 = j - 1
+    z4 = 0.0
+    z2 = 0.0
+    while True:
+        z4 += _func(j-1)
+        j += 1
+        if j >= ngrids:
+            break
+        z2 += _func(j-1)
+        j += 1
+    P1 = _func(0)
+    P2 = _func(j1-1)
+    inte = 2.0 * z2 + 4.0 * z4 + P2 + _func(-1)
+    inte = (dx*inte + P1)/3.0
+    if j1 > 1:
+        inte += 0.5 * dx * (P1+P2)
+    return inte

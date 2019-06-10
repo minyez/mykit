@@ -10,7 +10,7 @@ from mykit.core.utils import (
     get_all_atoms_from_sym_ops,
 )
 from mykit.wien2k.constants import STRUCT_LATT_PARAM_READER, DEFAULT_NPT
-from mykit.wien2k.utils import read_atom_info, read_symops, get_default_r0, get_default_rmt
+from mykit.wien2k.utils import read_atom_info, read_symops, get_default_r0, get_default_rmt, get_z
 
 
 class StructError(Exception):
@@ -73,14 +73,8 @@ class Struct(Cell):
 
     def __str__(self):
         return ""
-    
-    def get_radial(self, iden):
-        """return the radial grid points of particular muffin-tin
 
-        Args:
-            iden (int or str): the identifier for inequivalent atom
-                int for the index and str for the name.
-        """
+    def _get_atom_from_iden(self, iden):
         if isinstance(iden, int):
             at = self.atomTypes[iden]
         elif isinstance(iden, str):
@@ -89,12 +83,31 @@ class Struct(Cell):
             at = iden
         else:
             raise TypeError("iden should be int or str")
+        return at
+
+    def get_radial(self, iden):
+        """return the radial grid points of particular muffin-tin
+
+        Args:
+            iden (int or str): the identifier for inequivalent atom
+                int for the index and str for the name.
+        """
+        at = self._get_atom_from_iden(iden)
         r0 = self.r0[at]
         rmt = self.rmt[at]
         npt = self.npt[at]
         return r0 * np.logspace(0, np.log(rmt/r0), num=npt, base=np.e)
-        
+    
+    def get_z(self, iden):
+        """return the nuclear charge of atom
 
+        Args:
+            iden (int or str): the identifier for inequivalent atom
+                int for the index and str for the name.
+        """
+        at = self._get_atom_from_iden(iden)
+        return get_z(at)
+    
     @classmethod
     def read_from_file(cls, pathStruct=None):
         """Read from an existing struct file
