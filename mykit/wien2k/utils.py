@@ -271,6 +271,8 @@ def solve_ene_deriv(r, vr, E, l, Z):
     for i in range(1, n):
         if urlde[i-1] * urlde[i] < 0.0:
             nodes += 1
+        if urlde[i-1] == 0.0:
+            nodes -= 1
     return urlde, ursde, ude, dude, nodes
 
 

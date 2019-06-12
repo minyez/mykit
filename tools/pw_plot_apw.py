@@ -34,6 +34,8 @@ def pw_plot_apw():
         help="Index of LOs to plot, in format of 'a:l:i', a for atom index, l for angular moment and i for index of exception in l channel")
     parser.add_argument('--uonly', dest='uonly', action='store_true', \
         help="plot u of energy E only, instead of APW, lo or LO")
+    parser.add_argument('--savefig', dest='savefig', action='store_true', \
+        help="flag to save figure (png, 300 dpi)")
     parser.add_argument('-D', dest='debug', action='store_true', \
         help="debug mode")
 
@@ -144,8 +146,9 @@ def pw_plot_apw():
         for idl, data in los[ia][l].items():
             typeStr = {0: "lo"}.get(idl, "LO")
             E = elos[ia][l][idl]
-            n = data[-1]
-            ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%d nodes) (%s)" % (ia, l, E, n, typeStr), \
+            #n = data[-1]
+            #ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%d nodes) (%s)" % (ia, l, E, n, typeStr), \
+            ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%s)" % (ia, l, E, typeStr), \
                 lw=2)
     # adjust Axes attributes
     ax.set_ylabel("u(r)", size=20)
@@ -158,8 +161,9 @@ def pw_plot_apw():
     ax.tick_params(axis="both", which="minor", length=7)
     ax.set_xlim(0.0)
 
-
-    plt.legend()
+    plt.legend(fontsize=16)
+    if opts.savefig:
+        plt.savefig('plot_lo.png', dpi=300)
     plt.show()
 
 
