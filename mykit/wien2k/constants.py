@@ -2,9 +2,9 @@
 from fortranformat.FortranRecordReader import FortranRecordReader
 from fortranformat.FortranRecordWriter import FortranRecordWriter
 
-_EL_FORMAT = '(I2,2F10.5,A4,I2)'
-EL_READER = FortranRecordReader(_EL_FORMAT)
-EL_WRITER = FortranRecordWriter(_EL_FORMAT)
+# _EL_FORMAT = '(1X,I1,2F10.5,A5,I2)'
+# EL_READER = FortranRecordReader(_EL_FORMAT)
+# EL_WRITER = FortranRecordWriter(_EL_FORMAT)
 IN1_UNIT_READER_v171 = FortranRecordReader('(20X,I1,2F10.1,I6)')
 IN1_UNIT_READER_v142 = FortranRecordReader('(20X,I1,F7.1,F10.1,I6)')
 IN1_UNIT_READER_nmr = FortranRecordReader('(20X,I1,1X,F8.1,D12.1)')

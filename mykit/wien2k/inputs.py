@@ -3,10 +3,11 @@
 import os
 
 from mykit.core.log import Verbose
-from mykit.core.utils import get_filename_wo_ext, trim_after, trim_both_sides
-from mykit.wien2k.utils import get_casename, find_complex_file
-from mykit.wien2k.constants import EL_READER, EL_WRITER, \
-                                   IN1_UNIT_READER_v142, IN1_UNIT_READER_v171, IN1_UNIT_READER_nmr
+from mykit.core.utils import (conv_string, get_filename_wo_ext, trim_after,
+                              trim_both_sides)
+from mykit.wien2k.constants import (IN1_UNIT_READER_nmr, IN1_UNIT_READER_v142,
+                                    IN1_UNIT_READER_v171)
+from mykit.wien2k.utils import find_complex_file, get_casename
 
 
 class InputError(Exception):
@@ -45,7 +46,7 @@ class In1(Verbose):
         self.nbands = nbands
         self.elparams = elparams
 
-    def add_exception(self, atomId, l, e, search=0.000, cont=True, lapw=0):
+    def add_exception(self, atomId, l, e, search=0.000, cont=True, apw=1):
         """Add one exception for a particular atom and l channel
 
         Args:
@@ -58,14 +59,14 @@ class In1(Verbose):
         """
         assert isinstance(cont, bool)
         assert isinstance(atomId, int)
-        assert lapw in [0, 1]
+        assert apw in [0, 1]
         contStr = {True: "CONT", False: "STOP"}[cont]
         # add to existing item only
         elparam = self.elparams[atomId]
         elparam["Ndiff"] += 1
         if not l in elparam["exceptions"]:
             elparam["exceptions"][l] = []
-        elparam["exceptions"][l].append([e, search, contStr, lapw])
+        elparam["exceptions"][l].append([e, search, contStr, apw])
 
     def get_exceptions(self, atomId):
         """Get exceptions of a particular atom
@@ -81,7 +82,19 @@ class In1(Verbose):
         return elparam
     
     def __str__(self):
-        raise NotImplementedError
+        s = ["%5s  EF=%12.11f" % (self.switch, self.efermi), ]
+        s += ["%4.1f %8d %4d" % (self.rkmax, self.lmax, self.lnsmax)]
+        for _ia, elparams in enumerate(self.elparams):
+            s.append(_write_el_block(elparams))
+        last = "K-VECTORS FROM UNIT:%1d %6.1f" % (self.unit, self.emin)
+        if self.emax > 100:
+            last += "%10.1E" % self.emax
+        else:
+            last += "%10.1f" % self.emax
+        if self.nbands is not None:
+            last += "%6d" % self.nbands
+        s.append(last)
+        return '\n'.join(s)
 
     def write(self, pathIn=None, backup=False, suffix="_bak"):
         """Write to in1 file
@@ -154,17 +167,8 @@ class In1(Verbose):
                     elparams.append(atomEl)
                     i += ndiff
             i += 1
-        return cls(
-            casename,
-            switch,
-            efermi,
-            rkmax,
-            lmax,
-            lnsmax,
-            cmplx,
-            unit, emin, emax, nbands, \
-            *elparams
-        )
+        return cls(casename, switch, efermi, rkmax, lmax, lnsmax, cmplx,
+                   unit, emin, emax, nbands, *elparams)
 
 
 def _read_el_block(elBlock):
@@ -193,7 +197,11 @@ def _read_el_block(elBlock):
     elParams["Napw"] = int(globParams[2])
     exceptions = {}
     for j in range(ndiff):
-        l, e, eIncre, cont, apw = EL_READER.read(elBlock[1 + j])
+        # l, e, eIncre, cont, apw = EL_READER.read(elBlock[1 + j])
+        s = elBlock[1+j]
+        l, apw = conv_string(s, int, 0, -1)
+        e, eIncre = conv_string(s, float, 1, 2)
+        cont = s.split()[-2]
         if not l in exceptions:
             exceptions[l] = []
         exceptions[l].append([e, eIncre, cont, apw])
@@ -209,6 +217,11 @@ def _write_el_block(elParams):
     Returns
         str
     """
-    _ret = []
-    # TODO
-    return "\n".join(_ret)
+    ep = elParams
+    ret = ["%6.2f %4d %2d" % (ep["Etrial"], ep["Ndiff"], ep["Napw"])]
+    # sort by l
+    exceptions = sorted(list(ep["exceptions"].items()), key=lambda x: x[0])
+    for l, els in exceptions:
+        for el in els:
+            ret.append("%2d %9.5f %9.5f %4s %1d" % (l, *el))
+    return "\n".join(ret)

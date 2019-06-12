@@ -17,6 +17,12 @@ build/
 dist/
 *.egg-info
 
+# example temporary files
+examples/vasp/POSCAR
+examples/vasp/POTCAR
+examples/vasp/KPOINTS
+examples/vasp/INCAR
+
 #optimize.job
 #test.py
 #*.dat

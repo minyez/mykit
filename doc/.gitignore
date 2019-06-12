@@ -2,8 +2,3 @@ _build/
 _static/
 _templates/
 
-# examples: vasp
-examples/vasp/POSCAR
-examples/vasp/POTCAR
-examples/vasp/KPOINTS
-examples/vasp/INCAR
