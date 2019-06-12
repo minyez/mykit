@@ -70,12 +70,14 @@ def find_complex_file(casename, ext):
         casename (str) 
         ext (str) : the file extension without "c"
     """
-    _path = casename + "." + ext
-    if not os.path.isfile(_path):
-        _path = _path + "c"
-    if not os.path.isfile(_path):
-        raise FileNotFoundError("Neither {casename}.in1 nor {casename}.in1c is found.")
-    return _path
+    path = casename + "." + ext
+    c = False
+    if not os.path.isfile(path):
+        path += "c"
+        c = True
+    if not os.path.isfile(path):
+        raise FileNotFoundError("Neither {casename}.{ext} nor {casename}.{ext}c is found.")
+    return path, c
 
 
 def get_run_lapw():

@@ -2,12 +2,11 @@
 
 import os
 
-from fortranformat._exceptions import InvalidFormat
-
 from mykit.core.log import Verbose
 from mykit.core.utils import get_filename_wo_ext, trim_after, trim_both_sides
 from mykit.wien2k.utils import get_casename, find_complex_file
-from mykit.wien2k.constants import EL_READER, EL_WRITER
+from mykit.wien2k.constants import EL_READER, EL_WRITER, \
+                                   IN1_UNIT_READER_v142, IN1_UNIT_READER_v171, IN1_UNIT_READER_nmr
 
 
 class InputError(Exception):
@@ -27,31 +26,23 @@ class In1(Verbose):
         rkmax (float) : RKmax
         lmax (int) : the maximum angular quantum of APW basis in MT region
         lnsmax (int)
+        cmplx (bool)
         elparams (dict): the various information of exceptions of each atom
     """
 
-    def __init__(
-        self,
-        casename,
-        switch,
-        efermi,
-        rkmax,
-        lmax,
-        lnsmax,
-        #    unit, emin, emax, nband, \
-        *elparams,
-        **kwargs
-    ):
+    def __init__(self, casename, switch, efermi, rkmax, lmax, lnsmax, cmplx,
+                 unit, emin, emax, nbands, *elparams, **kwargs):
         self.casename = casename
         self.switch = switch
         self.efermi = efermi
         self.rkmax = rkmax
         self.lmax = lmax
         self.lnsmax = lnsmax
-        # self.unit = unit
-        # self.emin = emin
-        # self.emax = emax
-        # self.nband = nband
+        self.cmplx = cmplx
+        self.unit = unit
+        self.emin = emin
+        self.emax = emax
+        self.nbands = nbands
         self.elparams = elparams
 
     def add_exception(self, atomId, l, e, search=0.000, cont=True, lapw=0):
@@ -88,26 +79,42 @@ class In1(Verbose):
         except IndexError:
             return None
         return elparam
-
-    def write(self):
-        # TODO
+    
+    def __str__(self):
         raise NotImplementedError
 
+    def write(self, pathIn=None, backup=False, suffix="_bak"):
+        """Write to in1 file
+        """
+        path = pathIn
+        if path is None:
+            path = self.casename + 'in1' + 'c' * int(self.cmplx)
+        if os.path.isdir(path):
+            raise IOError("Trying to write in1 as an existing directory")
+        if os.path.isfile(path) and backup:
+            bakpath = path + suffix.strip()
+            os.rename(path, bakpath)
+        with open(path, 'w') as f:
+            print(self.__str__(), file=f)
+
     @classmethod
-    def read_from_file(cls, filePath=None):
+    def read_from_file(cls, pathIn1=None):
         """Return In1 instance by reading an exisiting 
 
         Args:
             filePath (str): the file name
         """
-        if filePath is None:
+        cmplx = False
+        if pathIn1 is None:
             casename = get_casename()
-            _path = find_complex_file(casename, "in1")
+            path, cmplx = find_complex_file(casename, "in1")
         else:
-            _path = filePath
-            casename = get_filename_wo_ext(_path)
+            path = pathIn1
+            if path.endswith("c"):
+                cmplx = True
+            casename = get_filename_wo_ext(path)
 
-        with open(_path, "r") as h:
+        with open(path, "r") as h:
             w2klines = h.readlines()
         switch = w2klines[0][:5]
         efermi = float(trim_both_sides(w2klines[0], r"=", r"\("))
@@ -123,21 +130,27 @@ class In1(Verbose):
             line = trim_after(w2klines[i], r"\(")
             if line.startswith("K-VECTORS FROM UNIT"):
                 _flagEnergy = False
-                # try:
-                #     # wien2k 17.1
-                #     data = IN1_UNIT_READER_v171.read(line)
-                #     unit, emin, emax, nband = data
-                #     de = emax - emin
-                # except InvalidFormat:
-                #     # wien2k 14.2
-                #     data = IN1_UNIT_READER_v142.read(line)
-                #     unit, emin, de, nband = data
-                #     emax = efermi + de
+                try:
+                    # wien2k 17.1
+                    data = IN1_UNIT_READER_v171.read(line)
+                    unit, emin, emax, nbands = data
+                    de = emax - emin
+                except ValueError:
+                    try:
+                        # wien2k 14.2
+                        data = IN1_UNIT_READER_v142.read(line)
+                        unit, emin, de, nbands = data
+                        emax = efermi + de
+                    except ValueError:
+                        # meet NMR in1
+                        data = IN1_UNIT_READER_nmr.read(line)
+                        unit, emin, emax = data
+                        nbands = None
             else:
                 words = line.split()
                 if _flagEnergy and len(words) == 3:
                     ndiff = int(words[1])
-                    atomEl = read_el_block(w2klines[i : i + ndiff + 1])
+                    atomEl = _read_el_block(w2klines[i : i + ndiff + 1])
                     elparams.append(atomEl)
                     i += ndiff
             i += 1
@@ -148,12 +161,13 @@ class In1(Verbose):
             rkmax,
             lmax,
             lnsmax,
-            # unit, emin, emax, nband, \
+            cmplx,
+            unit, emin, emax, nbands, \
             *elparams
         )
 
 
-def read_el_block(elBlock):
+def _read_el_block(elBlock):
     """
     Args:
         elBlock (list or tuple):  strings containing el information
@@ -187,7 +201,7 @@ def read_el_block(elBlock):
     return elParams
 
 
-def write_el_block(elParams):
+def _write_el_block(elParams):
     """
     Args:
         elParams (dict)

@@ -48,12 +48,12 @@ def pw_plot_apw():
     if cn is not None:
         pathStruct = cn + '.struct'
         pathVsp = cn + '.vsp'
-        pathIn1 = find_complex_file(cn, 'in1')
+        pathIn1, _ = find_complex_file(cn, 'in1')
     if opts.in1 is not None:
         pathIn1 = opts.in1
     
     struct = Struct.read_from_file(pathStruct=pathStruct)
-    in1 = In1.read_from_file(filePath=pathIn1)
+    in1 = In1.read_from_file(pathIn1=pathIn1)
     vsp = Vsp(pathVsp)
     ali = opts.ali
     if ali is None:

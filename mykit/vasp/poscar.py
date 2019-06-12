@@ -71,9 +71,7 @@ class Poscar(Cell):
         '''
         # TODO test it
         _name = pathPoscar
-        try:
-            assert not os.path.isdir(_name)
-        except AssertionError:
+        if os.path.isdir(_name):
             raise self._error("The path to write POSCAR is a directory.")
         if os.path.isfile(_name) and backup:
             _bakname = _name + suffix.strip()
