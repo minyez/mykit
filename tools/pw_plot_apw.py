@@ -81,8 +81,10 @@ def pw_plot_apw():
             continue
         requestial.append((ia, l))
         E = els[l][idl][0]
-        if E == 0.3:
-            E = in1.efermi - 0.2
+        if E == 0.30:
+            E = in1.efermi + 0.2 * {0: -1}.get(idl, 1)
+            if opts.debug:
+                print(x, E)
         E /= 2.0
         rs[ia] = struct.get_radial(ia)
         vrs[ia] = vsp.get_vsp(ia)

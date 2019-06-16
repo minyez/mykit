@@ -159,11 +159,14 @@ def read_lm_data(lines, lenfield=19):
     """Read the potential data of a particular LM channel in vsp and vns file
 
     Note that the header containing 'L=,M=' should be excluded. Only numbers and
-    empty lines are allowed. Hartree is used
+    empty lines are allowed. Unit conversion from Rydberg to Hartree is done.
 
     Args:
         lines (list of str): file lines containing data of potential
         lenfield (int): the length of field that one number occupies, 19 as default
+
+    Returns:
+        list, potential in Hartree unit
     """
     l = ''.join([x.strip() for x in lines])
     ll = len(l)
@@ -289,7 +292,6 @@ def logr_int(r, a, b, x, y):
 
     ngrids = len(r)
     assert ngrids == len(a) == len(b) == len(x) == len(y)
-    r0 = r[0]
     dx = np.log(r[1]/r[0])
     j = 3 - ngrids % 2
     j1 = j - 1

@@ -50,23 +50,46 @@ class In1(Verbose):
         """Add one exception for a particular atom and l channel
 
         Args:
-            atomId (int)
-            l (int)
-            e (float)
-            search (float)
+            atomId (int): index of inquivalent atom
+            l (int): the angular momentum
+            e (float): the linearization energy to set
+            search (float): step size for energy search
             cont (bool)
-            lapw (0, 1)
+            apw (0, 1)
         """
+        # add to existing item only
+        try:
+            elparam = self.elparams[atomId]
+        except IndexError:
+            raise IndexError("atom index %d not available" % atomId)
         assert isinstance(cont, bool)
-        assert isinstance(atomId, int)
         assert apw in [0, 1]
         contStr = {True: "CONT", False: "STOP"}[cont]
-        # add to existing item only
-        elparam = self.elparams[atomId]
         elparam["Ndiff"] += 1
         if not l in elparam["exceptions"]:
             elparam["exceptions"][l] = []
         elparam["exceptions"][l].append([e, search, contStr, apw])
+    
+    def remove_last_exception(self, atomId, l):
+        """Remove the last linearization energy of atomId in channel l
+
+        Args:
+            atomId (int): index of inquivalent atom
+            l (int): the angular momentum
+        """
+        try:
+            elparam = self.elparams[atomId]
+        except IndexError:
+            raise IndexError("atom index %d not available" % atomId)
+        if l in elparam["exceptions"]:
+            elparam["Ndiff"] -= 1
+            del elparam["exceptions"][l][-1]
+    
+    @property
+    def natoms(self):
+        """int. number of inequivalent atoms
+        """
+        return len(self.elparams)
 
     def get_exceptions(self, atomId):
         """Get exceptions of a particular atom
