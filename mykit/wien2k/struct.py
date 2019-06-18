@@ -5,12 +5,11 @@ import numpy as np
 from mykit.core.cell import Cell
 #from mykit.core.symmetry import get_spacegroup, get_sym_operations, standardize
 from mykit.core.utils import (
-    get_cwd_name,
     get_latt_vecs_from_latt_consts,
     get_all_atoms_from_sym_ops,
 )
 from mykit.wien2k.constants import STRUCT_LATT_PARAM_READER, DEFAULT_NPT
-from mykit.wien2k.utils import read_atom_info, read_symops, get_default_r0, get_default_rmt, get_z
+from mykit.wien2k.utils import read_atom_info, read_symops, get_default_r0, get_default_rmt, get_z, get_casename
 
 
 class StructError(Exception):
@@ -72,7 +71,7 @@ class Struct(Cell):
                     self.npt[a] = DEFAULT_NPT
 
     def __str__(self):
-        return ""
+        raise NotImplementedError
 
     def _get_atom_from_iden(self, iden):
         if isinstance(iden, int):
@@ -117,7 +116,7 @@ class Struct(Cell):
         """
         p = pathStruct
         if p is None:
-            p = get_cwd_name() + ".struct"
+            p = get_casename() + ".struct"
 
         with open(p, "r") as h:
             slines = h.readlines()

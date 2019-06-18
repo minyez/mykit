@@ -56,8 +56,8 @@ def get_casename(w2kdir="."):
     abspath = os.path.abspath(w2kdir)
     if os.path.isdir(abspath):
         for filename in os.listdir(abspath):
-            if fnmatch(filename, abspath + "/*.struct"):
-                case = filename.split("/")[-1][:-8]
+            if fnmatch(filename, "*.struct"):
+                case = filename.split("/")[-1][:-7]
                 return case
 
     return os.path.basename(get_dirpath(abspath))
@@ -127,8 +127,8 @@ def read_atom_info(latttype, lines):
     at = re.sub(" ", "", l[:11])
     atoms = [at,] * len(pos)
     npt = int(l[15:20])
-    r0 = float(l[25:35])
-    rmt = float(l[44:50])
+    r0 = float(l[25:36])
+    rmt = float(l[40:53])
     return atoms, pos, npt, r0, rmt
 
 
