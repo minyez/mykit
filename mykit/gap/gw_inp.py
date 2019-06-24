@@ -4,9 +4,8 @@ import re
 from mykit.core.utils import trim_after
 
 
-class gw_inp():
+class GwInp():
     '''
-
     The changable parameters are saved in a dict, with the names of parameters as keys.
     The values are 6-member tuple, with members as
 
@@ -20,7 +19,7 @@ class gw_inp():
     Args:
         path_gw_inp (str) : path to gw.inp
     '''
-    PARAMS = {
+    available_params = {
         "pwm": (float, r"%BareCoul", 2.0, 1, 2, 0), 
         "kmr": (float, r"%MixBasis", 0.75, 1, 1, 0), 
         "barcevtol": (float, r"barcevtol", 0.1, 0, 0, 0), 
@@ -28,7 +27,19 @@ class gw_inp():
         "lmbmax": (int, r"%MixBasis", 3, 2, 3, 0),
         "wftol": (float, r"%MixBasis", 1.0E-4, 2, 3, 1),
         "lblmax": (int, r"%MixBasis", 0, 2, 3, 2),
+        "iop_core": (int, r"iop_core", 0, 0, 0, 0),
+        "iop_fgrid": (int, r"%FreqGrid", 3, 1, 5, 0),
+        "nomeg": (int, r"%FreqGrid", 16, 1, 5, 1),
+        "omegmax": (float, r"%FreqGrid", 0.42, 1, 5, 2),
+        "omegmin": (float, r"%FreqGrid", 0.00, 1, 5, 3),
+        "emaxpol": (float, r"emaxpol", 1.0E10, 0, 0, 0),
+        "emaxsc": (float, r"emaxsc", 1.0E10, 0, 0, 0),
         }
+    
+    @classmethod
+    def get_available_params(cls):
+        """return the changable parameters"""
+        return tuple(cls.available_params.keys())
 
     def __init__(self, path_gw_inp='gw.inp'):
         with open(path_gw_inp, 'r') as h:
@@ -43,27 +54,37 @@ class gw_inp():
             l = trim_after(line, r'#').strip()
             if l == '':
                 continue
-            for k, v in self.PARAMS.items():
+            for k, v in self.available_params.items():
                 if l.startswith(v[1]):
                     self._params[k] = i + v[3]
                     continue
 
+    @property
+    def params(self):
+        '''dict, line index of parameter'''
+        return self._params
+
     def get_param(self, key):
         '''Get the value of the parameter specified by key
         '''
-        if key not in self.PARAMS:
+        if key not in self.available_params:
             raise KeyError("%s is not available" % key)
         raise NotImplementedError
 
     def modify_params(self, **kwargs):
         '''Change parameters
+
+        Note:
+            To modify parameters in block, the block should be present
+            in the input file, otherwise it will be written as one-line
+            parameter. This may be fixed in the future
         '''
         gwlines = []
         linos = []
         params = []
         extras = []
         for k in kwargs:
-            if k in self.PARAMS:
+            if k in self.available_params:
                 params.append(k)
                 linos.append(self._params[k])
             else:
@@ -72,8 +93,8 @@ class gw_inp():
             l = l.strip()
             if i in linos:
                 k = params[linos.index(i)]
-                pat = _get_pattern(self.PARAMS[k][-2])
-                sub = _get_substr(*self.PARAMS[k][-2:], kwargs[k])
+                pat = _get_pattern(self.available_params[k][-2])
+                sub = _get_substr(*self.available_params[k][-2:], kwargs[k])
                 l = re.sub(pat, sub, l.strip())
             gwlines.append(l+'\n')
         gwlines.extend(extras)

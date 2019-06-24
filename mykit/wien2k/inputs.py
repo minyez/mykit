@@ -91,17 +91,30 @@ class In1(Verbose):
         """
         return len(self.elparams)
 
-    def get_exceptions(self, atomId):
+    def get_exceptions(self, atomId, l=None, eonly=False):
         """Get exceptions of a particular atom
 
         Args:
             atomId (int)
+            l (int): if specified, the exceptions in particular l channel is returned
+            eonly (bool): get the linearization energy only
+        
+        Returns:
+            dict if l is None. Otherwise list.
         """
         assert isinstance(atomId, int)
         try:
             elparam = self.elparams[atomId]["exceptions"]
+            if eonly:
+                es = {}
+                for l in elparam.keys():
+                    e = [x[0] for x in elparam[l]]
+                    es[l] = e
+                elparam = es
         except IndexError:
             return None
+        if l is not None:
+            elparam = elparam.get(l, None)
         return elparam
     
     def __str__(self):

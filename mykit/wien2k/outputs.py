@@ -177,6 +177,12 @@ class Energy(Prec):
         self.kpts = kpts
         self.weights = weights
         self.eigen = enes
+    
+    def get_nbands_min(self):
+        return min([len(x) for x in self.eigen])
+
+    def get_nbands_max(self):
+        return max([len(x) for x in self.eigen])
 
     def load_band(self, efermi=None):
         """Return a band structure object from energy
