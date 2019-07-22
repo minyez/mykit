@@ -329,6 +329,11 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         '''
         return self._kLineSegs
 
+    @property
+    def x(self):
+        '''List. x coordinates, corresponding to the whole k-path'''
+        return self._generate_kpath_x()
+
     def _generate_kpath_x(self):
         '''Generate the x coordinates for plotting a kpath
 

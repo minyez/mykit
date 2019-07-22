@@ -36,6 +36,7 @@
         "GGA": "",
         "LHFCALC": "",
         "PRECFOCK": "",
+        "HFSCREEN": "",
         "METAGGA": "",
         "AEXX": "",
         "AGGAX": "",
@@ -71,7 +72,8 @@
         "ANTIRES": "",
         "NBANDSO": "",
         "NBANDSV": "",
-        "LSORBIT": ""
+        "LSORBIT": "",
+        "LNONCOLLINEAR": ""
     },
     "tagdocLDAU": {
         "LDAU": "",

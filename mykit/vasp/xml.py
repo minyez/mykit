@@ -426,7 +426,8 @@ class Vasprunxml(Verbose, Prec):
 
         Reciprocal basis of final lattice is used.
         '''
-        return np.dot(self._ibzkpt, np.transpose(self._finalPoscar.b))
+        #return np.dot(self._ibzkpt, np.transpose(self._finalPoscar.b))
+        return np.dot(self._ibzkpt, self._finalPoscar.b)
 
     @property
     def kpoints(self):
@@ -514,10 +515,11 @@ class Vasprunxml(Verbose, Prec):
             for v in f:
                 fcPerStep.append(conv_string(v.text, float))
             forces.append(fcPerStep)
-            stPerStep = []
-            for v in stroots[i]:
-                stPerStep.append(conv_string(v.text, float))
-            stress.append(stPerStep)
+            if stroots != []:
+                stPerStep = []
+                for v in stroots[i]:
+                    stPerStep.append(conv_string(v.text, float))
+                stress.append(stPerStep)
         self._forces = forces
         self._stress = stress
 

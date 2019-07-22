@@ -1,26 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
-# ====================================================
-#
-#     File Name : pv_acfdt.py
-# Creation Date : 2017-04-24
-# Last Modified : Fri 01 Dec 2017 07:49:18 PM CST
-#    Created By : Min-Ye Zhang
-#       Contact : stevezhang@pku.edu.cn
-#       Purpose : This script is used to calculate and analyze the ACFDT-RPA results in vasp
-#         TO DO :
-#                 vasp calculation script : normal dft, HF, exact diagonalization, acfdt
-#                                  Analyze: Ener_Vol curve. In another script
-#
-# ====================================================
-
-from __future__ import print_function
-import sys
-import os
 import re
 from shutil import copy2
 from argparse import ArgumentParser
+import numpy as np
+from mykit.vasp.incar import Incar
+from mykit.vasp.kpoints import Kpoints
 from pv_calc_utils import vasp_write_incar_minimal_elec,\
                           vasp_io_get_NPAR, vasp_vaspcmd_zmy,\
                           vasp_io_change_tag, vasp_write_incar_exact,\
@@ -73,6 +59,23 @@ def acfdt_write_running_script(vasp_cmd, nproc):
     os.system('sed -i \'s/TEMP_nproc/%d/g\' %s' % (nproc, templateName))
     os.system('sed -i \'s/TEMP_vasp_cmd/"%s"/g\' %s' % (re.escape(vasp_cmd), templateName))
     
+
+class ACFD:
+    """class for performing ACFDT calculation in VASP
+
+    Args:
+        encut (int)
+        kpts_exx ((3,) array)
+        kpts_rpa ((3,) array)
+        xc (str)
+        scheme (int)
+    """
+
+    def __init__(self, encut, kpts_exx, kpts_rpa, xc='PBE', scheme=0):
+        self.kpts_exx = Kpoints(comment="KPOINTS for SCF and exact exchange",
+                                kmode="G", kdiv=kpts_exx)
+        self.kpts_rpa = Kpoints(comment="KPOINTS for SCF and exact exchange",
+                                kmode="G", kdiv=kpts_rpa)
 
 # =====================================================
 
