@@ -1,4 +1,5 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+"""common utilities for WIEN2k calculation and analysis"""
 
 import re
 import os
@@ -50,16 +51,20 @@ def get_z(elem):
 def get_casename(w2kdir="."):
     """return the case name of a wien2k working directory
     
-    It will first search for case.struct, if exists return the filename without extension 
+    It will first search .casename at w2kdir
+    Then search for case.struct, if exists return the filename without extension.
     Otherwise the name of the directory will be returned
     """
     abspath = os.path.abspath(w2kdir)
     if os.path.isdir(abspath):
+        cnf = os.path.join(abspath, '.casename')
+        if os.path.isfile(cnf):
+            with open(cnf, 'r') as h:
+                return h.readline().strip()
         for filename in os.listdir(abspath):
             if fnmatch(filename, "*.struct"):
                 case = filename.split("/")[-1][:-7]
                 return case
-
     return os.path.basename(get_dirpath(abspath))
 
 

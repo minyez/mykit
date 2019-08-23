@@ -166,7 +166,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         toConv = [self._eigen, self._bandWidth,
                   self._vbmPerSpin, self._vbmPerChannel,
                   self._cbmPerSpin, self._cbmPerChannel,
-                  ]
+                 ]
         if coef != 1:
             self._efermi *= coef
             self._vbm *= coef

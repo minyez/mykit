@@ -1,6 +1,5 @@
 # coding = utf-8
-
-import numpy as np
+"""base class for unit conversion"""
 
 from mykit.core.constants import ANG2AU, EV2HA, EV2RY, RY2HA
 
@@ -10,11 +9,11 @@ class UnitError(Exception):
 
 
 class EnergyUnit:
-    '''Base class for controlling energy unit
+    """Base class for controlling energy unit
 
     Args:
         eunit (str)
-    '''
+    """
 
     _defaultEU = 'ev'
     _validEU = ['ev', 'ry', 'au']

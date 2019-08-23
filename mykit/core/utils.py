@@ -138,8 +138,7 @@ def trim_after(string, regex, include_pattern=False):
     if _search != None:
         if include_pattern:
             return string[: _search.end()]
-        else:
-            return string[: _search.start()]
+        return string[: _search.start()]
     return string
 
 
@@ -158,8 +157,7 @@ def trim_before(string, regex, include_pattern=False):
     if _search != None:
         if include_pattern:
             return string[_search.start() :]
-        else:
-            return string[_search.end() :]
+        return string[_search.end() :]
     return string
 
 
@@ -321,9 +319,8 @@ def conv_string(string, conv2, *indices, sep=None, strips=None):
         return list(map(convfunc, str_list))
     elif len(indices) == 1:
         return convfunc(str_list[indices[0]])
-    else:
-        conv_strs = [str_list[i] for i in indices]
-        return list(map(convfunc, conv_strs))
+    conv_strs = [str_list[i] for i in indices]
+    return list(map(convfunc, conv_strs))
 
 
 def get_first_last_line(filePath, encoding=stdout.encoding):
@@ -547,7 +544,7 @@ class Cif:
             mineName = "N/A"
         try:
             structName = self.__blk.GetItemValue("_chemical_name_structure_type")
-        except:
+        except KeyError:
             structName = "N/A"
         return sysName, mineName, structName
 
@@ -708,6 +705,22 @@ def get_all_atoms_from_sym_ops(ineqAtoms, ineqPos, symops, left_mult=True):
                 atoms.append(ineqAtoms[i])
                 pos.append(a)
     return atoms, pos
+
+
+class XYFit:
+    """fit functions for xy data
+    """
+
+    @staticmethod
+    def linear_inv_x(x, a0, a1, a2):
+        """y = a0/(x-a1) + a2
+
+        Examples:
+            x                         y
+            nbands                    GW band gap
+            energy of highest state   GW band gap
+        """
+        return a0/(x-a1) + a2
 
 
 class Smearing:

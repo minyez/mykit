@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*
 import re
 
 from mykit.core.utils import trim_after
@@ -20,10 +20,11 @@ class GwInp():
         path_gw_inp (str) : path to gw.inp
     '''
     available_params = {
-        "pwm": (float, r"%BareCoul", 2.0, 1, 2, 0), 
-        "kmr": (float, r"%MixBasis", 0.75, 1, 1, 0), 
-        "barcevtol": (float, r"barcevtol", 0.1, 0, 0, 0), 
-        "MB_emax": (float, r"MB_emax", 20.0, 0, 0, 0), 
+        "pwm": (float, r"%BareCoul", 2.0, 1, 2, 0),
+        "kmr": (float, r"%MixBasis", 0.75, 1, 1, 0),
+        "barcevtol": (float, r"barcevtol", 0.1, 0, 0, 0),
+        "barcevtol_soft": (float, r"barcevtol_soft", 0.1, 0, 0, 0),
+        "MB_emax": (float, r"MB_emax", 20.0, 0, 0, 0),
         "lmbmax": (int, r"%MixBasis", 3, 2, 3, 0),
         "wftol": (float, r"%MixBasis", 1.0E-4, 2, 3, 1),
         "lblmax": (int, r"%MixBasis", 0, 2, 3, 2),
@@ -58,18 +59,33 @@ class GwInp():
                 if l.startswith(v[1]):
                     self._params[k] = i + v[3]
                     continue
-
+    
     @property
     def params(self):
         '''dict, line index of parameter'''
         return self._params
+
+    def __getitem__(self, key):
+        return self.get_param(key)
 
     def get_param(self, key):
         '''Get the value of the parameter specified by key
         '''
         if key not in self.available_params:
             raise KeyError("%s is not available" % key)
-        raise NotImplementedError
+        try:
+            # extract from params
+            l = self._params[key]
+            t, _, _, _, n, i = self.available_params[key]
+            if n == 0:
+                # one-line parameter
+                v = t(self._lines[l].split()[2])
+            else:
+                v = t(self._lines[l].split('l')[i])
+        except KeyError:
+            # return default value
+            v = self.available_params[key][2]
+        return v
 
     def modify_params(self, **kwargs):
         '''Change parameters
@@ -77,14 +93,14 @@ class GwInp():
         Note:
             To modify parameters in block, the block should be present
             in the input file, otherwise it will be written as one-line
-            parameter. This may be fixed in the future
+            parameter.
         '''
         gwlines = []
         linos = []
         params = []
         extras = []
         for k in kwargs:
-            if k in self.available_params:
+            if k in self._params:
                 params.append(k)
                 linos.append(self._params[k])
             else:

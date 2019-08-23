@@ -32,8 +32,12 @@ def pw_plot_apw():
         help="in1 file. Overwrite that specified by casename")
     parser.add_argument('--ali', dest='ali', type=str, nargs="+", \
         help="Index of LOs to plot, in format of 'a:l:i', a for atom index, l for angular moment and i for index of exception in l channel")
+    parser.add_argument('--ru', dest='ru', action='store_true', \
+        help="plot ru instead of u")
+    parser.add_argument('--uapw', dest='uapw', action='store_true', \
+        help="plot APW u1 only")
     parser.add_argument('--uonly', dest='uonly', action='store_true', \
-        help="plot u of energy E only, instead of APW, lo or LO")
+        help="plot udot/u of energy E only, instead of lo/LO")
     parser.add_argument('--savefig', dest='savefig', action='store_true', \
         help="flag to save figure (png, 300 dpi)")
     parser.add_argument('-D', dest='debug', action='store_true', \
@@ -118,8 +122,9 @@ def pw_plot_apw():
         r = rs[ia]
         Z = Zs[ia]
         apw[ia][l] = list(solve_rde(r, vr, apw[ia][l], l, Z, normalize=True))
-        apw[ia][l][0] /= r
-        apw[ia][l][1] /= r
+        if not opts.ru:
+            apw[ia][l][0] /= r
+            apw[ia][l][1] /= r
         # compute LOs
         idls = list(los[ia][l].keys())
         for idl in idls:
@@ -132,26 +137,38 @@ def pw_plot_apw():
             if not opts.uonly:
                 print("compute LO/lo coefficients and normalize...")
                 coef = - los[ia][l][idl][2] / apw[ia][l][2]
-                los[ia][l][idl][0] += coef * apw[ia][l][0] * r
-                los[ia][l][idl][1] += coef * apw[ia][l][1] * r
+                if opts.ru:
+                    los[ia][l][idl][0] += coef * apw[ia][l][0]
+                    los[ia][l][idl][1] += coef * apw[ia][l][1]
+                else:
+                    los[ia][l][idl][0] += coef * apw[ia][l][0] * r
+                    los[ia][l][idl][1] += coef * apw[ia][l][1] * r
                 normsq = logr_int(r, los[ia][l][idl][0], los[ia][l][idl][1], \
                                   los[ia][l][idl][0], los[ia][l][idl][1], )
                 los[ia][l][idl][0] /= np.sqrt(normsq)
                 los[ia][l][idl][1] /= np.sqrt(normsq)
             sign = np.sign(los[ia][l][idl][0][0])
-            los[ia][l][idl][0] /= r * sign
-            los[ia][l][idl][1] /= r * sign
+            los[ia][l][idl][0] *= sign
+            los[ia][l][idl][1] *= sign
+            if not opts.ru:
+                los[ia][l][idl][0] /= r
+                los[ia][l][idl][1] /= r
+
     
     # plotting
     for ia, l in requestial:
         r = rs[ia]
-        for idl, data in los[ia][l].items():
-            typeStr = {0: "lo"}.get(idl, "LO")
-            E = elos[ia][l][idl]
-            #n = data[-1]
-            #ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%d nodes) (%s)" % (ia, l, E, n, typeStr), \
-            ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%s)" % (ia, l, E, typeStr), \
-                lw=2)
+        if not opts.uapw:
+            for idl, data in los[ia][l].items():
+                typeStr = {0: "lo"}.get(idl, "LO")
+                E = elos[ia][l][idl]
+                #n = data[-1]
+                #ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%d nodes) (%s)" % (ia, l, E, n, typeStr), \
+                ax.plot(r, data[0], label="Atom=%d l=%d E=%8.4f a.u. (%s)" % (ia, l, E, typeStr), \
+                    lw=2)
+        else:
+            data = apw[ia][l]
+            ax.plot(r, data[0], label="Atom=%d l=%d APW" % (ia, l))
     # adjust Axes attributes
     ax.set_ylabel("u(r)", size=20)
     ax.set_xlabel("r (a.u.)", size=20)
