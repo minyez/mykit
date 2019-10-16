@@ -10,10 +10,12 @@ Currently only support 1D case, i.e. optimization type = 1,2,3,4
     [4]  VARY B/A RATIO with CONSTANT VOLUME and C/A (orthorh lattice)
 '''
 
+import os
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import subprocess as sp
-from shutil import copy2
+from shutil import copy2, rmtree
 from mykit.wien2k.utils import get_casename
+from mykit.core.utils import get_arith_prog
 
 
 def pw_init_optimize_job():
@@ -31,42 +33,42 @@ def pw_init_optimize_job():
             help="file containing calculation command. Default: run_lapw -ec 0.0000001")
     parser.add_argument("--save", dest="savelapwdname", default=None, \
             help="Naming of the directory of savelapw command. Mustn't have space")
+    parser.add_argument("--dir", dest="savedir", action="store_true", \
+            help="also save each struct file to directoy V_x.xx/casename")
     # parser.add_argument("--run", dest="f_run", action='store_true', \
     #         help="flag for running the optimization")
     parser.add_argument("-D", dest="debug", action='store_true', \
             help="debug mode")
     
-    opts = parser.parse_args()
+    args = parser.parse_args()
 
-    # if opts.casename is None:
-    #     casename = get_casename() 
-    # else:
-    #     casename = opts.casename
+    if args.casename is None:
+        cn = get_casename() 
+    else:
+        cn = args.casename
     
-    ns = opts.nstruct
-    st = float(opts.st)
-    ed = float(opts.ed)
+    ns = args.nstruct
+    st = float(args.st)
+    ed = float(args.ed)
     # in case of wrong input
     if st > ed:
         st, ed = ed, st
     
-    if opts.f_calccmd is None:
+    if args.f_calccmd is None:
         calccmd = "run_lapw -ec 0.000001\n"
     else:
-        with open(opts.f_calccmd, 'r') as f_calccmd:
+        with open(args.f_calccmd, 'r') as f_calccmd:
             calccmd = f_calccmd.readlines()
-    if ns != 1:
-        dv = (ed-st)/float(ns-1)
-    else:
-        dv = 0.0
+
+    vals = get_arith_prog(st, ed, n=ns)
     
     ofile = 'opt.input'
     
     with open(ofile, 'w') as f:
-        f.write(str(opts.stype)+'\n')
+        f.write(str(args.stype)+'\n')
         f.write(str(ns)+'\n')
-        for i in range(ns):
-            f.write(str(round(st+float(i)*dv, 1))+'\n')
+        for v in vals:
+            f.write(str(round(v, 1))+'\n')
     
     sp.check_output('x optimize < %s' % ofile, stderr=sp.STDOUT, shell=True)
     
@@ -89,13 +91,13 @@ def pw_init_optimize_job():
         elif words[0].startswith('#'):
             continue
         else:
-            # write the calculation command from opts.f_calccmd
+            # write the calculation command from args.f_calccmd
             if words[0] == "run_lapw":
                 lines_optjob[i] = ''.join(calccmd)
             # change the directory of savelapw
             elif words[0] == "save_lapw":
-                if opts.savelapwdname is not None:
-                    lines_optjob[i] = "save_lapw -d ${i}_%s\n" % opts.savelapwdname
+                if args.savelapwdname is not None:
+                    lines_optjob[i] = "save_lapw -d ${i}_%s\n" % args.savelapwdname
                 else:
                     lines_optjob[i] = "save_lapw -d ${i}_default\n"
     # back up
@@ -104,11 +106,25 @@ def pw_init_optimize_job():
     with open('optimize.job', 'w') as h:
         for line in lines_optjob:
             h.write(line)
+    
+    # also save structures to directory
+    if args.savedir:
+        for i, v in enumerate(vals):
+            dname = 'V_%4.2f' % (1+v*0.01)
+            if os.path.isdir(dname):
+                print("%s found. Remove old..." % dname)
+                rmtree(dname)
+            os.makedirs(os.path.join(dname, cn))
+            fn = cn + '_' + {1: 'vol'}[args.stype] + f'{v:6.1f}'.replace(' ', '_') + '.struct'
+            if os.path.isfile(fn):
+                print("copying", fn, "...")
+                copy2(fn, os.path.join(dname, cn, cn + '.struct'))
+
 
     # run the optimization
-    # if opts.f_run:
-    #     fout = 'opt_type_%s.out' % opts.stype
-    #     ferr = 'opt_type_%s.error' % opts.stype
+    # if args.f_run:
+    #     fout = 'opt_type_%s.out' % args.stype
+    #     ferr = 'opt_type_%s.error' % args.stype
     #     ofile = open(fout, 'w')
     #     efile = open(ferr, 'w')
     
@@ -117,7 +133,6 @@ def pw_init_optimize_job():
     
     #     ofile.close()
     #     efile.close()
-
 
 if __name__ == "__main__":
     pw_init_optimize_job()

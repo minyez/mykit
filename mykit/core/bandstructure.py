@@ -563,7 +563,7 @@ class BandStructure(Prec, Verbose, EnergyUnit):
         int, shape (nspins, 2)
         '''
         vb = np.argmax(self._vbmPerChannel, axis=1)
-        cb = np.argmin(self._vbmPerChannel, axis=1)
+        cb = np.argmin(self._cbmPerChannel, axis=1)
         return tuple(zip(vb, cb))
 
     @property

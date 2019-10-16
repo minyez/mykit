@@ -78,6 +78,7 @@ def fitBMEOS():
 
     print("  E0 = %13.5f (%9.5f)" % (popt[0], perr[0]))
     print("  V0 = %13.4f (%9.4f)" % (popt[1], perr[1]))
+    print(" (a0 = %13.4f for FCC)" % np.power(4*popt[1], 1.0/3))
     print("  B0 = %13.3f (%9.3f)" % (popt[2] * conv, perr[2] * conv))
     print("  Bp = ", Bp)
 
@@ -117,13 +118,17 @@ def fitBMEOS():
             h.write("#B' %s\n" % Bp)
             h.write("#R2 %s\n" % R2)
             for i, fd in enumerate(yfit):
-                h.write("%s  %s  %s\n" % (xfit[i], fd, yfit_shifted[i]))
+                h.write("%s  %s\n" % (xfit[i], fd))
         # shift the original data 
-        with open(args.input + "_orig_shifted", 'w') as h:
-            print("#Shifted original data by fitted E0", file=h)
+        with open(args.input + "_shifted", 'w') as h:
+            print("#Shifted original data by fitted E0=%s" % popt[0], file=h)
             es -= popt[0]
             for v, e in zip(vs, es):
                 print("%s  %s" % (v, e), file=h)
+            print("", file=h)
+            print("#Shifted fitted data by fitted E0=%s" % popt[0], file=h)
+            for i, y in enumerate(yfit_shifted):
+                print("%s  %s" % (xfit[i], y), file=h)
 
 
 if __name__ == '__main__':

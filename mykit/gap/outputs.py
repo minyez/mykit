@@ -181,5 +181,9 @@ class Outgw:
     """Class for analyzing casename.outgw file
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, path_out=None):
+        p = path_out
+        if p is None:
+            cn = get_casename()
+            p = cn + '.outgw'
+    

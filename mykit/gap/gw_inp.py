@@ -35,6 +35,11 @@ class GwInp():
         "omegmin": (float, r"%FreqGrid", 0.00, 1, 5, 3),
         "emaxpol": (float, r"emaxpol", 1.0E10, 0, 0, 0),
         "emaxsc": (float, r"emaxsc", 1.0E10, 0, 0, 0),
+        "n_ang_grid": (int, r"n_ang_grid", 6, 0, 0, 0),
+        "lmax_q0": (int, r"lmax_q0", 6, 0, 0, 0),
+        "iop_aniso": (int, r"iop_aniso", -1, 0, 0, 0),
+        "iop_acfd": (int, r"%acfd", 1, 1, 1, 0),
+        "exclude_cc_exx": (str, r"exclude_cc_exx", "F", 0, 0, 0), 
         }
     
     @classmethod

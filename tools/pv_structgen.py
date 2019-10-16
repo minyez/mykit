@@ -8,6 +8,7 @@ import os
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import numpy as np
 from mykit.vasp.poscar import Poscar
+from mykit.core.utils import get_arith_prog
 
 def pv_structgen():
     '''main stream
@@ -27,18 +28,14 @@ def pv_structgen():
 
     opts = parser.parse_args()
     
-    stvra = opts.stvra
-    edvra = opts.edvra
-    interval = opts.interval
-    grid = round((edvra-stvra)/interval) + 1
-    vras = np.linspace(stvra, edvra, grid)
+    vras = get_arith_prog(opts.stvra, opts.edvra, interval=opts.interval)
     aras = np.power(vras, 1.0/3)
 
     pc = Poscar.read_from_file(opts.ipos) 
 
     if opts.dir:
         for i, x in enumerate(vras):
-            dname = 'V_%3.2f' % x
+            dname = 'V_%4.2f' % x
             if os.path.isdir(dname):
                 print("%s found. Remove old..." % dname)
                 os.removedirs(dname)

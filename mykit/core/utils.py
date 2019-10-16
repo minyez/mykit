@@ -706,6 +706,27 @@ def get_all_atoms_from_sym_ops(ineqAtoms, ineqPos, symops, left_mult=True):
                 pos.append(a)
     return atoms, pos
 
+def get_arith_prog(st=None, ed=None, n=None, interval=None):
+    """Return an arithmetic progression according to options
+    """
+    nn = 0
+    for x in [st, ed, n, interval]:
+        if x is None:
+            nn += 1
+    if nn != 1:
+        raise ValueError("3 parameters needs to be set for progression")
+    data = []
+    if interval is None:
+        data = np.linspace(st, ed, n)
+    if n is None:
+        n = int((ed-st)/interval) + 1
+        data = np.linspace(st, ed, n)
+    if ed is None:
+        data = np.array([st + i * interval for i in range(n)])
+    if st is None:
+        data = np.array([ed - (n-i) * interval for i in range(n)])
+    return data   
+
 
 class XYFit:
     """fit functions for xy data
@@ -721,6 +742,17 @@ class XYFit:
             energy of highest state   GW band gap
         """
         return a0/(x-a1) + a2
+
+    @staticmethod
+    def linear_inv_x_n(x, n, a0, a1, a2):
+        """y = a0/(x-a1) + a2
+
+        Examples:
+            x                         y
+            nbands                    GW band gap
+            energy of highest state   GW band gap
+        """
+        return a0/(np.power(x, n)-a1) + a2
 
 
 class Smearing:
