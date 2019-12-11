@@ -728,6 +728,45 @@ def get_arith_prog(st=None, ed=None, n=None, interval=None):
     return data   
 
 
+def find_str_matched(strs, pat, regex=False, full=False, ind=False):
+    """Find the strings that match the pattern from start
+
+    Args:
+        strs (sequence)
+        pat (str)
+        regex (bool) : if methods in the re package should be used
+        full (bool) : if the full string should be matched
+        ind (bool) : if set true, the indices of the matched string will be returned
+    
+    Returns:
+        list
+    """
+    val = []
+    if regex:
+        m = {True: re.fullmatch, False: re.match}[full]
+        for i, s in enumerate(strs):
+            if m(pat, s):
+                if ind:
+                    val.append(i)
+                else:
+                    val.append(s)
+    else:
+        for i, s in enumerate(strs):
+            if full:
+                if s == pat:
+                    if ind:
+                        val.append(i)
+                    else:
+                        val.append(s)
+            else:
+                if s.startswith(pat):
+                    if ind:
+                        val.append(i)
+                    else:
+                        val.append(s)
+    return val
+
+
 class XYFit:
     """fit functions for xy data
     """

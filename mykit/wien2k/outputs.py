@@ -1,9 +1,13 @@
 # coding = utf-8
+"""Uitlities for analysing WIEN2k output files
+"""
 
 import os
+from collections import OrderedDict
 from mykit.wien2k.utils import get_casename, read_lm_data
-from mykit.core.utils import conv_string
+from mykit.core.utils import conv_string, find_str_matched
 from mykit.core.numeric import Prec
+from mykit.core.log import Verbose
 from mykit.core.bandstructure import BandStructure
 
 class Vsp(Prec):
@@ -191,3 +195,67 @@ class Energy(Prec):
             efermi (float) 
         """
         raise NotImplementedError
+
+
+class Scf(Prec):
+    """Class for analyzing .scf file
+
+    Args:
+        pathScf (str) : the path to the case.scf file
+    """
+
+    def __init__(self, pathScf=None):
+        p = pathScf
+        if p is None:
+            p = get_casename() + '.scf'
+        if not os.path.isfile(p):
+            raise FileNotFoundError
+        
+        with open(p, 'r') as h:
+            self.scflines = h.readlines()
+        # get the line indices of :ITE
+        self.completed = True
+        self.spin_polarized = False
+        self.ites_li = find_str_matched(self.scflines, ":ITE", regex=False, full=False, ind=True)
+        # check if the SCF complete
+        #self._check_scf_complete()
+        self.scf = {}
+        self._load_iterations()
+    
+    def _check_scf_complete(self):
+        if self.ites_li == [] or len(self.scflines) < 3:
+            Verbose.print_cm_warn("SCF calculation not completed")
+            self.completed = False
+        if not self.scflines[-2].startswith(":ENE"):
+            Verbose.print_cm_warn("SCF calculation not completed")
+            self.completed = False
+
+    def _load_iterations(self):
+        for i, l in enumerate(self.scflines):
+            if l.startswith(":VOL"):
+                _s = self.scflines[i+2].strip()
+                self.spin_polarized = _s == "SPINPOLARIZED CALCULATION"
+        if self.spin_polarized:
+            Verbose.print_cm_log("Spin-polarized calculation found")
+            self._load_iterations_sp()
+        else:
+            self._load_iterations_nsp()
+
+    def _load_iterations_nsp(self):
+        infos = [("VOL", -1), ("GAP", 2), ("ENE", -1), ("FER", -1)]
+        for i, iteli in enumerate(self.ites_li):
+            end = len(self.scflines)
+            if i < len(self.ites_li) - 1:
+                end = self.ites_li[i+1]
+            ite = int(self.scflines[iteli][4:7])
+            oneite = self.scflines[iteli:end]
+            self.scf[ite] = OrderedDict.fromkeys([x[0] for x in infos])
+            try:
+                for _j, l in enumerate(oneite):
+                    for mark, ind in infos:
+                        if l.startswith(":"+mark):
+                            self.scf[ite][mark] = float(l.split()[ind])
+            except ValueError:
+                raise ValueError("error in loading iteration %d: %s" % (i+1, l))
+
+    _load_iterations_sp = _load_iterations_nsp

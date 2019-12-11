@@ -826,8 +826,8 @@ def random_band_structure(nspins=1, nkpts=1, nbands=2, natoms=1, nprojs=1,
         for ispin in range(ns):
             for ik in range(nk):
                 for ib in range(nb):
-                    pWave[ispin, ik, ib, :,
-                          :] /= np.sum(pWave[ispin, ik, ib, :, :])
+                    pWave[ispin, ik, ib, :, :] /= np.sum(pWave[ispin, ik, ib, :, :])
         projected = dict(
             (("atoms", atoms), ("projs", projs), ("pWave", pWave)))
     return BandStructure(eigen, occ, weight, efermi=efermi, projected=projected)
+

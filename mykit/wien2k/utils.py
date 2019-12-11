@@ -11,6 +11,11 @@ from mykit.core.utils import get_dirpath
 from mykit.core.elements import NUCLEAR_CHARGE
 from mykit.core.numeric import Prec
 
+def get_wien2k_version():
+    """get the wien2k version number
+    """
+    pass
+
 
 def get_default_r0(elem):
     """get the default R0 for element ``elem``
@@ -316,3 +321,4 @@ def logr_int(r, a, b, x, y):
     if j1 > 1:
         inte += 0.5 * dx * (P1+P2)
     return inte
+
