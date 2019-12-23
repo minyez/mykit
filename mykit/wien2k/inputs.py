@@ -1,6 +1,7 @@
 # coding = utf-8
 
 import os
+import numpy as np
 
 from mykit.core.log import Verbose
 from mykit.core.utils import (conv_string, get_filename_wo_ext, trim_after,
@@ -8,7 +9,6 @@ from mykit.core.utils import (conv_string, get_filename_wo_ext, trim_after,
 from mykit.wien2k.constants import (IN1_UNIT_READER_nmr, IN1_UNIT_READER_v142,
                                     IN1_UNIT_READER_v171)
 from mykit.wien2k.utils import find_complex_file, get_casename
-
 
 class InputError(Exception):
     pass
@@ -261,3 +261,4 @@ def _write_el_block(elParams):
         for el in els:
             ret.append("%2d %9.5f %9.5f %4s %1d" % (l, *el))
     return "\n".join(ret)
+

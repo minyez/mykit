@@ -14,7 +14,7 @@ STRUCT_LATT_PARAM_WRITER = FortranRecordWriter('(6F10.6)')
 del FortranRecordReader, FortranRecordWriter
 
 DEFAULT_RMTS = {
-    "O": 1.4, 
+    "O": 1.4,
     "Ti": 2.0,
 }
 DEFAULT_RMT = 1.8
