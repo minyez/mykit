@@ -1,18 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
-# ====================================================
-#     File Name : pc_checkidle_sbatch.py
-# Creation Date : 09-05-2018
-#    Created By : Min-Ye Zhang
-#       Contact : stevezhang@pku.edu.cn
-# ====================================================
-
-from __future__ import print_function
 import subprocess as sp
 import re, sys
 import string
-
 
 def __node_list_of_part(sinfo_line):
     '''
@@ -36,7 +27,7 @@ def __node_list_of_part(sinfo_line):
         if node_str[i] == ',':
             # tell if the comma in a "[]" to separate two node IDs or names
             # the node name usually starts with an alphabet
-            if node_str[i+1] in string.letters:
+            if node_str[i+1] in string.ascii_letters:
                 comma_index.append(i)
     comma_index.append(len(node_str))
 
@@ -79,7 +70,7 @@ def __expand_nodeid(nodeid_num_str):
 def __avail_cores(scontrol_cmd, nodeid):
 
     scontrol_cmd_tmp = scontrol_cmd + [nodeid]
-    scontrol_info = sp.check_output(scontrol_cmd_tmp)
+    scontrol_info = sp.check_output(scontrol_cmd_tmp).decode('ascii')
     cpu_info = scontrol_info.split('\n')[1].split()
     
     cpu_alloc = int(cpu_info[0].split('=')[-1])
@@ -104,7 +95,7 @@ def Main(ArgList):
     # the partitions you do not want to check
     ignore_part = ['GPU','KNL','TH_SHORT']
     
-    sinfo = sp.check_output('sinfo')
+    sinfo = sp.check_output('sinfo').decode('ascii')
     sinfo_list = sinfo.split('\n')[1:-1]
     
     # get all available partitions

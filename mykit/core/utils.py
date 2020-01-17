@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """this module defines some common used utilities"""
 
-
 import os
 import re
 import subprocess as sp
@@ -105,20 +104,18 @@ def get_matched_files(dirPath=".", regex=None):
 #     return dirname
 
 
-# def common_io_cleandir(dirname=None):
-#     '''
-#     check if dirname exists and is empty, or create it
-#     and make it contain no files
-#     return: the full path of target directory
-#     '''
-#     if (dirname is None or dirname.strip() == ""):
-#         dirname = os.getcwd()
-#     elif (not os.path.exists(dirname)):
-#         os.mkdir(dirname)
-#     elif (os.path.exists(dirname)):
-#         rmtree(dirname)
-#         os.mkdir(dirname)
-#     return dirname
+def io_cleandir(dirname=None):
+    '''check if dirname exists and is empty, or create it
+    return: the full path of target directory
+    '''
+    if (dirname is None or dirname.strip() == ""):
+        dirname = os.getcwd()
+    elif (not os.path.exists(dirname)):
+        os.mkdir(dirname)
+    elif (os.path.exists(dirname)):
+        rmtree(dirname)
+        os.mkdir(dirname)
+    return dirname
 
 
 def trim_after(string, regex, include_pattern=False):
@@ -399,29 +396,29 @@ def get_str_indices_by_iden(container, iden=None):
     return ret
 
 
-# ====================== PERFORM CALCULATION ======================
-# def common_run_calc_cmd(calc_cmd, fout=None, ferr=None):
-#     '''
-#     Run the calculation command by threading a subprocess calling calc_cmd
-#     '''
+def run_cmd(cmd, fout=None, ferr=None):
+    """Run the calculation command by threading a subprocess calling cmd
+    """
+    shell = False
+    if isinstance(cmd, str):
+        shell = True
+    if fout is None:
+        ofile = sp.PIPE
+    else:
+        ofile = open(fout, 'w')
 
-#     if fout is None:
-#         ofile = sp.PIPE
-#     else:
-#         ofile = open(fout, 'w')
+    if ferr is None:
+        efile = sp.PIPE
+    else:
+        efile = open(ferr, 'w')
 
-#     if ferr is None:
-#         efile = sp.PIPE
-#     else:
-#         efile = open(ferr, 'w')
+    p = sp.Popen(cmd, stdout=ofile, stderr=efile, shell=shell)
+    p.wait()
 
-#     p = sp.Popen(calc_cmd, stdout=ofile, stderr=efile, shell=True)
-#     p.wait()
-
-#     if not fout is None:
-#         ofile.close()
-#     if not ferr is None:
-#         efile.close()
+    if not fout is None:
+        ofile.close()
+    if not ferr is None:
+        efile.close()
 
 
 def conv_estimate_number(s):

@@ -111,15 +111,13 @@ def is_primitive(cell):
     return flag
 
 
-def primitize(cell, instantiate=True):
+def primitize(cell):
     '''Return the primitive cell of the input cell.
 
     If primitive cell is not found, the original cell is returned
 
     Args:
         cell (``Cell``)
-        instantiate (bool): if set True, an instance with the same type
-            is returned
 
     Returns:
     '''
@@ -137,7 +135,7 @@ def primitize(cell, instantiate=True):
     return newCell
 
 
-def standardize(cell, primitive=False, instantiate=True):
+def standardize(cell, primitive=False):
     '''Return the standardized cell from the original cell
 
     Args:

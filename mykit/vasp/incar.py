@@ -309,6 +309,10 @@ class Incar(*_incar_controllers):
                 # "gw": (_get_minimal_scf_tags, _get_minimal_gw_tags, ),
             }
         minimals = _taskDict.get(task, None)
+        # pump out 0 encut
+        if "ENCUT" in kwargs:
+            if kwargs["ENCUT"] == 0:
+                kwargs.pop("ENCUT")
         if minimals is None:
             raise IncarError("Task name not supported: {}. Should be in {}".format(task, _taskDict.keys()))
 

@@ -75,3 +75,4 @@ with open(ofile,'w') as fout:
     fout.write("# Vol %s\n" %obs)
     for i in xrange(len(vol_data)):
         fout.write("%3i   %s   %s\n" % (i+1,vol_data[i],obs_data[i]))
+

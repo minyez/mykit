@@ -1,138 +1,163 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
-# ====================================================
-#
-#     File Name : pv_hf.py
-# Creation Date : 10-04-2018
-#    Created By : Min-Ye Zhang
-#       Contact : stevezhang@pku.edu.cn
-#
-# ====================================================
-
 from __future__ import print_function
-from pv_calc_utils import vasp_io_get_NPAR, \
-                          vasp_vaspcmd_zmy, \
-                          vasp_write_incar_minimal_elec, \
-                          vasp_io_change_tag
+from mykit.vasp.incar import Incar
+from mykit.vasp.utils import get_npar
 from argparse import ArgumentParser
 import os, sys, re
 from shutil import copy2
 
-def pv_write_hf_sequence(nproc, vasp_path, incar_pre='INCAR_1', incar_coarse='INCAR_2', incar_stdhf='INCAR_3',seq_out='hf_calc.py'):
-
-    '''
-    Write the python control file for a fast-SCF-converging HF calculation.
+def pv_write_hf_sequence(vasp_cmd, nproc, mpi, seq_out='hf_calc.py'):
+    '''Write the python control file for a fast-SCF-converging HF calculation.
     '''
 
-    # check if the three INCARs exists
-    incar_list = [incar_pre, incar_coarse, incar_stdhf]
+    # check if the three INCARs exist
+    incar_list = ['INCAR_pbe', 'INCAR_nkred', 'INCAR_hf']
     for i in incar_list:
-        if not os.path.exists(i):
+        if not os.path.isfile(i):
             raise ValueError("Error: specified INCAR not found, %s " % i)
 
-    # generate the VASP command with path to VASP executive
-    vasp_path, vasp_cmd = vasp_vaspcmd_zmy(np=nproc,vasp_path=vasp_path)
+    _template = """#!/usr/bin/env python3
+import os
+import subprocess as sp
+from shutil import copy2
+from mykit.vasp.utils import run_vasp
+from mykit.core.utils import io_cleandir
 
+vasp_cmd = '{vasp_cmd}'
+nproc = {nproc}
+mpi = '{mpi}'
+
+ifiles = ["POSCAR", "POTCAR", "KPOINTS"]
+for i in ifiles:
+    if not os.path.exists(i):
+        raise IOError("%s not found" % i)
+# copy input files except INCAR
+workdirs = ["1_PBE_preconv", "2_HF_coarse", "3_HF_normal"]
+for w in workdirs:
+    io_cleandir(w)
+    for i in ifiles:
+        copy2(i, w)
+copy2('INCAR_pbe', workdirs[0]+"/INCAR")
+copy2('INCAR_nkred', workdirs[1]+"/INCAR")
+copy2('INCAR_hf', workdirs[2]+"/INCAR")
+
+# PBE preconverge
+os.chdir(workdirs[0])
+run_vasp(vasp_cmd, nproc, mpi, "out", "error")
+
+# coarse HF
+os.chdir('../'+workdirs[1])
+try:
+    copy2("../"+workdirs[0]+"/WAVECAR", "WAVECAR")
+except IOError:
+    raise IOError("WARNING: WAVECAR in the PBE step not found")
+run_vasp(vasp_cmd, nproc, mpi, "out", "error")
+
+# standard HF
+os.chdir('../'+workdirs[2])
+try:
+    copy2("../"+workdirs[1]+"/WAVECAR", "WAVECAR")
+except IOError:
+    raise IOError("WARNING: WAVECAR in the coarse HF step not found")
+run_vasp(vasp_cmd, nproc, mpi, "out", "error")
+
+# finish
+os.chdir('../')
+"""
     # write the python control file
     with open(seq_out, 'w') as h_out:
-        h_out.write('#!/usr/bin/env python\n')
-        h_out.write('# coding=utf-8\n\n')
-        h_out.write('from __future__ import print_function\n')
-        h_out.write('import os\n')
-        h_out.write('from shutil import copy2\n')
-        h_out.write('from pv_calc_utils import vasp_vasprun_zmy\n')
-        h_out.write('from pc_utils import common_io_cleandir\n')
-        h_out.write('import subprocess as sp\n\n')
-        h_out.write('vasp_cmd = "%s"\n\n' % vasp_cmd)
-        h_out.write('# check POSCAR, POTCAR and KPOINTS\n')
-        h_out.write('ifiles = ["POSCAR","POTCAR","KPOINTS"]\n')
-        h_out.write('for ifile in ifiles:\n')
-        h_out.write('    if not os.path.exists(ifile):\n')
-        h_out.write('       raise IOError("Error: %s not found" % ifile)\n\n')
-        h_out.write('# copy input files except INCAR\n')
-        h_out.write('workdirs = ["1_PBE_preconv", "2_HF_coarse", "3_HF_normal"]\n')
-        h_out.write('for workdir in workdirs:\n')
-        h_out.write('    common_io_cleandir(workdir)\n')
-        h_out.write('    for ifile in ifiles:\n')
-        h_out.write('        copy2(ifile, workdir)\n\n')
-        h_out.write('copy2(\'%s\', workdirs[0]+"/INCAR")\n' % incar_pre)
-        h_out.write('copy2(\'%s\', workdirs[1]+"/INCAR")\n' % incar_coarse)
-        h_out.write('copy2(\'%s\', workdirs[2]+"/INCAR")\n' % incar_stdhf)
-        h_out.write('\n# 1 PBE preconverge\n')
-        h_out.write('os.chdir(workdirs[0])\n')
-        h_out.write('vasp_vasprun_zmy(vasp_cmd, "out","error")\n')
-        h_out.write('\n# 2 coarse HF\n')
-        h_out.write('os.chdir(\'../\' + workdirs[1])\n')
-        h_out.write('try:\n')
-        h_out.write('    copy2("../"+workdirs[0]+"/WAVECAR", "WAVECAR")\n')
-        h_out.write('except IOError:\n')
-        h_out.write('    print("WARNING: WAVECAR in the previous step not found.")\n')
-        h_out.write('vasp_vasprun_zmy(vasp_cmd, "out","error")\n')
-        h_out.write('\n# 3 standard HF\n')
-        h_out.write('os.chdir(\'../\' + workdirs[2])\n')
-        h_out.write('try:\n')
-        h_out.write('    copy2("../"+workdirs[1]+"/WAVECAR", "WAVECAR")\n')
-        h_out.write('except IOError:\n')
-        h_out.write('    print("WARNING: WAVECAR in the previous step not found.")\n')
-        h_out.write('vasp_vasprun_zmy(vasp_cmd, "out","error")\n')
-        h_out.write('os.chdir("../")\n')
+        h_out.write(_template.format(vasp_cmd=vasp_cmd, nproc=nproc, mpi=mpi))
 
 
-def pv_prepare_hf_calculation(ArgList):
+def pv_prepare_hf_calculation():
 
     description = '''Prepare the input files and python executive script for a hybrid functional caluclation (PBE0, HSE06, HF).'''
 
     parser = ArgumentParser(description=description)
     group1 = parser.add_mutually_exclusive_group()
 
-    parser.add_argument("-e",dest='encut',type=int,default=0,help="Planewave cutoff. 0 will set largest ENMAX")
-    parser.add_argument("-n",dest='nproc',type=int,default=1,help="Number of processors ")
-    parser.add_argument("-x",dest='tag_xc',default='HSE06',help="Type of hybrid functional. HSE06|PBE0|HF")
-    parser.add_argument("-v",dest='vasp_path',default="vasp",help="Path of vasp executive")
-    group1.add_argument("--nkred",dest='nkred',type=int,default=1,help="NKRED set in the coarse calculation of HF ")
-    group1.add_argument("--nkredxyz",dest='nkredxyz',help="NKREDX/Y/Z set in the coarse calculation of HF, [X,Y,Z]")
-    parser.add_argument("--spin",dest='ispin',type=int,default=1,help="Spin-polarization. 1 for nsp and 2 for sp.")
+    parser.add_argument("-e", dest='encut', type=int, default=0, \
+        help="planewave cutoff. 0 will set largest ENMAX")
+    parser.add_argument("-n", dest='nproc', type=int, default=1, \
+        help="number of processors")
+    parser.add_argument("--mpi", dest='mpi', type=str, default="mpirun", \
+        help="mpirun type")
+    parser.add_argument("-x", dest='tag_xc', default='HSE06', \
+        help="yype of hybrid functional. HSE06|PBE0|HF")
+    parser.add_argument("-v", dest='vasp_cmd', default="vasp", \
+        help="vasp executive")
+    group1.add_argument("--nkred", dest='nkred', type=int, default=1, \
+        help="NKRED set in the coarse calculation of HF ")
+    group1.add_argument("--nkredxyz",dest='nkredxyz', \
+        help="NKREDX/Y/Z set in the coarse calculation of HF, [X,Y,Z]")
+    parser.add_argument("--spin", dest='ispin', type=int, default=1, \
+        help="Spin-polarization. 1 for nsp and 2 for sp.")
 
     opts  = parser.parse_args()
     ispin = opts.ispin
     nproc = opts.nproc
     encut = opts.encut
 
-    npar  = vasp_io_get_NPAR(nproc)
+    npar  = get_npar(nproc)
 
     # generate primitive INCAR files
-    with open('INCAR_1','w') as incar:
-        vasp_write_incar_minimal_elec(incar,'PBE',encut=encut,npar=npar,spin=ispin)
-    with open('INCAR_2','w') as incar:
-        vasp_write_incar_minimal_elec(incar,opts.tag_xc,encut=encut,npar=npar,spin=ispin)
+    ic1 = Incar.minimal_incar("scf",
+                              xc="PBE",
+                              nproc=nproc,
+                              ISPIN=ispin,
+                              ENCUT=encut,
+                              npar=npar,
+                              comment="PBE preconv for hybrid")
+    ic2 = Incar.minimal_incar("scf",
+                              xc=opts.tag_xc,
+                              nproc=nproc,
+                              ISPIN=ispin,
+                              ENCUT=encut,
+                              npar=1,
+                              PRECFOCK='FAST',
+                              ISTART=1,
+                              comment="hybrid calculation with nkred")
+    ic3 = Incar.minimal_incar("scf",
+                              xc=opts.tag_xc,
+                              nproc=nproc,
+                              ISPIN=ispin,
+                              ENCUT=encut,
+                              npar=1,
+                              ISTART=1,
+                              comment="hybrid calculation")
+    if ic2["ALGO"] == "ALL":
+        ic2["ISMEAR"] = 0
+        ic2["SIGMA"] = 0.05
+    if ic3["ALGO"] == "ALL":
+        ic3["ISMEAR"] = 0
+        ic3["SIGMA"] = 0.05
 
-    copy2('INCAR_2','INCAR_3')
 
-    vasp_io_change_tag('INCAR_2', 'PRECFOCK', new_val='FAST', backup=False)
-    vasp_io_change_tag('INCAR_2', 'ISTART', new_val='1', backup=False)
-    vasp_io_change_tag('INCAR_3', 'ISTART', new_val='1', backup=False)
-
-    # deal with INCAR_2 for coarse HF calculation with NKRED or NKREDX/Y/Z
+    # set coarse HF calculation with NKRED or NKREDX/Y/Z
     if opts.nkred != 1:
-        vasp_io_change_tag('INCAR_2', 'NKRED', new_val=opts.nkred, backup=False)
+        ic2['NKRED'] = opts.nkred
     if opts.nkredxyz:
         try:
-            string = opts.nkredxyz + 'str'
-            nkredxyz = [ x.strip() for x in re.split(r'[,\[\]]',opts.nkredxyz)]
-            nkredxyz = [ int(x) for x in ' '.join(nkredxyz).split()]
+            nkredxyz = [x.strip() for x in re.split(r'[,\[\]]',opts.nkredxyz)]
+            nkredxyz = [int(x) for x in ' '.join(nkredxyz).split()]
 
             nkred_opt = ['NKREDX','NKREDY','NKREDZ']
             for i in range(3):
                 if nkredxyz[i] !=1 :
-                    vasp_io_change_tag('INCAR_2', nkred_opt[i], new_val=nkredxyz[i], backup=False)
+                    ic2[nkred_opt[i]] = nkredxyz[i]
         except:
             print(" WARNING: Unsupported input of NKREDX/Y/Z. Pass")
 
-    pv_write_hf_sequence(nproc=opts.nproc, vasp_path=opts.vasp_path)
+    ic1.write('INCAR_pbe')
+    ic2.write('INCAR_nkred')
+    ic3.write('INCAR_hf')
+
+    pv_write_hf_sequence(nproc=opts.nproc, vasp_cmd=opts.vasp_cmd, mpi=opts.mpi)
 
 # =====================================================
 
 if __name__ == "__main__":
-    pv_prepare_hf_calculation(sys.argv)
+    pv_prepare_hf_calculation()
 

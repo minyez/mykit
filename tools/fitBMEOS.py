@@ -15,11 +15,12 @@ import matplotlib.pyplot as plt
 
 from mykit.core.constants import EV_PER_ANG_CUB2GPA
 from mykit.core.eos import Birch_Murnaghan
+from mykit.core.unit import EnergyUnit, LengthUnit
 
 
 def _readfile(filename, v_col, e_col, nfu=1):
-    data = np.loadtxt(filename, unpack=True)
-    return data[v_col]/nfu, data[e_col]/nfu
+    vs, es = np.loadtxt(filename, unpack=True, usecols=[v_col, e_col])
+    return vs/nfu, es/nfu
 
 
 def fitBMEOS():
@@ -44,6 +45,12 @@ def fitBMEOS():
         help="column of energy")
     parser.add_argument("--gpa", dest="gpa", action="store_true", \
         help="Use GPa as unit to print bulk modulus")
+    parser.add_argument("--eu", dest="eunit", default="ev", \
+        choices=["ev", "ry", "au"], \
+        help="Energy unit of input")
+    parser.add_argument("--lu", dest="lunit", default="ang", \
+        choices=["ang", "au"], \
+        help="Length unit of input")
     parser.add_argument("--png", dest="png", type=str, default=None, \
         help="Output to png. Filename wo png extension.")
     parser.add_argument("--write-fit", dest="write_fit", action="store_true", \
@@ -55,6 +62,11 @@ def fitBMEOS():
     nfu = args.nunits
 
     vs, es = _readfile(args.input, args.v_col-1, args.e_col-1, nfu=nfu)
+    if args.eunit != "ev":
+        es = EnergyUnit.convert_eunit(es, args.eunit, "ev")
+    if args.lunit != "ang":
+        vs *= np.power(LengthUnit.convert_lunit(1.0, args.lunit, "ang"), 3)
+
     opts_curve_fit = {"maxfev": 5000}
 
     # initial guess
